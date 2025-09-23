@@ -48,7 +48,7 @@ export default function App() {
   const [blocks, setBlocks] = useState<BlockProps[]>([]);
 
   useEffect(() => {
-    fetch("/courses.json")
+    fetch("/uconn-schedule-builder/courses.json")
       .then((res) => res.json())
       .then((data) => setBlocks(data));
   }, []);
