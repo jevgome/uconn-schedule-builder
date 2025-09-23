@@ -1,19 +1,28 @@
-import { DndContext, closestCenter } from "@dnd-kit/core";
+import React, { useState } from "react";
 import {
-  arrayMove,
+  DndContext,
+  closestCenter,
+  useSensor,
+  useSensors,
+  PointerSensor,
+} from "@dnd-kit/core";
+import {
   SortableContext,
-  useSortable,
   verticalListSortingStrategy,
+  arrayMove,
+  useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useState } from "react";
 
-// Component for each draggable block
-function DraggableBlock({ id }: { id: string }) {
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id });
+interface BlockProps {
+  id: string;
+  label: string;
+}
 
-  const style = {
+function DraggableBlock({ id, label }: BlockProps) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+
+  const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     padding: "12px",
@@ -27,37 +36,37 @@ function DraggableBlock({ id }: { id: string }) {
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      {id}
+      {label}
     </div>
   );
 }
 
 export default function App() {
-  const [blocks, setBlocks] = useState(["Math", "Physics", "Chemistry"]);
+  const [blocks, setBlocks] = useState([
+    { id: "1", label: "Math 101" },
+    { id: "2", label: "CS 202" },
+    { id: "3", label: "History 303" },
+  ]);
+
+  const sensors = useSensors(useSensor(PointerSensor));
+
+  function handleDragEnd(event: any) {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = blocks.findIndex((b) => b.id === active.id);
+      const newIndex = blocks.findIndex((b) => b.id === over.id);
+      setBlocks(arrayMove(blocks, oldIndex, newIndex));
+    }
+  }
 
   return (
-    <div style={{ maxWidth: 400, margin: "2rem auto" }}>
-      <h1 style={{ textAlign: "center", marginBottom: "1rem" }}>
-        Drag & Drop Classes
-      </h1>
-      <DndContext
-        collisionDetection={closestCenter}
-        onDragEnd={(event) => {
-          const { active, over } = event;
-          if (over && active.id !== over.id) {
-            const oldIndex = blocks.indexOf(active.id as string);
-            const newIndex = blocks.indexOf(over.id as string);
-            setBlocks(arrayMove(blocks, oldIndex, newIndex));
-          }
-        }}
-      >
-        <SortableContext items={blocks} strategy={verticalListSortingStrategy}>
-          {blocks.map((block) => (
-            <DraggableBlock key={block} id={block} />
-          ))}
-        </SortableContext>
-      </DndContext>
-    </div>
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <SortableContext items={blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+        {blocks.map((block) => (
+          <DraggableBlock key={block.id} id={block.id} label={block.label} />
+        ))}
+      </SortableContext>
+    </DndContext>
   );
 }
 
