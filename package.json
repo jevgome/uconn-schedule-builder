@@ -1,13 +1,14 @@
 {
-  "name": "uconn-schedule-builder",
-  "private": true,
-  "version": "0.0.0",
+  "name": "Uconn Schedule Builder",
+  "version": "0.0.1",
+  "homepage": "https://jevgome.github.io/uconn-schedule-builder/",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "react": "^19.1.1",
@@ -21,6 +22,7 @@
     "eslint": "^9.36.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
+    "gh-pages": "^6.3.0",
     "globals": "^16.4.0",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.44.0",
