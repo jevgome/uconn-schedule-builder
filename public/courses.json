@@ -1,16 +1,6 @@
 [
-  {
-    "code": "PHYS1502",
-    "section": "001",
-    "days": ["Mon", "Wed"],
-    "start": "10:00",
-    "end": "11:15"
-  },
-  {
-    "code": "MATH2401",
-    "section": "002",
-    "days": ["Tue", "Thu"],
-    "start": "14:00",
-    "end": "15:15"
-  }
+  { "id": "1", "name": "Math 101" },
+  { "id": "2", "name": "CS 202" },
+  { "id": "3", "name": "History 303" },
+  { "id": "4", "name": "Physics 204" }
 ]
