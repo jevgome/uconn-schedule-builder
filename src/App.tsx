@@ -1,68 +1,63 @@
-import { useEffect, useState } from "react";
+import { DndContext, closestCenter } from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { useState } from "react";
 
-type Course = {
-  code: string;
-  section: string;
-  days: string[];
-  start: string;
-  end: string;
-};
+// Component for each draggable block
+function DraggableBlock({ id }: { id: string }) {
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({ id });
 
-const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri"];
-
-function App() {
-  const [courses, setCourses] = useState<Course[]>([]);
-
-  useEffect(() => {
-    fetch("/courses.json")
-      .then((res) => res.json())
-      .then(setCourses)
-      .catch(console.error);
-  }, []);
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    padding: "12px",
+    margin: "6px 0",
+    background: "#4f46e5",
+    color: "white",
+    borderRadius: "0.5rem",
+    textAlign: "center",
+    cursor: "grab",
+  };
 
   return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
-      <h1>Schedule Builder Demo</h1>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(5, 1fr)",
-          gap: "8px",
-          marginTop: "2rem",
-        }}
-      >
-        {daysOfWeek.map((day) => (
-          <div
-            key={day}
-            style={{
-              border: "1px solid #ccc",
-              minHeight: "200px",
-              padding: "4px",
-            }}
-          >
-            <h3>{day}</h3>
-            {courses
-              .filter((c) => c.days.includes(day))
-              .map((c) => (
-                <div
-                  key={c.code + c.section}
-                  style={{
-                    backgroundColor: "#4ade80",
-                    margin: "2px 0",
-                    padding: "4px",
-                    borderRadius: "4px",
-                    color: "#000",
-                  }}
-                >
-                  {c.code} ({c.section}) <br />
-                  {c.start} - {c.end}
-                </div>
-              ))}
-          </div>
-        ))}
-      </div>
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      {id}
     </div>
   );
 }
 
-export default App;
+export default function App() {
+  const [blocks, setBlocks] = useState(["Math", "Physics", "Chemistry"]);
+
+  return (
+    <div style={{ maxWidth: 400, margin: "2rem auto" }}>
+      <h1 style={{ textAlign: "center", marginBottom: "1rem" }}>
+        Drag & Drop Classes
+      </h1>
+      <DndContext
+        collisionDetection={closestCenter}
+        onDragEnd={(event) => {
+          const { active, over } = event;
+          if (over && active.id !== over.id) {
+            const oldIndex = blocks.indexOf(active.id as string);
+            const newIndex = blocks.indexOf(over.id as string);
+            setBlocks(arrayMove(blocks, oldIndex, newIndex));
+          }
+        }}
+      >
+        <SortableContext items={blocks} strategy={verticalListSortingStrategy}>
+          {blocks.map((block) => (
+            <DraggableBlock key={block} id={block} />
+          ))}
+        </SortableContext>
+      </DndContext>
+    </div>
+  );
+}
+
