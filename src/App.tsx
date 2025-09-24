@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -7,14 +7,23 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import {
+  arrayMove,
   SortableContext,
   verticalListSortingStrategy,
-  arrayMove,
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-// Draggable block component
+interface Course {
+  course: string;
+  catalog_number: string;
+}
+
+interface DraggableBlockData {
+  id: string;
+  name: string;
+}
+
 interface BlockProps {
   id: string;
   name: string;
@@ -39,7 +48,7 @@ function DraggableBlock({
     width: 200,
     cursor: "grab",
     textAlign: "center",
-    overflow: "visible", // so the button outside is visible
+    overflow: "visible",
   };
 
   const buttonStyle: React.CSSProperties = {
@@ -60,7 +69,7 @@ function DraggableBlock({
     fontSize: 14,
     lineHeight: 1,
     pointerEvents: "auto",
-    opacity: 0, // hidden by default
+    opacity: 0,
     transition: "opacity 0.2s",
   };
 
@@ -83,7 +92,7 @@ function DraggableBlock({
       <button
         style={buttonStyle}
         onClick={() => onDelete(id)}
-        onPointerDown={(e) => e.stopPropagation()} // prevent drag
+        onPointerDown={(e) => e.stopPropagation()}
       >
         ×
       </button>
@@ -91,112 +100,99 @@ function DraggableBlock({
   );
 }
 
-// Main App
 export default function App() {
-  const [blocks, setBlocks] = useState<BlockProps[]>([
-    { id: "1", name: "Math 101" },
-    { id: "2", name: "CS 202" },
-  ]);
-  const [inputValue, setInputValue] = useState("");
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [blocks, setBlocks] = useState<DraggableBlockData[]>([]);
+  const [input, setInput] = useState("");
+  const [suggestions, setSuggestions] = useState<Course[]>([]);
+
+  useEffect(() => {
+    fetch("/uconn-schedule-builder/courses.json")
+      .then((res) => res.json())
+      .then((data: Course[]) => setCourses(data))
+      .catch((err) => console.error(err));
+  }, []);
+
+  useEffect(() => {
+    if (!input) return setSuggestions([]);
+    const lower = input.toLowerCase();
+    setSuggestions(
+      courses
+        .filter((c) => `${c.course} ${c.catalog_number}`.toLowerCase().includes(lower))
+        .slice(0, 10)
+    );
+  }, [input, courses]);
 
   const sensors = useSensors(useSensor(PointerSensor));
 
-  function handleDragEnd(event: any) {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
       const oldIndex = blocks.findIndex((b) => b.id === active.id);
       const newIndex = blocks.findIndex((b) => b.id === over.id);
       setBlocks(arrayMove(blocks, oldIndex, newIndex));
     }
-  }
+  };
 
-  function addBlock() {
-    if (!inputValue.trim()) return;
-    const newBlock: BlockProps = {
-      id: Date.now().toString(),
-      name: inputValue,
-    };
-    setBlocks([...blocks, newBlock]);
-    setInputValue("");
-  }
+  const addBlock = (course: Course) => {
+    setBlocks((prev) => [
+      ...prev,
+      { id: `${course.course}-${course.catalog_number}-${Date.now()}`, name: `${course.course} ${course.catalog_number}` },
+    ]);
+    setInput("");
+    setSuggestions([]);
+  };
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") addBlock();
-  }
-
-  function deleteBlock(id: string) {
-    setBlocks(blocks.filter((b) => b.id !== id));
-  }
+  const removeBlock = (id: string) => setBlocks((prev) => prev.filter((b) => b.id !== id));
 
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "100vh",
-        background: "#f3f4f6",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 400,
-          padding: "1rem",
-          borderRadius: "0.5rem",
-          background: "#fff",
-          boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-        }}
-      >
-        <h1 style={{ textAlign: "center", marginBottom: "1rem" }}>Drag & Drop Courses</h1>
+    <div style={{ padding: 40, display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <div style={{ position: "relative", width: 250 }}>
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Type a course..."
+          style={{ width: "100%", padding: 8, fontSize: 16 }}
+        />
+        {suggestions.length > 0 && (
+          <ul style={{
+            listStyle: "none",
+            margin: 0,
+            padding: 0,
+            position: "absolute",
+            top: "100%",
+            left: 0,
+            width: "100%",
+            border: "1px solid #ccc",
+            backgroundColor: "white",
+            zIndex: 100,
+            maxHeight: 200,
+            overflowY: "auto"
+          }}>
+            {suggestions.map((c, i) => (
+              <li
+                key={i}
+                style={{ padding: 8, cursor: "pointer" }}
+                onClick={() => addBlock(c)}
+              >
+                {c.course} {c.catalog_number}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
-        {/* Input */}
-        <div style={{ display: "flex", marginBottom: "1rem" }}>
-          <input
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Add a course..."
-            style={{
-              flex: 1,
-              padding: "8px",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-              marginRight: "8px",
-            }}
-          />
-          <button
-            onClick={addBlock}
-            style={{
-              padding: "8px 12px",
-              borderRadius: "4px",
-              border: "none",
-              background: "#4f46e5",
-              color: "white",
-              cursor: "pointer",
-            }}
-          >
-            Add
-          </button>
-        </div>
-
-        {/* Draggable list */}
+      <div style={{ marginTop: 40 }}>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-              {blocks.map((block) => (
-                <DraggableBlock
-                  key={block.id}
-                  id={block.id}
-                  name={block.name}
-                  onDelete={deleteBlock}
-                />
-              ))}
-            </div>
+          <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
+            {blocks.map((block) => (
+              <DraggableBlock key={block.id} id={block.id} name={block.name} onDelete={removeBlock} />
+            ))}
           </SortableContext>
         </DndContext>
       </div>
     </div>
   );
 }
+

@@ -1,0 +1,31 @@
+.draggable-block {
+  position: relative;
+  cursor: grab;
+}
+
+.remove-btn {
+  background: red;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+  pointer-events: auto; /* ensure button can be clicked */
+}
+
+.draggable-block:hover .remove-btn,
+.remove-btn:hover {
+  opacity: 1; /* stays visible when hovering the button */
+}
+
