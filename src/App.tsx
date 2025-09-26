@@ -99,7 +99,6 @@ function DraggableBlock({
     </div>
   );
 }
-
 export default function App() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [blocks, setBlocks] = useState<DraggableBlockData[]>([]);
@@ -145,6 +144,23 @@ export default function App() {
 
   const removeBlock = (id: string) => setBlocks((prev) => prev.filter((b) => b.id !== id));
 
+  // highlight matched text
+  const highlightMatch = (text: string, query: string) => {
+    const lower = text.toLowerCase();
+    const idx = lower.indexOf(query.toLowerCase());
+    if (idx === -1) return text;
+
+    return (
+      <>
+        {text.slice(0, idx)}
+        <span style={{ backgroundColor: "yellow", fontWeight: "bold" }}>
+          {text.slice(idx, idx + query.length)}
+        </span>
+        {text.slice(idx + query.length)}
+      </>
+    );
+  };
+
   return (
     <div style={{ padding: 40, display: "flex", flexDirection: "column", alignItems: "center" }}>
       <div style={{ position: "relative", width: 250 }}>
@@ -170,15 +186,18 @@ export default function App() {
             maxHeight: 200,
             overflowY: "auto"
           }}>
-            {suggestions.map((c, i) => (
-              <li
-                key={i}
-                style={{ padding: 8, cursor: "pointer" }}
-                onClick={() => addBlock(c)}
-              >
-                {c.course} {c.catalog_number}
-              </li>
-            ))}
+            {suggestions.map((c, i) => {
+              const label = `${c.course} ${c.catalog_number}`;
+              return (
+                <li
+                  key={i}
+                  style={{ padding: 8, cursor: "pointer" }}
+                  onClick={() => addBlock(c)}
+                >
+                  {highlightMatch(label, input)}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

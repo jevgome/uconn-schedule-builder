@@ -148,7 +148,6 @@ def scrape_subject(url):
         })
 
     return courses
-
 def save_results(data, filename="../public/courses.json"):
     """Save all courses to JSON file."""
     path = Path(filename)
