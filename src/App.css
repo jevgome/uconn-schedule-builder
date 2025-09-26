@@ -1,3 +1,4 @@
+@import "tailwindcss";
 .draggable-block {
   position: relative;
   cursor: grab;

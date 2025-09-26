@@ -130,9 +130,5 @@ if __name__ == '__main__':
         courses = json.load(f)
 
     for sem in sems:
-        start = time.time()
-        results = scrape_all(courses, sem)
-        elapsed = time.time() - start
-        print(f"\nScraped {len(results)} results in {elapsed:.1f}s")
-
         save_results(scrape_all(courses, sem), f"../public/{sem['value']}-classes.json")
+

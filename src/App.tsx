@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   DndContext,
   closestCenter,
@@ -27,50 +27,17 @@ interface DraggableBlockData {
 interface BlockProps {
   id: string;
   name: string;
+  onDelete: (id: string) => void;
 }
 
-function DraggableBlock({
-  id,
-  name,
-  onDelete,
-}: BlockProps & { onDelete: (id: string) => void }) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+function DraggableBlock({ id, name, onDelete }: BlockProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
   const style: React.CSSProperties = {
-    position: "relative",
     transform: CSS.Transform.toString(transform),
     transition,
-    padding: "12px 20px",
-    margin: "6px 0",
-    background: "#4f46e5",
-    color: "white",
-    borderRadius: "0.5rem",
-    width: 200,
-    cursor: "grab",
-    textAlign: "center",
-    overflow: "visible",
-  };
-
-  const buttonStyle: React.CSSProperties = {
-    position: "absolute",
-    top: -6,
-    right: -6,
-    width: 20,
-    height: 20,
-    borderRadius: "50%",
-    backgroundColor: "#ef4444",
-    color: "white",
-    border: "none",
-    fontWeight: "bold",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 14,
-    lineHeight: 1,
-    pointerEvents: "auto",
-    opacity: 0,
-    transition: "opacity 0.2s",
+    opacity: isDragging ? 0.9 : 1,
+    zIndex: isDragging ? 10 : 1,
   };
 
   return (
@@ -79,139 +46,310 @@ function DraggableBlock({
       style={style}
       {...attributes}
       {...listeners}
+      className={`group relative bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white rounded-2xl p-4 m-2 w-64 shadow-lg transition-all duration-300 cursor-grab active:cursor-grabbing select-none animate-fadeInUp ${
+        isDragging 
+          ? 'shadow-2xl scale-110 rotate-3 z-50' 
+          : 'hover:shadow-2xl hover:scale-105 hover:-rotate-1'
+      }`}
       onMouseEnter={(e) => {
-        const btn = e.currentTarget.querySelector("button");
-        if (btn) (btn as HTMLButtonElement).style.opacity = "1";
+        if (!isDragging) {
+          const btn = e.currentTarget.querySelector("button");
+          if (btn) (btn as HTMLButtonElement).style.opacity = "1";
+          e.currentTarget.style.boxShadow = "0 25px 50px rgba(99, 102, 241, 0.4), 0 0 30px rgba(139, 92, 246, 0.3)";
+        }
       }}
       onMouseLeave={(e) => {
         const btn = e.currentTarget.querySelector("button");
         if (btn) (btn as HTMLButtonElement).style.opacity = "0";
+        if (!isDragging) {
+          e.currentTarget.style.boxShadow = "0 10px 25px rgba(0, 0, 0, 0.1)";
+        }
       }}
     >
-      {name}
+      <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      <div className="relative z-10 font-semibold text-center text-lg tracking-wide">
+        {name}
+      </div>
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300 animate-pulse"></div>
       <button
-        style={buttonStyle}
-        onClick={() => onDelete(id)}
-        onPointerDown={(e) => e.stopPropagation()}
+        className="absolute -top-3 -right-3 w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center text-sm font-bold shadow-lg transform hover:scale-110 hover:rotate-90 z-20"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete(id);
+        }}
+        onPointerDown={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+        }}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+        }}
       >
         ×
       </button>
+      <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl opacity-0 group-hover:opacity-30 transition-opacity duration-300 blur-sm -z-10"></div>
     </div>
   );
 }
+
 export default function App() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [blocks, setBlocks] = useState<DraggableBlockData[]>([]);
   const [input, setInput] = useState("");
   const [suggestions, setSuggestions] = useState<Course[]>([]);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/uconn-schedule-builder/courses.json")
       .then((res) => res.json())
       .then((data: Course[]) => setCourses(data))
-      .catch((err) => console.error(err));
+      .catch((err) => console.error("Error loading courses:", err));
   }, []);
 
   useEffect(() => {
-    if (!input) return setSuggestions([]);
-    const lower = input.toLowerCase();
-    setSuggestions(
-      courses
-        .filter((c) => `${c.course} ${c.catalog_number}`.toLowerCase().includes(lower))
-        .slice(0, 10)
-    );
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setSuggestions([]);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!input.trim()) {
+      setSuggestions([]);
+      return;
+    }
+    
+    const query = input.toLowerCase().trim();
+    const filtered = courses
+      .filter((course) => {
+        const fullName = `${course.course} ${course.catalog_number}`.toLowerCase();
+        return fullName.includes(query) || 
+               course.course.toLowerCase().includes(query) ||
+               course.catalog_number.includes(query);
+      })
+      .slice(0, 8);
+    
+    setSuggestions(filtered);
   }, [input, courses]);
 
-  const sensors = useSensors(useSensor(PointerSensor));
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 3,
+      },
+    })
+  );
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
-      const oldIndex = blocks.findIndex((b) => b.id === active.id);
-      const newIndex = blocks.findIndex((b) => b.id === over.id);
+      const oldIndex = blocks.findIndex((block) => block.id === active.id);
+      const newIndex = blocks.findIndex((block) => block.id === over.id);
       setBlocks(arrayMove(blocks, oldIndex, newIndex));
     }
   };
 
   const addBlock = (course: Course) => {
+    const courseName = `${course.course} ${course.catalog_number}`;
+    
+    // Check if course is already added
+    if (blocks.some(block => block.name === courseName)) {
+      return;
+    }
+    
     setBlocks((prev) => [
       ...prev,
-      { id: `${course.course}-${course.catalog_number}-${Date.now()}`, name: `${course.course} ${course.catalog_number}` },
+      { 
+        id: `${course.course}-${course.catalog_number}-${Date.now()}`, 
+        name: courseName 
+      },
     ]);
     setInput("");
     setSuggestions([]);
   };
 
-  const removeBlock = (id: string) => setBlocks((prev) => prev.filter((b) => b.id !== id));
+  const removeBlock = (id: string) => {
+    setBlocks((prev) => prev.filter((block) => block.id !== id));
+  };
 
-  // highlight matched text
+  const handleInputSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && suggestions.length > 0) {
+      e.preventDefault();
+      addBlock(suggestions[0]);
+    }
+  };
+
   const highlightMatch = (text: string, query: string) => {
-    const lower = text.toLowerCase();
-    const idx = lower.indexOf(query.toLowerCase());
-    if (idx === -1) return text;
-
+    const lowerText = text.toLowerCase();
+    const lowerQuery = query.toLowerCase();
+    const index = lowerText.indexOf(lowerQuery);
+    
+    if (index === -1) return text;
+    
     return (
       <>
-        {text.slice(0, idx)}
+        {text.slice(0, index)}
         <span style={{ backgroundColor: "yellow", fontWeight: "bold" }}>
-          {text.slice(idx, idx + query.length)}
+          {text.slice(index, index + query.length)}
         </span>
-        {text.slice(idx + query.length)}
+        {text.slice(index + query.length)}
       </>
     );
   };
 
   return (
-    <div style={{ padding: 40, display: "flex", flexDirection: "column", alignItems: "center" }}>
-      <div style={{ position: "relative", width: 250 }}>
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type a course..."
-          style={{ width: "100%", padding: 8, fontSize: 16 }}
-        />
-        {suggestions.length > 0 && (
-          <ul style={{
-            listStyle: "none",
-            margin: 0,
-            padding: 0,
-            position: "absolute",
-            top: "100%",
-            left: 0,
-            width: "100%",
-            border: "1px solid #ccc",
-            backgroundColor: "white",
-            zIndex: 100,
-            maxHeight: 200,
-            overflowY: "auto"
-          }}>
-            {suggestions.map((c, i) => {
-              const label = `${c.course} ${c.catalog_number}`;
-              return (
-                <li
-                  key={i}
-                  style={{ padding: 8, cursor: "pointer" }}
-                  onClick={() => addBlock(c)}
-                >
-                  {highlightMatch(label, input)}
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-8">
+      <style>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px) scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        .animate-fadeInUp {
+          animation: fadeInUp 0.6s ease-out forwards;
+        }
+      `}</style>
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-800 mb-4">Course Scheduler</h1>
+          <p className="text-gray-600 text-lg">Search and organize your courses with drag & drop</p>
+        </div>
 
-      <div style={{ marginTop: 40 }}>
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
-            {blocks.map((block) => (
-              <DraggableBlock key={block.id} id={block.id} name={block.name} onDelete={removeBlock} />
-            ))}
-          </SortableContext>
-        </DndContext>
+        {/* Search Section */}
+        <div className="flex justify-center mb-12">
+          <div ref={searchRef} className="relative w-full max-w-2xl">
+            <div className="relative transition-all duration-300 transform focus-within:scale-105">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleInputSubmit}
+                onFocus={() => setIsInputFocused(true)}
+                onBlur={() => setIsInputFocused(false)}
+                placeholder="🔍 Type to search courses..."
+                className="w-full px-6 py-4 text-lg border-0 rounded-2xl bg-white shadow-xl focus:shadow-2xl focus:outline-none transition-all duration-300 bg-gradient-to-r from-white to-gray-50 ring-2 ring-transparent focus:ring-indigo-300 focus:ring-4"
+                style={{
+                  background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                  boxShadow: '0 10px 25px rgba(79, 70, 229, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1)',
+                }}
+              />
+              {input && (
+                <div className="absolute inset-y-0 right-0 flex items-center pr-6 pointer-events-none">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Suggestions Dropdown */}
+            {suggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl z-50 border border-gray-100 p-4"
+                   style={{
+                     background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                     backdropFilter: 'blur(10px)',
+                     minWidth: '100%',
+                     maxHeight: '320px',
+                     overflowY: 'auto',
+                     display: 'flex',
+                     flexDirection: 'column',
+                     gap: '12px'
+                   }}>
+                {suggestions.map((course, index) => {
+                  const courseName = `${course.course} ${course.catalog_number}`;
+                  const isAlreadyAdded = blocks.some(block => block.name === courseName);
+                  
+                  return (
+                    <button
+                      key={index}
+                      className={`font-medium transition-all duration-200 text-left ${
+                        isAlreadyAdded 
+                          ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed shadow-sm' 
+                          : 'border-indigo-200 bg-white hover:border-indigo-400 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 hover:text-indigo-700 hover:shadow-md hover:transform hover:scale-102 text-gray-700 shadow-sm hover:shadow-lg'
+                      }`}
+                      style={{
+                        width: '100%',
+                        padding: '16px 24px',
+                        borderRadius: '12px',
+                        border: '2px solid',
+                        borderColor: isAlreadyAdded ? '#d1d5db' : '#c7d2fe',
+                        display: 'block',
+                        textAlign: 'left',
+                        minHeight: '56px'
+                      }}
+                      onClick={() => !isAlreadyAdded && addBlock(course)}
+                      disabled={isAlreadyAdded}
+                    >
+                      {highlightMatch(courseName, input)}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Course Blocks */}
+        <div className="flex flex-col items-center">
+          {blocks.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="text-6xl mb-4">📚</div>
+              <h3 className="text-2xl font-semibold text-gray-700 mb-2">No courses yet</h3>
+              <p className="text-gray-500">Start by searching and adding some courses above</p>
+            </div>
+          ) : (
+            <>
+              <h2 className="text-2xl font-semibold text-gray-700 mb-8 text-center">
+                Your Schedule ({blocks.length} course{blocks.length !== 1 ? 's' : ''})
+              </h2>
+              <DndContext 
+                sensors={sensors} 
+                collisionDetection={closestCenter} 
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext 
+                  items={blocks.map(block => block.id)} 
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="flex flex-col items-center">
+                    {blocks.map((block) => (
+                      <DraggableBlock 
+                        key={block.id} 
+                        id={block.id} 
+                        name={block.name} 
+                        onDelete={removeBlock} 
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            </>
+          )}
+        </div>
+
+        {/* Instructions */}
+        {blocks.length > 0 && (
+          <div className="text-center mt-12 text-gray-500">
+            <p>💡 Drag courses to reorder them • Hover over a course to see the delete button</p>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
