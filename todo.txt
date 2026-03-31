@@ -1,3 +1,6 @@
 - Scrape courses
 - Build schedule
 - Show schedule
+
+# Future Stuff:
+- Gen ed finder

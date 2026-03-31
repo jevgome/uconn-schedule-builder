@@ -1,3 +1,4 @@
+import init, { generate_schedules_from_sections } from "./wasm_pkg/scheduler_wasm";
 import { useEffect, useState, useRef } from "react";
 import {
   DndContext,
@@ -15,8 +16,8 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 interface Course {
-  course: string;
-  catalog_number: string;
+  code: string;
+  title: string;
 }
 
 interface DraggableBlockData {
@@ -29,7 +30,6 @@ interface BlockProps {
   name: string;
   onDelete: (id: string) => void;
 }
-
 function DraggableBlock({ id, name, onDelete }: BlockProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
@@ -93,17 +93,34 @@ function DraggableBlock({ id, name, onDelete }: BlockProps) {
 export default function App() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [blocks, setBlocks] = useState<DraggableBlockData[]>([]);
+  const [selectedSemester, setSelectedSemester] = useState<string>('');
   const [input, setInput] = useState("");
   const [suggestions, setSuggestions] = useState<Course[]>([]);
-  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(400);
+  const [isResizing, setIsResizing] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
+  // Scheduler call
+  const runScheduler = async () => {
+    if (!courses || courses.length === 0) return;
+
+    await init();
+    const selectedCodes = blocks.map((b) => b.name);
+
+    const result = generate_schedules_from_sections(
+      JSON.stringify(courses),
+      JSON.stringify(selectedCodes),
+      200
+    );
+    console.log("Schedules:", result);
+  };
   useEffect(() => {
-    fetch("/uconn-schedule-builder/courses.json")
+    fetch("/uconn-schedule-builder/all_data.json")
       .then((res) => res.json())
       .then((data: Course[]) => setCourses(data))
       .catch((err) => console.error("Error loading courses:", err));
   }, []);
+
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -127,15 +144,45 @@ export default function App() {
     const query = input.toLowerCase().trim();
     const filtered = courses
       .filter((course) => {
-        const fullName = `${course.course} ${course.catalog_number}`.toLowerCase();
+        const fullName = course.code.toLowerCase();
+        const courseName = course.title.toLowerCase();
         return fullName.includes(query) || 
-               course.course.toLowerCase().includes(query) ||
-               course.catalog_number.includes(query);
+               courseName.includes(query);
       })
+      .reduce((unique, course) => {
+        if(!unique.find(c=>c.code === course.code)) {
+          unique.push(course);
+        }
+        return unique;
+      }, [] as Course[])
       .slice(0, 8);
     
     setSuggestions(filtered);
   }, [input, courses]);
+
+  // Handle sidebar resizing
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isResizing) {
+        const newWidth = Math.max(300, Math.min(800, e.clientX));
+        setSidebarWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -145,7 +192,7 @@ export default function App() {
     })
   );
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = (event: any) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
       const oldIndex = blocks.findIndex((block) => block.id === active.id);
@@ -155,9 +202,8 @@ export default function App() {
   };
 
   const addBlock = (course: Course) => {
-    const courseName = `${course.course} ${course.catalog_number}`;
+    const courseName = course.code;
     
-    // Check if course is already added
     if (blocks.some(block => block.name === courseName)) {
       return;
     }
@@ -165,7 +211,7 @@ export default function App() {
     setBlocks((prev) => [
       ...prev,
       { 
-        id: `${course.course}-${course.catalog_number}-${Date.now()}`, 
+        id: `${course.code}-${Date.now()}`, 
         name: courseName 
       },
     ]);
@@ -203,7 +249,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-8">
+    <div className="h-screen flex bg-gray-100">
       <style>{`
         @keyframes fadeInUp {
           from {
@@ -219,33 +265,36 @@ export default function App() {
           animation: fadeInUp 0.6s ease-out forwards;
         }
       `}</style>
-      <div className="max-w-4xl mx-auto">
+      
+      {/* Sidebar */}
+      <div 
+        className="bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl flex flex-col overflow-hidden relative"
+        style={{ width: sidebarWidth }}
+      >
         {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">UConn Schedule Builder</h1>
-          <p className="text-gray-600 text-lg">Search and organize your courses with drag & drop</p>
+        <div className="p-6 border-b border-gray-200">
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">UConn Schedule Builder</h1>
+          <p className="text-gray-600 text-sm">Search and organize your courses</p>
         </div>
 
         {/* Search Section */}
-        <div className="flex justify-center mb-12">
-          <div ref={searchRef} className="relative w-full max-w-2xl">
+        <div className="p-6">
+          <div ref={searchRef} className="relative">
             <div className="relative transition-all duration-300 transform focus-within:scale-105">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleInputSubmit}
-                onFocus={() => setIsInputFocused(true)}
-                onBlur={() => setIsInputFocused(false)}
-                placeholder="🔍 Type to search courses..."
-                className="w-full px-6 py-4 text-lg border-0 rounded-2xl bg-white shadow-xl focus:shadow-2xl focus:outline-none transition-all duration-300 bg-gradient-to-r from-white to-gray-50 ring-2 ring-transparent focus:ring-indigo-300 focus:ring-4"
+                placeholder="🔍 Search for catalog number or title..."
+                className="w-full px-4 py-3 text-base border-0 rounded-xl bg-white shadow-lg focus:shadow-xl focus:outline-none transition-all duration-300 ring-2 ring-transparent focus:ring-indigo-300 focus:ring-4"
                 style={{
                   background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-                  boxShadow: '0 10px 25px rgba(79, 70, 229, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1)',
+                  boxShadow: '0 8px 20px rgba(79, 70, 229, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1)',
                 }}
               />
               {input && (
-                <div className="absolute inset-y-0 right-0 flex items-center pr-6 pointer-events-none">
+                <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
                   <div className="flex space-x-1">
                     <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce"></div>
                     <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
@@ -257,43 +306,45 @@ export default function App() {
             
             {/* Suggestions Dropdown */}
             {suggestions.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl z-50 border border-gray-100 p-4"
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl z-50 border border-gray-100 p-3"
                    style={{
                      background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-                     backdropFilter: 'blur(10px)',
-                     minWidth: '100%',
-                     maxHeight: '320px',
+                     maxHeight: '250px',
                      overflowY: 'auto',
                      display: 'flex',
                      flexDirection: 'column',
-                     gap: '12px'
+                     gap: '8px'
                    }}>
                 {suggestions.map((course, index) => {
-                  const courseName = `${course.course} ${course.catalog_number}`;
-                  const isAlreadyAdded = blocks.some(block => block.name === courseName);
+                  const isAlreadyAdded = blocks.some(block => block.name === course.code);
                   
                   return (
                     <button
                       key={index}
-                      className={`font-medium transition-all duration-200 text-left ${
+                      className={`font-medium transition-all duration-200 text-left text-sm ${
                         isAlreadyAdded 
                           ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed shadow-sm' 
                           : 'border-indigo-200 bg-white hover:border-indigo-400 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 hover:text-indigo-700 hover:shadow-md hover:transform hover:scale-102 text-gray-700 shadow-sm hover:shadow-lg'
                       }`}
                       style={{
                         width: '100%',
-                        padding: '16px 24px',
-                        borderRadius: '12px',
+                        padding: '12px 16px 20px',
+                        borderRadius: '8px',
                         border: '2px solid',
                         borderColor: isAlreadyAdded ? '#d1d5db' : '#c7d2fe',
                         display: 'block',
                         textAlign: 'left',
-                        minHeight: '56px'
+                        minHeight: '64px'
                       }}
                       onClick={() => !isAlreadyAdded && addBlock(course)}
                       disabled={isAlreadyAdded}
                     >
-                      {highlightMatch(courseName, input)}
+                      <div className="font-semibold">
+                        {highlightMatch(course.code, input)}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {highlightMatch(course.title, input)}
+                      </div>
                     </button>
                   );
                 })}
@@ -303,16 +354,16 @@ export default function App() {
         </div>
 
         {/* Course Blocks */}
-        <div className="flex flex-col items-center">
+        <div className="flex-1 overflow-y-auto p-6">
           {blocks.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="text-6xl mb-4">📚</div>
-              <h3 className="text-2xl font-semibold text-gray-700 mb-2">No courses yet</h3>
-              <p className="text-gray-500">Start by searching and adding some courses above</p>
+            <div className="text-center py-8">
+              <div className="text-4xl mb-3 select-none">📚</div>
+              <h3 className="text-lg font-semibold text-gray-700 mb-1 select-none">No courses yet</h3>
+              <p className="text-gray-500 text-sm select-none">Start by searching above</p>
             </div>
           ) : (
             <>
-              <h2 className="text-2xl font-semibold text-gray-700 mb-8 text-center">
+              <h2 className="text-lg font-semibold text-gray-700 mb-4">
                 Your Schedule ({blocks.length} course{blocks.length !== 1 ? 's' : ''})
               </h2>
               <DndContext 
@@ -339,13 +390,33 @@ export default function App() {
             </>
           )}
         </div>
-
+        <button onClick={() => runScheduler(courses)}>
+          Generate Schedules
+        </button>
         {/* Instructions */}
         {blocks.length > 0 && (
-          <div className="text-center mt-12 text-gray-500">
-            <p>💡 Drag courses to reorder them • Hover over a course to see the delete button</p>
+          <div className="p-4 border-t border-gray-200">
+            <p className="text-xs text-gray-500 text-center">💡 Drag to reorder • Hover to delete</p>
           </div>
         )}
+
+        {/* Resize Handle */}
+        <div 
+          className="absolute top-0 right-0 w-1 h-full bg-gray-300 hover:bg-indigo-400 cursor-col-resize transition-colors duration-200"
+          onMouseDown={() => setIsResizing(true)}
+        />
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 p-8 bg-white">
+        <div className="h-full flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-8xl mb-6 select-none">🎓</div>
+            <h2 className="text-3xl font-bold text-gray-800 mb-4 select-none">Welcome to Schedule Builder</h2>
+            <p className="text-gray-600 text-lg select-none">Use the sidebar to search and organize your courses</p>
+            <p className="text-gray-500 text-sm mt-2 select-none">You can resize the sidebar by dragging its right edge</p>
+          </div>
+        </div>
       </div>
     </div>
   );
