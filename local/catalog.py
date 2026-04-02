@@ -1,3 +1,10 @@
+"""
+    Handles data pulled from the catalog:
+        - Class subject/name
+        - Catalog number
+        - Description
+        - TOI/W/E/Q, etc.
+"""
 # scraper/scrape_catalog.py
 
 import requests

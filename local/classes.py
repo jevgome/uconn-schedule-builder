@@ -1,3 +1,8 @@
+"""
+    Handles the individual courses:
+        - Semester-specific data
+        - Seats available
+"""
 import requests
 import sys
 from bs4 import BeautifulSoup
@@ -110,16 +115,16 @@ def fetch_course(course, semester, search_type="alias"):
     return course_list, unique_codes
 
 
-def scrape_all(courses, semester, search_type="alias"):
+def scrape_all(subjects, semester, search_type="alias"):
     results = []
     codes = []
-    for i, course in enumerate(courses,1):
+    for i, subject in enumerate(subjects,1):
         # name = course['course'] + " " + course['catalog_number']
-        name = course
+        name = subject
         data, unique_codes = fetch_course(name, semester, search_type)
         if data is not None:
             results.extend(data)
-            print(f"[{i}/{len(courses)}] Scraping {name} for {semester.get_text(strip=True)}")
+            print(f"[{i}/{len(subjects)}] Scraped {name} for {semester.get_text(strip=True)}")
     return results, unique_codes
 
 def save_results(data, filename="../public/classes.json"):

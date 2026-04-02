@@ -1,6 +1,9 @@
-- Scrape courses
+- Get teachers/class rooms
 - Build schedule
 - Show schedule
+- Room distances
+- Prof RMP
 
 # Future Stuff:
 - Gen ed finder
+- Plan of study generator (?)
