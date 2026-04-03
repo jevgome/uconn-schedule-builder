@@ -136,7 +136,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!input.trim()) {
+    if (!input.trim() || input.trim().length < 2) {
       setSuggestions([]);
       return;
     }
@@ -286,7 +286,7 @@ export default function App() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleInputSubmit}
-                placeholder="🔍 Search for catalog number or title..."
+                placeholder="🔍 Search catalog # or title..."
                 className="w-full px-4 py-3 text-base border-0 rounded-xl bg-white shadow-lg focus:shadow-xl focus:outline-none transition-all duration-300 ring-2 ring-transparent focus:ring-indigo-300 focus:ring-4"
                 style={{
                   background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
