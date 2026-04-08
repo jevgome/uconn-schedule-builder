@@ -1,4 +1,14 @@
-from classes import *
+import requests
+import sys
+from bs4 import BeautifulSoup
+import time
+import json
+from pathlib import Path
+import asyncio
+import aiohttp
+import random
+import re
+from lxml import etree
 
 def SA_get_room():
     session = requests.Session()
@@ -68,15 +78,15 @@ def scrape_courses(semester, subject):
         "CAMPUS_TBL$selmh$2$$0": "Y",
         "CAMPUS_TBL$selm$2$$0": "n",
         "UC_CAMPUS_VW$selmh$0$$0": "Y",
-        "UC_CAMPUS_VW$selm$0$$0": "n",
+        "UC_CAMPUS_VW$selm$0$$0": "on",
         "UC_CAMPUS_VW$selmh$1$$0": "Y",
-        "UC_CAMPUS_VW$selm$1$$0": "n",
+        "UC_CAMPUS_VW$selm$1$$0": "on",
         "UC_CAMPUS_VW1$selmh$0$$0": "Y",
-        "UC_CAMPUS_VW1$selm$0$$0": "n",
+        "UC_CAMPUS_VW1$selm$0$$0": "on",
         "UC_CAMPUS_VW1$selmh$1$$0": "Y",
-        "UC_CAMPUS_VW1$selm$1$$0": "n",
+        "UC_CAMPUS_VW1$selm$1$$0": "on",
         "UC_CAMPUS_VW1$selmh$2$$0": "Y",
-        "UC_CAMPUS_VW1$selm$2$$0": "n",
+        "UC_CAMPUS_VW1$selm$2$$0": "on",
         "UC_DERIVED_GST_ENRL_STAT$chk": "C",
         "UC_DERIVED_GST_FLAG2$chk": "Y",
         "UC_DERIVED_GST_FLAG2": "Y",
@@ -91,9 +101,15 @@ def scrape_courses(semester, subject):
         "ICSID": icsid,
     }
     res2 = session.post(url, data=payload)
-    return res2.text
+    # soup2 = BeautifulSoup(res2.text.strip(), "xml")
+    # tsoup = BeautifulSoup(soup2.find('FIELD').get_text(), "html.parser")
+    table = tsoup.find('table', class_='PSLEVEL1GRID')
+    data = table.find_all('tr')
+    return data
+    # return soup2.find('FIELD').prettify()
+    # return tsoup
 
 if __name__ == "__main__":
     # SA_get_room()
     res = scrape_courses("1268", "CSE")
-    print(res)
+    print(res[1])
