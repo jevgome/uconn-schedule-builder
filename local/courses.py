@@ -12,7 +12,7 @@ from lxml import etree
 import time
 import re
 
-def SA_get_room():
+def scrape_room():
     session = requests.Session()
     url="https://student.studentadmin.uconn.edu/psc/CSGUE/EMPLOYEE/HRMS/c/COMMUNITY_ACCESS.CLASS_SEARCH.GBL"
     res = session.get(url)
@@ -124,7 +124,7 @@ def scrape_courses(semester, subject):
                 "campus": row_data[6],
                 "session": row_data[7],
                 "instruction_mode": row_data[9],
-                "hours": row_data[10],
+                "meeting_times": row_data[10],
                 "additional_sections": row_data[11],
                 "enrollment_capacity": row_data[12],
                 "enrollment_total": row_data[13],
@@ -168,7 +168,6 @@ def save_results(data, filename="../public/classes.json"):
     print(f"✅ Saved {len(data)} courses to {filename}")
 
 if __name__ == "__main__":
-    # print(len(scrape_semester(1268)))
     response = requests.get("https://classes.uconn.edu")
     response.raise_for_status()
     soup = BeautifulSoup(response.text, "html.parser")

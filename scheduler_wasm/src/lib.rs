@@ -46,35 +46,22 @@ extern "C" {
 // Representation of a course section
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Section {
-    pub semester: String,
-    pub code: String,
-    pub crn: String,
-    pub title: String,
-    pub no: String,
-    #[serde(deserialize_with = "deserialize_null_default")]
-    pub is_open: u8,
-    pub meeting_times: String,
-    pub career: String,
-    #[serde(default)]
-    pub linked_crns: String,
-    #[serde(default)]
-    pub is_enroll_section: String,
-    #[serde(deserialize_with = "deserialize_null_default")]
-    pub max_enroll: u32,
-    #[serde(deserialize_with = "deserialize_null_default")]
-    pub seats_available: u32,
-    pub schd: String,
+    pub registration_number: String,
+    pub subject: String,
+    pub catalog_number: String,
+    pub class_section: String,
+    pub academic_career: String,
     pub campus: String,
-    pub inst_mode: String,
-    #[serde(default)]
-    pub requirements: String,
-    #[serde(default)]
-    pub reserved_seats: String,
     pub session: String,
-    pub num_credits: String,
-    pub description: String,
-    #[serde(default)]
-    pub attributes: Vec<String>
+    pub instruction_mode: String,
+    pub meeting_times: String,
+    pub additional_sections: String,
+    pub enrollment_capacity: String,
+    pub enrollment_total: String,
+    pub seats_available: String,
+    pub capacity_available: String,
+    pub waitlist_available: String,
+    pub instructor: String,
 }
 
 impl Section {
