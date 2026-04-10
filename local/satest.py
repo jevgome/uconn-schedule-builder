@@ -103,39 +103,96 @@ def scrape_courses(semester, subject):
         "ICSID": icsid,
     }
     res2 = session.post(url, data=payload)
-    # start = time.perf_counter()
-    # tree = etree.fromstring(res2.text.strip().encode('utf-8'))
-    # cdata_content = tree.xpath("//FIELD/text()")[0]
-    # tsoup = BeautifulSoup(cdata_content, 'lxml')
-    # table = tsoup.find('table', class_='PSLEVEL1GRID')
-    # data = table.find_all('tr')
-    # end = time.perf_counter()
-    # print(f"lxml: {end - start}")
-    #
-    # start = time.perf_counter()
-    # soup2 = BeautifulSoup(res2.text.strip(), "xml")
-    # tsoup = BeautifulSoup(soup2.find('FIELD').get_text(), "html.parser")
-    # table = tsoup.find('table', class_='PSLEVEL1GRID')
-    # data = table.find_all('tr')
-    # end = time.perf_counter()
-    # print(f"BS: {end - start}")
+    if "popupText" in res2.text:
+        return None
 
-    start = time.perf_counter()
-    match = re.search(r'<!\[CDATA\[(.*?)\]\]>', res2.text.strip(), re.DOTALL)
+    match = re.search(r'<FIELD(.*?)><!\[CDATA\[(.*?)\]\]>', res2.text.strip(), re.DOTALL)
     if match:
-        content = match.group(1)
+        data = []
+        content = match.group(2)
         strainer = SoupStrainer("table", class_="PSLEVEL1GRID")
         table = BeautifulSoup(content, "lxml", parse_only=strainer)
-        data = table.find_all('tr')
-        end = time.perf_counter()
-        print(f"Regex: {end - start}")
+        rows = table.find_all('tr')
+        for row in rows[1:]:
+            row_data = list(map(lambda d: d.get_text(strip=True), row.find_all('div')))
+            course_data = {
+                "registration_number": row_data[0],
+                "subject": row_data[1],
+                "catalog_number": row_data[2],
+                "class_section": row_data[3],
+                "academic_career": row_data[4],
+                "campus": row_data[6],
+                "session": row_data[7],
+                "instruction_mode": row_data[9],
+                "hours": row_data[10],
+                "additional_sections": row_data[11],
+                "enrollment_capacity": row_data[12],
+                "enrollment_total": row_data[13],
+                "seats_available": row_data[14],
+                "capacity_available": row_data[15],
+                "waitlist_available": row_data[16],
+                "instructor": row_data[17],
+            }
+            data.append(course_data)
         return data
     else:
-        print(f"Could not find {subject}")
         return None
     
+def scrape_semester(semester):
+    """Scrape all course data for a given semester."""
+    path = Path("./subject.txt")
+    with path.open("r", encoding='utf-8') as f:
+        subjects = [line.strip() for line in f.readlines()]
+
+    results = []
+    for i, subject in enumerate(subjects,1):
+        name = subject
+
+        data = scrape_courses(semester['value'], subject)
+        if data is not None:
+            results.extend(data)
+            print(f"[{i:>{len(str(len(subjects)))}}/{len(subjects)}] Scraped {name} for {semester['name']}")
+
+        else:
+                print(f"[{i:>{len(str(len(subjects)))}}/{len(subjects)}] {name} not in {semester['name']}")
+    return results
+
+def save_results(data, filename="../public/classes.json"):
+    """Save all courses to JSON file."""
+    path = Path(filename)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    with path.open("w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
+    print(f"✅ Saved {len(data)} courses to {filename}")
 
 if __name__ == "__main__":
-    # SA_get_room()
-    res = scrape_courses("1268", "CSE")
-    # print(res[1])
+    # print(len(scrape_semester(1268)))
+    response = requests.get("https://classes.uconn.edu")
+    response.raise_for_status()
+    soup = BeautifulSoup(response.text, "html.parser")
+    sems = soup.find('select', id='crit-srcdb').find_all()
+    sem_list = []
+    for sem in sems:
+        sem_dict = {
+            "value": sem['value'],
+            "name": sem.get_text(strip=True)
+        }
+        sem_list.append(sem_dict)
+
+    save_results(sem_list, "../public/semesters.json")
+    if len(sys.argv) > 1:
+        if sys.argv[1] == '0':
+            scrape = False
+        elif sys.argv[1] not in sems:
+            sems = [sems[0]]
+        else:
+            sems = sys.argv[1:]
+
+    print("🔍 Fetching course details...")
+
+    for sem in sem_list:
+        results = scrape_semester(sem)
+        save_results(results, f"../public/semesters/{sem['value']}-classes.json")
+        print()
