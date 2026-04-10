@@ -1,6 +1,6 @@
 import requests
 import sys
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, SoupStrainer
 import time
 import json
 from pathlib import Path
@@ -9,6 +9,8 @@ import aiohttp
 import random
 import re
 from lxml import etree
+import time
+import re
 
 def SA_get_room():
     session = requests.Session()
@@ -101,15 +103,39 @@ def scrape_courses(semester, subject):
         "ICSID": icsid,
     }
     res2 = session.post(url, data=payload)
+    # start = time.perf_counter()
+    # tree = etree.fromstring(res2.text.strip().encode('utf-8'))
+    # cdata_content = tree.xpath("//FIELD/text()")[0]
+    # tsoup = BeautifulSoup(cdata_content, 'lxml')
+    # table = tsoup.find('table', class_='PSLEVEL1GRID')
+    # data = table.find_all('tr')
+    # end = time.perf_counter()
+    # print(f"lxml: {end - start}")
+    #
+    # start = time.perf_counter()
     # soup2 = BeautifulSoup(res2.text.strip(), "xml")
     # tsoup = BeautifulSoup(soup2.find('FIELD').get_text(), "html.parser")
-    table = tsoup.find('table', class_='PSLEVEL1GRID')
-    data = table.find_all('tr')
-    return data
-    # return soup2.find('FIELD').prettify()
-    # return tsoup
+    # table = tsoup.find('table', class_='PSLEVEL1GRID')
+    # data = table.find_all('tr')
+    # end = time.perf_counter()
+    # print(f"BS: {end - start}")
+
+    start = time.perf_counter()
+    match = re.search(r'<!\[CDATA\[(.*?)\]\]>', res2.text.strip(), re.DOTALL)
+    if match:
+        content = match.group(1)
+        strainer = SoupStrainer("table", class_="PSLEVEL1GRID")
+        table = BeautifulSoup(content, "lxml", parse_only=strainer)
+        data = table.find_all('tr')
+        end = time.perf_counter()
+        print(f"Regex: {end - start}")
+        return data
+    else:
+        print(f"Could not find {subject}")
+        return None
+    
 
 if __name__ == "__main__":
     # SA_get_room()
     res = scrape_courses("1268", "CSE")
-    print(res[1])
+    # print(res[1])
