@@ -11,29 +11,11 @@ import re
 from lxml import etree
 import time
 import re
+from concurrent.futures import ThreadPoolExecutor
 
-def scrape_room():
-    session = requests.Session()
-    url="https://student.studentadmin.uconn.edu/psc/CSGUE/EMPLOYEE/HRMS/c/COMMUNITY_ACCESS.CLASS_SEARCH.GBL"
-    res = session.get(url)
-    soup = BeautifulSoup(res.text, "html.parser")
-    icsid = soup.find("input", {"name": "ICSID"})["value"]
-    payload = {
-        "ICAJAX": "1",
-        "ICNAVTYPEDROPDOWN": "0",
-        "ICType": "Panel",
-        "ICElementNum": "0",
-        "ICAction": "CLASS_SRCH_WRK2_SSR_PB_CLASS_SRCH",
-        "CLASS_SRCH_WRK2_STRM$35$": "1268",
-        "SSR_CLSRCH_WRK_SUBJECT_SRCH$0": "ME",
-        "SSR_CLSRCH_WRK_CATALOG_NBR$1": "3253",
-        "SSR_CLSRCH_WRK_CAMPUS$2": "STORR",
-    }
-    res2 = session.post(url, data=payload)
-    print(res2.text)
-
-def scrape_courses(semester, subject):
-    session = requests.Session()
+def scrape_courses(semester, subject, session=None):
+    # time.sleep(random.uniform(0.1,0.5))
+    if not session: session = requests.Session()
     url="https://student.studentadmin.uconn.edu/psc/CSGUE/EMPLOYEE/HRMS/c/UC_ENROLL.UC_GUEST_CLS_SCH.GBL"
     res = session.get(url)
     headers = {
@@ -49,11 +31,10 @@ def scrape_courses(semester, subject):
         "ICElementNum": "0",
         "ICAction": "#ICPanel1",
         "ICSID": icsid,
-        # "UC_DERIVED_GST_STRM1": semester,
-        # "UC_DERIVED_GST_CAMPUS": "STORR",
+        "ICStateNum": "1",
     }
     session.post(url, headers=headers, data=payload)
-    
+ 
     payload = {
         "ICAJAX": "1",
         "ICNAVTYPEDROPDOWN": "0",
@@ -62,6 +43,7 @@ def scrape_courses(semester, subject):
         "ICAction": "UC_DERIVED_GST_STRM",
         "UC_DERIVED_GST_STRM": semester,
         "ICSID": icsid,
+        "ICStateNum": "2",
     }
     session.post(url, data=payload)
 
@@ -70,6 +52,7 @@ def scrape_courses(semester, subject):
         "ICNAVTYPEDROPDOWN": "0",
         "ICType": "Panel",
         "ICElementNum": "0",
+        "ICStateNum": "3",
         "ICAction": "UC_DERIVED_GST_SEARCH_PB",
         "UC_DERIVED_GST_STRM": semester,
         "UC_DERIVED_GST_SUBJECT": subject,
@@ -103,7 +86,10 @@ def scrape_courses(semester, subject):
         "ICSID": icsid,
     }
     res2 = session.post(url, data=payload)
+    if res2.status_code == 429:
+        raise ValueError("429")
     if "popupText" in res2.text:
+        print(f"{subject} not in {semester}")
         return None
 
     match = re.search(r'<FIELD(.*?)><!\[CDATA\[(.*?)\]\]>', res2.text.strip(), re.DOTALL)
@@ -134,27 +120,23 @@ def scrape_courses(semester, subject):
                 "instructor": row_data[17],
             }
             data.append(course_data)
+        print(f"Scraped {subject} for {semester}")
         return data
     else:
+        raise ValueError("somtin wrong")
         return None
     
-def scrape_semester(semester):
+def scrape_semester_courses(semester, session=None):
     """Scrape all course data for a given semester."""
     path = Path("./subject.txt")
     with path.open("r", encoding='utf-8') as f:
         subjects = [line.strip() for line in f.readlines()]
 
     results = []
-    for i, subject in enumerate(subjects,1):
-        name = subject
-
-        data = scrape_courses(semester['value'], subject)
-        if data is not None:
-            results.extend(data)
-            print(f"[{i:>{len(str(len(subjects)))}}/{len(subjects)}] Scraped {name} for {semester['name']}")
-
-        else:
-                print(f"[{i:>{len(str(len(subjects)))}}/{len(subjects)}] {name} not in {semester['name']}")
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        data = list(executor.map(lambda u: scrape_courses(semester['value'], u),subjects))
+    for i in data:
+        if i: results.extend(i)
     return results
 
 def save_results(data, filename="../public/classes.json"):
@@ -167,7 +149,7 @@ def save_results(data, filename="../public/classes.json"):
 
     print(f"✅ Saved {len(data)} courses to {filename}")
 
-if __name__ == "__main__":
+def get_current_semesters():
     response = requests.get("https://classes.uconn.edu")
     response.raise_for_status()
     soup = BeautifulSoup(response.text, "html.parser")
@@ -179,19 +161,15 @@ if __name__ == "__main__":
             "name": sem.get_text(strip=True)
         }
         sem_list.append(sem_dict)
+    return sem_list
 
+
+if __name__ == "__main__":
+    sem_list = get_current_semesters()
     save_results(sem_list, "../public/semesters.json")
-    if len(sys.argv) > 1:
-        if sys.argv[1] == '0':
-            scrape = False
-        elif sys.argv[1] not in sems:
-            sems = [sems[0]]
-        else:
-            sems = sys.argv[1:]
 
     print("🔍 Fetching course details...")
-
+    session = requests.Session()
     for sem in sem_list:
-        results = scrape_semester(sem)
+        results = scrape_semester_courses(sem, session=session)
         save_results(results, f"../public/semesters/{sem['value']}-classes.json")
-        print()
