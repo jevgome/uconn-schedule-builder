@@ -113,3 +113,80 @@ async def scrape_all(semester):
 
 def scrape_semester_rooms(semester):
     return asyncio.run(scrape_all(semester))
+
+
+########################################################################################
+import requests
+from bs4 import BeautifulSoup
+from geopy.geocoders import Nominatim
+import time
+import json
+
+URL = "https://scheduling.uconn.edu/storrs-campus-areas/"
+
+
+# ---------------------------
+# STEP 1: SCRAPE TABLE
+# ---------------------------
+def scrape_buildings():
+    r = requests.get(URL)
+    r.raise_for_status()
+
+    soup = BeautifulSoup(r.text, "html.parser")
+
+    table = soup.find("table")
+    rows = table.find_all("tr")[1:]  # skip header
+
+    buildings = []
+
+    for row in rows:
+        cols = [td.get_text(strip=True) for td in row.find_all("td")]
+
+        if len(cols) == 4:
+            obj = {
+                "area": cols[0],
+                "area_name": cols[1],
+                "building_name": cols[2],
+                "building_code": cols[3],
+            }
+            buildings.append(obj)
+
+    geolocator = Nominatim(user_agent="uconn_building_mapper")
+
+    cache = {}
+
+    for i, b in enumerate(buildings):
+        query = f"{b['building_name']}, Storrs, CT"
+
+        print(f"[{i+1}/{len(buildings)}] Geocoding: {query}")
+
+        if query in cache:
+            location = cache[query]
+        else:
+            try:
+                location = geolocator.geocode(query)
+                cache[query] = location
+                time.sleep(1)  # respect rate limits
+            except Exception as e:
+                print("Error:", e)
+                location = None
+
+        if location:
+            b["lat"] = location.latitude
+            b["lon"] = location.longitude
+            b["address"] = location.address
+        else:
+            b["lat"] = None
+            b["lon"] = None
+            b["address"] = None
+            print(f'Could not find {b["building_name"]}')
+
+    return buildings
+
+def buildings(campus='STORR'):
+    print("Scraping buildings...")
+    buildings = scrape_buildings()
+
+    print(f"Found {len(buildings)} buildings")
+
+    return buildings

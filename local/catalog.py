@@ -11,6 +11,7 @@ import requests
 from bs4 import BeautifulSoup, SoupStrainer
 import json
 from pathlib import Path
+import time
 
 BASE_URL = "https://catalog.uconn.edu"
 CATALOG_URL = f"{BASE_URL}/undergraduate/courses/#coursestext"
@@ -168,3 +169,163 @@ def scrape_course_details():
         all_courses.extend(subject_courses)
 
     return all_courses
+
+import requests
+import json
+import time
+
+RMP_GRAPHQL_URL = "https://www.ratemyprofessors.com/graphql"
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+    "Accept": "application/json",
+    "Content-Type": "application/json",
+    "Origin": "https://www.ratemyprofessors.com",
+    "Referer": "https://www.ratemyprofessors.com/"
+}
+
+
+# ----------------------------
+# STEP 1: GET SCHOOL ID
+# ----------------------------
+def get_school_id(school_name="University of Connecticut"):
+    query = """
+    query SchoolSearch($query: SchoolSearchQuery!) {
+      newSearch {
+        schools(query: $query) {
+          edges {
+            node {
+              id
+              name
+              city
+              state
+            }
+          }
+        }
+      }
+    }
+    """
+
+    variables = {
+        "query": {
+            "text": school_name
+        }
+    }
+
+    r = requests.post(
+        RMP_GRAPHQL_URL,
+        headers=HEADERS,
+        json={"query": query, "variables": variables}
+    )
+
+    r.raise_for_status()
+    data = r.json()
+
+    schools = data["data"]["newSearch"]["schools"]["edges"]
+
+    for s in schools:
+        node = s["node"]
+        if "Connecticut" in node["name"]:
+            print(f"Found school: {node['name']}")
+            return node["id"]
+
+    return None
+
+
+# ----------------------------
+# STEP 2: FETCH PROFESSORS
+# ----------------------------
+def fetch_professors(school_id, cursor=None):
+    query = """
+    query TeacherSearchPaginationQuery(
+      $query: TeacherSearchQuery!
+      $cursor: String
+    ) {
+      search: newSearch {
+        teachers(query: $query, first: 50, after: $cursor) {
+          edges {
+            cursor
+            node {
+              firstName
+              lastName
+              avgRating
+              numRatings
+              legacyId
+            }
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+        }
+      }
+    }
+    """
+
+    variables = {
+        "query": {
+            "schoolID": school_id,
+            "text": ""
+        },
+        "cursor": cursor
+    }
+
+    r = requests.post(
+        RMP_GRAPHQL_URL,
+        headers=HEADERS,
+        json={"query": query, "variables": variables}
+    )
+
+    # Basic retry on 403 / transient errors
+    if r.status_code == 403:
+        print("403 blocked — retrying after delay...")
+        time.sleep(2)
+        r = requests.post(
+            RMP_GRAPHQL_URL,
+            headers=HEADERS,
+            json={"query": query, "variables": variables}
+        )
+
+    r.raise_for_status()
+    return r.json()
+
+
+# ----------------------------
+# STEP 3: COLLECT ALL PROFESSORS
+# ----------------------------
+def get_all_professors():
+    school_id = get_school_id()
+
+    if not school_id:
+        raise Exception("Could not find school ID for UConn")
+
+    print(f"Using school ID: {school_id}")
+
+    professors = []
+    cursor = None
+
+    while True:
+        data = fetch_professors(school_id, cursor)
+
+        teachers = data["data"]["search"]["teachers"]
+
+        for edge in teachers["edges"]:
+            node = edge["node"]
+
+            professors.append({
+                "name": f"{node['firstName']} {node['lastName']}",
+                "rating": node["avgRating"],
+                "num_ratings": node["numRatings"],
+                "link": f"https://www.ratemyprofessors.com/professor/{node['legacyId']}"
+            })
+
+        if not teachers["pageInfo"]["hasNextPage"]:
+            break
+
+        cursor = teachers["pageInfo"]["endCursor"]
+
+        print(f"Fetched {len(professors)} professors so far...")
+
+        time.sleep(0.5)  # be polite to the API
+
+    return professors

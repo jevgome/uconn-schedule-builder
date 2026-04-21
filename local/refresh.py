@@ -39,6 +39,8 @@ if __name__ == '__main__':
     parser.add_argument('--catalog', action='store_true', help='Scrape detailed information of course details (TOI, # credits, etc.).')
     parser.add_argument('--courses', action='store_true', help='Scrape information of courses to enroll.')
     parser.add_argument('--rooms', action='store_true', help='Scrape class room information and buildings.')
+    parser.add_argument('--buildings', action='store_true', help='Scrape buildings.')
+    parser.add_argument('--professors', action='store_true', help='Scrapes all UConn professors from RMP.')
     parser.add_argument('-s', '--semester', default='0', help='Sets a semester to scrape data from.')
 
     parser.add_argument('-o', '--once', action='store_true', help='Run scripts that should only be run once (course details, ...).')
@@ -53,6 +55,10 @@ if __name__ == '__main__':
         course_details = catalog.scrape_course_details()
         save_results(course_details, "../public/courses.json")
 
+    if args.once or args.all or args.buildings:
+        buildings = rooms.buildings()
+        save_results(buildings, "../public/buildings.json")
+
     # Run every semester
     with open('../public/semesters.json') as f:
         sem_list = json.load(f)
@@ -60,6 +66,10 @@ if __name__ == '__main__':
     if args.per or args.all:
         sem_list = get_current_semesters()
         save_results(sem_list, "../public/semesters.json")
+
+    if args.per or args.professors:
+        profs = catalog.get_all_professors()
+        save_results(profs, "../public/professors.json")
 
     if args.all or (args.per and not(args.rooms and args.catalog and args.courses) or args.rooms):
         if args.semester == '0':
