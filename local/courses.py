@@ -9,8 +9,6 @@ import aiohttp
 import random
 import re
 from lxml import etree
-import time
-import re
 from concurrent.futures import ThreadPoolExecutor
 
 def scrape_courses(semester, subject, session=None):
@@ -126,7 +124,7 @@ def scrape_courses(semester, subject, session=None):
         raise ValueError("somtin wrong")
         return None
     
-def scrape_semester_courses(semester, session=None):
+def scrape_semester_courses(semester):
     """Scrape all course data for a given semester."""
     path = Path("./subject.txt")
     with path.open("r", encoding='utf-8') as f:
@@ -138,38 +136,3 @@ def scrape_semester_courses(semester, session=None):
     for i in data:
         if i: results.extend(i)
     return results
-
-def save_results(data, filename="../public/classes.json"):
-    """Save all courses to JSON file."""
-    path = Path(filename)
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-    with path.open("w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
-
-    print(f"✅ Saved {len(data)} courses to {filename}")
-
-def get_current_semesters():
-    response = requests.get("https://classes.uconn.edu")
-    response.raise_for_status()
-    soup = BeautifulSoup(response.text, "html.parser")
-    sems = soup.find('select', id='crit-srcdb').find_all()
-    sem_list = []
-    for sem in sems:
-        sem_dict = {
-            "value": sem['value'],
-            "name": sem.get_text(strip=True)
-        }
-        sem_list.append(sem_dict)
-    return sem_list
-
-
-if __name__ == "__main__":
-    sem_list = get_current_semesters()
-    save_results(sem_list, "../public/semesters.json")
-
-    print("🔍 Fetching course details...")
-    session = requests.Session()
-    for sem in sem_list:
-        results = scrape_semester_courses(sem, session=session)
-        save_results(results, f"../public/semesters/{sem['value']}-classes.json")

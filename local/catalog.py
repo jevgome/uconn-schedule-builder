@@ -156,18 +156,7 @@ def scrape_subject(url):
 
     return courses
 
-def save_results(data, filename="../public/courses.json"):
-    """Save all courses to JSON file."""
-    path = Path(filename)
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-    with path.open("w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
-
-    print(f"✅ Saved {len(data)} courses to {filename}")
-
-
-if __name__ == "__main__":
+def scrape_course_details():
     print("🔍 Fetching subject links...")
     subject_links = get_subject_links()
     print(f"Found {len(subject_links)} subjects.")
@@ -178,5 +167,4 @@ if __name__ == "__main__":
         subject_courses = scrape_subject(link)
         all_courses.extend(subject_courses)
 
-    save_results(all_courses)
-    print(f"🎉 Done! Total courses scraped: {len(all_courses)}")
+    return all_courses
