@@ -48,6 +48,7 @@ def scrape_subject(semester, subject):
             "CLASS_SRCH_WRK2_STRM$35$": semester['value'],
             "SSR_CLSRCH_WRK_SUBJECT_SRCH$0": subject,
             "SSR_CLSRCH_WRK_CAMPUS$2": campus,
+            "SSR_CLSRCH_WRK_SSR_OPEN_ONLY$chk$3": "N"
         }
 
         resp = session.post(URL, data=payload)
@@ -116,20 +117,14 @@ def scrape_semester_rooms(semester):
 
 
 ########################################################################################
-import requests
-from bs4 import BeautifulSoup
 from geopy.geocoders import Nominatim
-import time
-import json
-
-URL = "https://scheduling.uconn.edu/storrs-campus-areas/"
 
 
 # ---------------------------
 # STEP 1: SCRAPE TABLE
 # ---------------------------
 def scrape_buildings():
-    r = requests.get(URL)
+    r = requests.get("https://scheduling.uconn.edu/storrs-campus-areas/")
     r.raise_for_status()
 
     soup = BeautifulSoup(r.text, "html.parser")
