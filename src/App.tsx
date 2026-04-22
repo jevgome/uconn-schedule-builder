@@ -22,7 +22,8 @@ interface Course {
 
 interface DraggableBlockData {
   id: string;
-  name: string;
+  code: string;
+  title: string;
 }
 
 interface BlockProps {
@@ -101,8 +102,10 @@ export default function App() {
   const [suggestions, setSuggestions] = useState<Course[]>([]);
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [mode, setMode] = useState<"typing" | "suggestions">("typing");
   const [selectedSuggestion, setSelectedSuggestion] = useState(0);
+  type FocusContext = "global" | "search" | "suggestions" | "blocks";
+  const [focusContext, setFocusContext] = useState<FocusContext>("global");
+  const [hasNavigatedSuggestions, setHasNavigatedSuggestions] = useState(false);
 
   // Scheduler call
   const runScheduler = async () => {
@@ -128,6 +131,159 @@ export default function App() {
     // setSchedules(schedules);
   };
 
+  const getKeymaps = () => ({
+    global: {
+      i: () => {
+        setFocusContext("search");
+        searchInputRef.current?.focus();
+      },
+    },
+  
+    search: {
+      ArrowDown: () => {
+        if (suggestions.length > 0) {
+          setFocusContext("suggestions");
+          setSelectedSuggestion(0);
+        }
+      },
+    },
+  
+    suggestions: {
+      ArrowDown: () =>
+        setSelectedSuggestion((prev) =>
+          Math.min(prev + 1, suggestions.length - 1)
+        ),
+  
+      ArrowUp: () =>
+        setSelectedSuggestion((prev) => Math.max(prev - 1, 0)),
+  
+      j: () => {
+        setHasNavigatedSuggestions(true);
+        setSelectedSuggestion((prev) =>
+          Math.min(prev + 1, suggestions.length - 1)
+        );
+      },
+  
+      k: () => {
+        setHasNavigatedSuggestions(true);
+        setSelectedSuggestion((prev) => Math.max(prev - 1, 0));
+      },
+  
+    },
+  
+    blocks: {
+      j: () => console.log("move down blocks"),
+      k: () => console.log("move up blocks"),
+    },
+  });
+
+  const scoreCourse = (course: Course, query: string) => {
+    const q = query.toLowerCase().trim();
+    const code = course.code.toLowerCase();
+    const title = course.title.toLowerCase();
+
+    let score = 0;
+
+    // exact match = highest priority
+    if (code === q) score += 100;
+
+    // prefix match (very strong)
+    if (code.startsWith(q)) score += 50;
+
+    // includes match
+    if (code.includes(q)) score += 30;
+    if (title.includes(q)) score += 10;
+
+    // bonus: closer position match
+    const codeIndex = code.indexOf(q);
+    if (codeIndex === 0) score += 20;
+
+    return score;
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isInputFocused =
+        document.activeElement === searchInputRef.current;
+
+      const keymaps = getKeymaps();
+
+      if (e.key === "Escape" || (e.ctrlKey && e.key === "[")) {
+        e.preventDefault();
+        goGlobal();
+        return;
+      }
+
+      // =========================
+      // ALWAYS allow arrows
+      // =========================
+      if (e.key === "ArrowDown") {
+        if (suggestions.length === 0) return;
+
+        e.preventDefault();
+        setFocusContext("suggestions");
+
+        setHasNavigatedSuggestions(true);
+
+        setSelectedSuggestion((prev) =>
+          Math.min(prev + 1, suggestions.length - 1)
+        );
+        return;
+      }
+
+      if (e.key === "ArrowUp") {
+        if (suggestions.length === 0) return;
+
+        e.preventDefault();
+        setFocusContext("suggestions");
+
+        setHasNavigatedSuggestions(true);
+
+        setSelectedSuggestion((prev) => Math.max(prev - 1, 0));
+        return;
+      }
+
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleEnter();
+        return;
+      }
+
+      // =========================
+      // If typing in input → DO NOTHING
+      // (THIS fixes your j/k problem)
+      // =========================
+      if (isInputFocused && focusContext === "search") {
+        return;
+      }
+
+      // =========================
+      // Tab-entered suggestion mode
+      // =========================
+      if (focusContext === "suggestions") {
+        const handler = keymaps.suggestions?.[e.key];
+
+        if (handler) {
+          e.preventDefault();
+          handler();
+        }
+        return;
+      }
+
+      // =========================
+      // Global keys
+      // =========================
+      const globalHandler = keymaps.global?.[e.key];
+      if (globalHandler) {
+        e.preventDefault();
+        globalHandler();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [focusContext, suggestions, selectedSuggestion, blocks]);
+
   useEffect(() => {
     Promise.all([
       fetch("/uconn-schedule-builder/semesters/1268/classes.json").then((res) => res.json()),
@@ -141,14 +297,20 @@ export default function App() {
           titleMap.set(key, c.name);
         }
 
-        const uiCourses: Course[] = classesData.map((c: any) => {
+        const courseMap = new Map<string, Course>();
+
+        for (const c of classesData) {
           const code = `${c.subject} ${c.catalog_number}`;
 
-          return {
-            code,
-            title: titleMap.get(code) ?? "Unknown Course",
-          };
-        });
+          if (!courseMap.has(code)) {
+            courseMap.set(code, {
+              code,
+              title: titleMap.get(code) ?? "Unknown Course",
+            });
+          }
+        }
+
+        const uiCourses = Array.from(courseMap.values());
 
         setCourses(uiCourses);
         setClassesDataRaw(classesData);
@@ -174,176 +336,21 @@ export default function App() {
       setSuggestions([]);
       return;
     }
-    
+
     const query = input.toLowerCase().trim();
-    const filtered = courses
-      .filter((course) => {
-        const fullName = course.code.toLowerCase();
-        const courseName = (course.title ?? "").toLowerCase();
-        return fullName.includes(query) || 
-               courseName.includes(query);
-      })
-      .reduce((unique, course) => {
-        if(!unique.find(c=>c.code === course.code)) {
-          unique.push(course);
-        }
-        return unique;
-      }, [] as Course[])
-      .slice(0, 8);
-    setSuggestions(filtered);
+
+    const ranked = courses
+      .map((course) => ({
+        course,
+        score: scoreCourse(course, query),
+      }))
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 8)
+      .map((item) => item.course);
+
+    setSuggestions(ranked);
   }, [input, courses]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Only trigger on "i"
-      if (e.key !== "i") return;
-
-      // Ignore if modifier keys are pressed
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
-
-      // Only run on desktop (basic mobile detection)
-      const isMobile =
-        /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|Mobile/i.test(
-          navigator.userAgent
-        );
-
-      if (isMobile) return;
-
-      // Don't trigger if user is already typing
-      const active = document.activeElement;
-      const isTyping =
-        active &&
-        (active.tagName === "INPUT" ||
-          active.tagName === "TEXTAREA" ||
-          (active as HTMLElement).isContentEditable);
-
-      if (isTyping) return;
-
-      e.preventDefault();
-
-      searchInputRef.current?.focus();
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const active = document.activeElement;
-      const isTyping =
-        active &&
-        (active.tagName === "INPUT" ||
-          active.tagName === "TEXTAREA" ||
-          (active as HTMLElement).isContentEditable);
-
-      // ESC → exit suggestion mode / blur input
-      if (e.key === "Escape") {
-        setMode("typing");
-        setSelectedSuggestion(0);
-        searchInputRef.current?.blur();
-        return;
-      }
-
-      // i → focus search
-      if (e.key === "i") {
-        const isMobile =
-          /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|Mobile/i.test(
-            navigator.userAgent
-          );
-
-        if (isMobile) return;
-
-        setMode("typing");
-        searchInputRef.current?.focus();
-        return;
-      }
-
-      // Enter suggestion mode via Tab (still only when suggestions exist)
-      if (e.key === "Tab") {
-        const active = document.activeElement;
-
-        const isSearchFocused =
-          searchInputRef.current &&
-          active === searchInputRef.current;
-
-        if (!isSearchFocused) return;
-
-        if (suggestions.length === 0) return;
-
-        e.preventDefault();
-        setMode("suggestions");
-        setSelectedSuggestion(0);
-        return;
-      }
-      // =========================
-      // ARROW NAVIGATION (ALWAYS)
-      // =========================
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-
-        if (suggestions.length === 0) return;
-
-        setSelectedSuggestion((prev) =>
-          Math.min(prev + 1, suggestions.length - 1)
-        );
-
-        if (mode === "typing") setMode("suggestions");
-        return;
-      }
-
-      if (e.key === "ArrowUp") {
-        e.preventDefault();
-
-        if (suggestions.length === 0) return;
-
-        setSelectedSuggestion((prev) => Math.max(prev - 1, 0));
-
-        if (mode === "typing") setMode("suggestions");
-        return;
-      }
-
-      // =========================
-      // VIM KEYS (ONLY suggestion mode)
-      // =========================
-      if (mode === "suggestions") {
-        if (e.key === "j") {
-          e.preventDefault();
-          setSelectedSuggestion((prev) =>
-            Math.min(prev + 1, suggestions.length - 1)
-          );
-        }
-
-        if (e.key === "k") {
-          e.preventDefault();
-          setSelectedSuggestion((prev) =>
-            Math.max(prev - 1, 0)
-          );
-        }
-
-        if (e.key === "Enter") {
-          const course = suggestions[selectedSuggestion];
-          if (!course) return;
-
-          const already = blocks.some(
-            (b) => b.name === course.code
-          );
-
-          if (!already) addBlock(course);
-        }
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [mode, suggestions, selectedSuggestion, blocks]);
-  useEffect(() => {
-    setMode("typing");
-    setSelectedSuggestion(0);
-  }, [input]);
-
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -365,18 +372,19 @@ export default function App() {
   const addBlock = async (course: Course) => {
     const courseName = course.code;
 
-    if (blocks.some(block => block.name === courseName)) {
+    if (blocks.some(block => block.code === courseName)) {
       return;
     }
+
 
     const newBlocks = [
       ...blocks,
       {
         id: `${course.code}-${Date.now()}`,
-        name: courseName,
+        code: course.code,
+        title: course.title,
       },
     ];
-
     setBlocks(newBlocks);
 
     // =========================
@@ -384,7 +392,7 @@ export default function App() {
     // =========================
     await init();
 
-    const selectedCodes = newBlocks.map(b => b.name);
+    const selectedCodes = newBlocks.map(b => b.code);
 
     const sectionsJson = get_sections_for_courses(
       selectedCodes,
@@ -400,26 +408,21 @@ export default function App() {
     setSuggestions([]);
   };
 
+  useEffect(() => {
+    setHasNavigatedSuggestions(false);
+    setSelectedSuggestion(0);
+  }, [input]);
+
   const removeBlock = (id: string) => {
     setBlocks((prev) => prev.filter((block) => block.id !== id));
   };
-
   const handleInputSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && suggestions.length > 0) {
-      e.preventDefault();
-
-      const firstAvailable = suggestions.find(
-        (course) => !blocks.some((block) => block.name === course.code)
-      );
-
-      if (firstAvailable) addBlock(firstAvailable);
-    }
-
     if (e.key === "Tab") {
       if (suggestions.length === 0) return;
-
+  
       e.preventDefault();
-      setMode("suggestions");
+      setFocusContext("suggestions");
+      setHasNavigatedSuggestions(true);
       setSelectedSuggestion(0);
     }
   };
@@ -439,6 +442,68 @@ export default function App() {
         </span>
         {text.slice(index + query.length)}
       </>
+    );
+  };
+
+  const handleEnter = () => {
+    if (suggestions.length === 0) return;
+
+    let course: Course | undefined;
+
+    const available = suggestions.filter(
+      (c) => !blocks.some((b) => b.code === c.code)
+    );
+
+    // =========================
+    // CASE 1: user navigated manually
+    // =========================
+    if (hasNavigatedSuggestions) {
+      course = suggestions[selectedSuggestion];
+    }
+
+    // =========================
+    // CASE 2: smart fallback (THIS is the fix)
+    // =========================
+    else {
+      course =
+        hasNavigatedSuggestions
+          ? suggestions[selectedSuggestion]
+          : available[0];
+    }
+
+    // =========================
+    // FINAL SAFETY: if selected is blocked, keep searching
+    // =========================
+    if (!course) {
+      course =
+        hasNavigatedSuggestions
+          ? suggestions[selectedSuggestion]
+          : available[0];
+    }
+
+    if (!course) return;
+
+    addBlock(course);
+  };
+
+  const goGlobal = () => {
+    setFocusContext("global");
+    setSelectedSuggestion(0);
+    setHasNavigatedSuggestions(false);
+    searchInputRef.current?.blur();
+  };
+
+  const getEnterCandidate = (): Course | undefined => {
+    if (suggestions.length === 0) return undefined;
+
+    // if user manually navigated
+    if (hasNavigatedSuggestions) {
+      return suggestions[selectedSuggestion];
+    }
+
+    // otherwise pick first available
+    return suggestions.find(
+      (c) => !blocks.some((b) => b.code === c.code)
     );
   };
 
@@ -465,6 +530,8 @@ export default function App() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onFocus={() => setFocusContext("search")}
+              onBlur={() => setFocusContext("global")}
               onKeyDown={handleInputSubmit}
               placeholder="🔍 Search catalog # or title..."
               className="w-full px-4 py-3 text-base border-0 rounded-xl bg-white shadow-lg focus:shadow-xl focus:outline-none transition-all duration-300 ring-2 ring-transparent focus:ring-indigo-300 focus:ring-4"
@@ -478,21 +545,30 @@ export default function App() {
               <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl z-50 border p-3">
                 {suggestions.map((course, index) => {
                   const isAlreadyAdded = blocks.some(
-                    (block) => block.name === course.code
+                    (block) => block.code === course.code
                   );
+                  const ghostCandidate = getEnterCandidate();
+                  const isGhost =
+                    ghostCandidate?.code === course.code &&
+                    !hasNavigatedSuggestions;
 
                   const isSelected = index == selectedSuggestion;
 
                   return (
                     <button
                       key={index}
-                      className={`w-full text-left p-3 rounded-lg border text-sm transition-all duration-200 ${
-                        isAlreadyAdded
-                          ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                          : isSelected
-                            ? "bg-indigo-100 border-indigo-500 shadow-md"
-                            : "bg-white text-gray-700 border-indigo-200 hover:bg-indigo-50 hover:border-indigo-400"
-                      }`}
+
+                      className={`w-full text-left p-3 rounded-lg border text-sm transition-all duration-200
+                        ${
+                          isGhost
+                            ? "bg-indigo-50 border-indigo-300 text-gray-900"
+                            : isAlreadyAdded
+                              ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                              : isSelected
+                                ? "bg-indigo-100 border-indigo-500 shadow-md"
+                                : "bg-white text-gray-700 border-indigo-200 hover:bg-indigo-50"
+                        }
+                      `}
                       onClick={() => !isAlreadyAdded && addBlock(course)}
                       disabled={isAlreadyAdded}
                     >
@@ -538,7 +614,10 @@ export default function App() {
       </div>
 
       {/* RIGHT SIDEBAR */}
-      <div className="w-[300px] bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-y-auto p-6 border-l border-gray-200">
+      <div 
+        className="w-[300px] bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-y-auto p-6 border-l border-gray-200"
+        onClick={() => setFocusContext("blocks")}
+      >
         <h2 className="text-lg font-semibold mb-4">
           Your Schedule ({blocks.length})
         </h2>
@@ -562,7 +641,7 @@ export default function App() {
                   <DraggableBlock
                     key={block.id}
                     id={block.id}
-                    name={block.name}
+                    name={block.code}
                     onDelete={removeBlock}
                   />
                 ))}
