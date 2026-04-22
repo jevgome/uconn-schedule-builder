@@ -1,4 +1,4 @@
-import init, { generate_schedules_from_sections } from "./wasm_pkg/scheduler_wasm";
+import init, { generate_schedules_wasm } from "./wasm_pkg/scheduler_wasm";
 import { useEffect, useState, useRef } from "react";
 import {
   DndContext,
@@ -107,15 +107,14 @@ export default function App() {
     await init();
     const selectedCodes = blocks.map((b) => b.name);
 
-    const result = generate_schedules_from_sections(
-      JSON.stringify(courses),
+    const result = generate_schedules_wasm(
       JSON.stringify(selectedCodes),
-      200
+      JSON.stringify(courses),
     );
     console.log("Schedules:", result);
   };
   useEffect(() => {
-    fetch("/uconn-schedule-builder/all_data.json")
+    fetch("/uconn-schedule-builder/semesters/1268/classes.json")
       .then((res) => res.json())
       .then((data: Course[]) => setCourses(data))
       .catch((err) => console.error("Error loading courses:", err));

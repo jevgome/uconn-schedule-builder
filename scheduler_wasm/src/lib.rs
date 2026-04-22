@@ -1,210 +1,501 @@
 // wasm-pack build --target web --out-dir ../src/wasm_pkg
+
 use wasm_bindgen::prelude::*;
-use serde::{Deserialize, Deserializer, Serialize};
-use serde_json;
-use serde_wasm_bindgen::to_value;
+use serde::{Serialize, Deserialize};
+use std::collections::HashMap;
 
-// Custom deserializer for handling null values as default
-fn deserialize_null_default<'de, D, T>(deserializer: D) -> Result<T, D::Error>
-where
-    D: Deserializer<'de>,
-    T: Default + Deserialize<'de>,
-{
-    let opt = Option::deserialize(deserializer)?;
-    Ok(opt.unwrap_or_default())
+//
+// =========================
+// CORE STRUCTS
+// =========================
+//
+
+#[derive(Debug, Clone)]
+pub struct Block {
+    pub day: String,
+    pub start_min: u16,
+    pub end_min: u16,
+
+    pub class_section: String,
+    pub room: Option<String>,
+    pub instructor: Option<String>,
 }
 
-// Hook better panic messages in the browser console
-#[wasm_bindgen(start)]
-pub fn main_js() {
-    console_error_panic_hook::set_once();
-}
-
-// Meeting times for each section
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct MeetingTime {
-    pub meet_day: String,
-    pub start_time: String,
-    pub end_time: String,
-}
-
-impl MeetingTime {
-    pub fn normalized_day(&self) -> u8 {
-        match self.meet_day.parse::<u8>() {
-            Ok(day) => day,
-            Err(_) => 0,
-        }
-    }
-}
-
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
-}
-
-// Representation of a course section
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub struct Section {
     pub registration_number: String,
     pub subject: String,
     pub catalog_number: String,
     pub class_section: String,
+
     pub academic_career: String,
     pub campus: String,
     pub session: String,
     pub instruction_mode: String,
+
+    pub enrollment_capacity: u32,
+    pub enrollment_total: u32,
+    pub seats_available: u32,
+    pub capacity_available: Option<u32>,
+    pub waitlist_available: u32,
+
+    pub blocks: Vec<Block>,
+}
+
+#[derive(Debug, Clone)]
+pub struct MeetingPattern {
+    pub blocks: Vec<Block>,
+}
+
+//
+// =========================
+// RAW INPUT (FIXED FOR WASM)
+// =========================
+//
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RawCourseEntry {
+    pub registration_number: String,
+    pub subject: String,
+    pub catalog_number: String,
+    pub class_section: String,
+
+    pub academic_career: String,
+    pub campus: String,
+    pub session: String,
+    pub instruction_mode: String,
+
     pub meeting_times: String,
     pub additional_sections: String,
+    pub instructor: String,
+
     pub enrollment_capacity: String,
     pub enrollment_total: String,
     pub seats_available: String,
     pub capacity_available: String,
     pub waitlist_available: String,
-    pub instructor: String,
 }
 
-impl Section {
-    pub fn get_meeting_times(&self) -> Vec<MeetingTime> {
-        serde_json::from_str(&self.meeting_times).unwrap_or_default()
-    }
-    
-    pub fn conflicts_with(&self, other: &Section) -> bool {
-        let my_times = self.get_meeting_times();
-        let other_times = other.get_meeting_times();
-        
-        for my_time in &my_times {
-            for other_time in &other_times {
-                if my_time.normalized_day() == other_time.normalized_day() {
-                    let my_start: u32 = my_time.start_time.parse().unwrap_or(0);
-                    let my_end: u32 = my_time.end_time.parse().unwrap_or(0);
-                    let other_start: u32 = other_time.start_time.parse().unwrap_or(0);
-                    let other_end: u32 = other_time.end_time.parse().unwrap_or(0);
-                    
-                    if my_start < other_end && my_end > other_start {
-                        return true;
-                    }
-                }
-            }
-        }
-        false
-    }
-}
+//
+// =========================
+// JSON OUTPUT STRUCTS
+// =========================
+//
 
-// A generated schedule = list of sections
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Schedule {
-    pub sections: Vec<Section>,
+    pub sections: Vec<SectionJson>,
 }
+
+#[derive(Debug, Clone, Serialize)]
+pub struct SectionJson {
+    pub registration_number: String,
+    pub subject: String,
+    pub catalog_number: String,
+    pub class_section: String,
+
+    pub campus: String,
+    pub instruction_mode: String,
+
+    pub blocks: Vec<BlockJson>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct BlockJson {
+    pub day: String,
+    pub start_min: u16,
+    pub end_min: u16,
+    pub instructor: Option<String>,
+}
+
+//
+// =========================
+// WASM ENTRY POINT
+// =========================
+//
 
 #[wasm_bindgen]
-pub fn generate_schedules_from_sections(
-    dataset_json: &str,
-    selected_json: &str,
-    max_results: usize,
-) -> JsValue {
-    // Parse dataset
-    let dataset: Vec<Section> = match serde_json::from_str(dataset_json) {
-        Ok(data) => data,
-        Err(e) => {
-            log(&format!("Error parsing dataset: {}", e));
-            return to_value(&Vec::<Schedule>::new()).unwrap();
-        }
-    };
-    
-    let selected: Vec<String> = match serde_json::from_str(selected_json) {
-        Ok(data) => data,
-        Err(e) => {
-            log(&format!("Error parsing selected courses: {}", e));
-            return to_value(&Vec::<Schedule>::new()).unwrap();
-        }
-    };
+pub fn generate_schedules_wasm(
+    course_list: JsValue,
+    raw_data: JsValue,
+) -> String {
+    let course_list: Vec<String> =
+        serde_wasm_bindgen::from_value(course_list).unwrap();
 
-    log(&format!("Dataset size: {}", dataset.len()));
-    log(&format!("Selected courses: {:?}", selected));
+    let raw_data: Vec<RawCourseEntry> =
+        serde_wasm_bindgen::from_value(raw_data).unwrap();
 
-    // Group sections by course code - keep them separate for each unique course
-    let mut courses: Vec<Vec<Section>> = Vec::new();
-    
-    for selected_course in &selected {
-        let matching_sections: Vec<Section> = dataset
-            .iter()
-            .filter(|section| {
-                selected_course == &section.code ||
-                section.code.starts_with(selected_course) ||
-                selected_course.to_lowercase() == section.code.to_lowercase()
-            })
-            .cloned()
-            .collect();
-        
-        if !matching_sections.is_empty() {
-            log(&format!("Found {} sections for course '{}'", matching_sections.len(), selected_course));
-            courses.push(matching_sections);
-        } else {
-            log(&format!("No sections found for course '{}'", selected_course));
-        }
-    }
-
-    if courses.is_empty() {
-        log("No matching courses found. Check that your selected course codes match the dataset format.");
-        return to_value(&Vec::<Schedule>::new()).unwrap();
-    }
-
-    log(&format!("Generating schedules from {} courses", courses.len()));
-
-    // Generate all valid schedule combinations
-    let mut results: Vec<Schedule> = Vec::new();
-    let mut current_schedule: Vec<Section> = Vec::new();
-    
-    generate_combinations(&courses, &mut current_schedule, 0, &mut results, max_results);
-
-    log(&format!("Generated {} valid schedules", results.len()));
-    to_value(&results).unwrap()
+    generate_schedules(course_list, raw_data)
 }
 
-// Recursive function to generate all valid schedule combinations
-fn generate_combinations(
-    courses: &[Vec<Section>],
-    current_schedule: &mut Vec<Section>,
-    course_index: usize,
-    results: &mut Vec<Schedule>,
-    max_results: usize,
+//
+// =========================
+// MAIN GENERATOR
+// =========================
+//
+
+pub fn generate_schedules(
+    course_list: Vec<String>,
+    raw_data: Vec<RawCourseEntry>,
+) -> String {
+    let sections = build_sections(course_list, raw_data);
+    let grouped = group_by_course(sections);
+
+    // FIX: correct grouping extraction
+    let course_groups: Vec<Vec<Section>> =
+        grouped.into_iter().map(|(_, v)| v).collect();
+
+    let mut results = Vec::new();
+    let mut current = Vec::new();
+
+    backtrack(&course_groups, 0, &mut current, &mut results);
+
+    schedules_to_json(results)
+}
+
+//
+// =========================
+// SECTION BUILDING
+// =========================
+//
+
+fn build_sections(
+    course_list: Vec<String>,
+    raw_data: Vec<RawCourseEntry>,
+) -> Vec<Section> {
+    let mut sections = Vec::new();
+
+    for course in course_list {
+        let mut i = 0;
+
+        while i < raw_data.len() {
+            let entry = &raw_data[i];
+            let course_code = format!("{} {}", entry.subject, entry.catalog_number);
+
+            if course_code != course {
+                i += 1;
+                continue;
+            }
+
+            if entry.registration_number.is_empty() {
+                let mut section = build_section_from_lecture(entry);
+
+                let mut j = i + 1;
+
+                while j < raw_data.len() {
+                    let next = &raw_data[j];
+                    let next_course = format!("{} {}", next.subject, next.catalog_number);
+
+                    if next_course != course || next.registration_number.is_empty() {
+                        break;
+                    }
+
+                    if next.additional_sections.contains(&entry.class_section) {
+                        if let Some(mut pattern) = parse_meeting_times(
+                            &next.meeting_times,
+                            &next.class_section,
+                            Some(&next.instructor),
+                        ) {
+                            section.blocks.append(&mut pattern.blocks);
+                        }
+                    }
+
+                    j += 1;
+                }
+
+                sections.push(section);
+            }
+
+            i += 1;
+        }
+    }
+
+    sections
+}
+
+fn build_section_from_lecture(entry: &RawCourseEntry) -> Section {
+    let capacity = entry.enrollment_capacity.parse().unwrap_or(0);
+    let total = entry.enrollment_total.parse().unwrap_or(0);
+    let seats = entry.seats_available.parse().unwrap_or(0);
+    let waitlist = entry.waitlist_available.parse().unwrap_or(0);
+
+    let blocks = parse_meeting_times(
+        &entry.meeting_times,
+        &entry.class_section,
+        Some(&entry.instructor),
+    )
+    .map(|m| m.blocks)
+    .unwrap_or(vec![]);
+
+    Section {
+        registration_number: entry.registration_number.clone(),
+        subject: entry.subject.clone(),
+        catalog_number: entry.catalog_number.clone(),
+        class_section: entry.class_section.clone(),
+
+        academic_career: entry.academic_career.clone(),
+        campus: entry.campus.clone(),
+        session: entry.session.clone(),
+        instruction_mode: entry.instruction_mode.clone(),
+
+        enrollment_capacity: capacity,
+        enrollment_total: total,
+        seats_available: seats,
+        capacity_available: None,
+        waitlist_available: waitlist,
+
+        blocks,
+    }
+}
+
+//
+// =========================
+// GROUPING
+// =========================
+//
+
+fn group_by_course(sections: Vec<Section>) -> HashMap<String, Vec<Section>> {
+    let mut map: HashMap<String, Vec<Section>> = HashMap::new();
+
+    for section in sections {
+        let key = format!("{} {}", section.subject, section.catalog_number);
+        map.entry(key).or_default().push(section);
+    }
+
+    map
+}
+
+//
+// =========================
+// BACKTRACKING (STRICT)
+// =========================
+//
+
+fn backtrack(
+    courses: &Vec<Vec<Section>>,
+    index: usize,
+    current: &mut Vec<Section>,
+    results: &mut Vec<Vec<Section>>,
 ) {
-    // Stop if we've hit the max results limit
-    if results.len() >= max_results {
+    if index == courses.len() {
+        results.push(current.clone());
         return;
     }
-    
-    // Base case: we've selected one section from each course
-    if course_index >= courses.len() {
-        // Add this valid schedule to results
-        results.push(Schedule {
-            sections: current_schedule.clone(),
+
+    let course_sections = &courses[index];
+
+    for section in course_sections {
+        if can_add_section(current, section) {
+            current.push(section.clone());
+
+            backtrack(courses, index + 1, current, results);
+
+            current.pop();
+        }
+    }
+}
+
+fn can_add_section(current: &Vec<Section>, candidate: &Section) -> bool {
+    for existing in current {
+        if sections_conflict(existing, candidate) {
+            return false;
+        }
+    }
+    true
+}
+
+//
+// =========================
+// CONFLICT DETECTION
+// =========================
+//
+
+pub fn sections_conflict(a: &Section, b: &Section) -> bool {
+    for ba in &a.blocks {
+        for bb in &b.blocks {
+            if ba.day == bb.day
+                && ba.start_min < bb.end_min
+                && bb.start_min < ba.end_min
+            {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+//
+// =========================
+// JSON EXPORT
+// =========================
+//
+
+fn schedules_to_json(schedules: Vec<Vec<Section>>) -> String {
+    let output: Vec<Schedule> = schedules
+        .into_iter()
+        .map(|sched| Schedule {
+            sections: sched.iter().map(section_to_json).collect(),
+        })
+        .collect();
+
+    serde_json::to_string(&output).unwrap()
+}
+
+fn section_to_json(section: &Section) -> SectionJson {
+    SectionJson {
+        registration_number: section.registration_number.clone(),
+        subject: section.subject.clone(),
+        catalog_number: section.catalog_number.clone(),
+        class_section: section.class_section.clone(),
+
+        campus: section.campus.clone(),
+        instruction_mode: section.instruction_mode.clone(),
+
+        blocks: section
+            .blocks
+            .iter()
+            .map(|b| BlockJson {
+                day: b.day.clone(),
+                start_min: b.start_min,
+                end_min: b.end_min,
+                instructor: b.instructor.clone(),
+            })
+            .collect(),
+    }
+}
+
+//
+// =========================
+// MEETING PARSER
+// =========================
+//
+
+pub fn parse_meeting_times(
+    input: &str,
+    class_section: &str,
+    instructor: Option<&str>,
+) -> Option<MeetingPattern> {
+    let input = input.trim();
+
+    if input.is_empty() || input.contains("ARRANGED") {
+        return None;
+    }
+
+    let chunks: Vec<&str> = input.split(" & ").collect();
+
+    let mut blocks = Vec::new();
+
+    for chunk in chunks {
+        if let Some(mut parsed) =
+            parse_single_meeting(chunk, class_section, instructor)
+        {
+            blocks.append(&mut parsed);
+        }
+    }
+
+    if blocks.is_empty() {
+        None
+    } else {
+        Some(MeetingPattern { blocks })
+    }
+}
+
+fn parse_single_meeting(
+    input: &str,
+    class_section: &str,
+    instructor: Option<&str>,
+) -> Option<Vec<Block>> {
+    let parts: Vec<&str> = input.split('/').map(|s| s.trim()).collect();
+
+    if parts.len() < 2 {
+        return None;
+    }
+
+    let time_part = parts[0];
+    let days_part = parts[1];
+
+    let (start, end) = parse_time_range(time_part)?;
+
+    if start >= end {
+        panic!("Invalid time range");
+    }
+
+    let days = parse_days(days_part);
+
+    let mut blocks = Vec::new();
+
+    for day in days {
+        blocks.push(Block {
+            day,
+            start_min: start,
+            end_min: end,
+
+            class_section: class_section.to_string(),
+            room: None,
+            instructor: instructor.map(|s| s.to_string()),
         });
-        return;
     }
-    
-    // Try each section from the current course
-    for section in &courses[course_index] {
-        // Check if this section conflicts with any section already in the schedule
-        let mut has_conflict = false;
-        for existing_section in current_schedule.iter() {
-            if section.conflicts_with(existing_section) {
-                has_conflict = true;
-                break;
+
+    Some(blocks)
+}
+
+fn parse_time_range(input: &str) -> Option<(u16, u16)> {
+    let parts: Vec<&str> = input.split('-').map(|s| s.trim()).collect();
+    if parts.len() != 2 {
+        return None;
+    }
+
+    Some((parse_time(parts[0])?, parse_time(parts[1])?))
+}
+
+fn parse_time(input: &str) -> Option<u16> {
+    let input = input.trim().to_uppercase();
+
+    let is_pm = input.contains("PM");
+    let is_am = input.contains("AM");
+
+    // FIXED lifetime issue
+    let binding = input.replace("AM", "").replace("PM", "");
+    let cleaned = binding.trim();
+
+    let parts: Vec<&str> = cleaned.split(':').collect();
+    if parts.len() != 2 {
+        return None;
+    }
+
+    let hour: u16 = parts[0].parse().ok()?;
+    let minute: u16 = parts[1].parse().ok()?;
+
+    let mut hour24 = hour;
+
+    if is_pm && hour != 12 {
+        hour24 += 12;
+    }
+
+    if is_am && hour == 12 {
+        hour24 = 0;
+    }
+
+    Some(hour24 * 60 + minute)
+}
+
+fn parse_days(input: &str) -> Vec<String> {
+    let mut days = Vec::new();
+    let mut chars = input.chars().peekable();
+
+    while chars.peek().is_some() {
+        let mut day = String::new();
+
+        for _ in 0..2 {
+            if let Some(c) = chars.next() {
+                day.push(c);
             }
         }
-        
-        // If no conflict, add this section and recurse to next course
-        if !has_conflict {
-            current_schedule.push(section.clone());
-            generate_combinations(courses, current_schedule, course_index + 1, results, max_results);
-            current_schedule.pop();
-            
-            // Early exit if we've hit max results
-            if results.len() >= max_results {
-                return;
-            }
+
+        if day.len() == 2 && day.chars().all(|c| c.is_alphabetic()) {
+            days.push(day);
         }
     }
+
+    days
 }
