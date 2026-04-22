@@ -158,62 +158,63 @@ pub fn generate_schedules(
 // SECTION BUILDING
 // =========================
 //
-
 fn build_sections(
     course_list: Vec<String>,
     raw_data: Vec<RawCourseEntry>,
 ) -> Vec<Section> {
     let mut sections = Vec::new();
 
-    for course in course_list {
-        let mut i = 0;
+    // =========================
+    // STEP 1: build lecture map
+    // =========================
+    let mut lecture_map: HashMap<String, RawCourseEntry> = HashMap::new();
 
-        while i < raw_data.len() {
-            let entry = &raw_data[i];
-            let course_code = format!("{} {}", entry.subject, entry.catalog_number);
+    for entry in &raw_data {
+        let course_code = format!("{} {}", entry.subject, entry.catalog_number);
 
-            if course_code != course {
-                i += 1;
-                continue;
-            }
-
-            if entry.registration_number.is_empty() {
-                let mut section = build_section_from_lecture(entry);
-
-                let mut j = i + 1;
-
-                while j < raw_data.len() {
-                    let next = &raw_data[j];
-                    let next_course = format!("{} {}", next.subject, next.catalog_number);
-
-                    if next_course != course || next.registration_number.is_empty() {
-                        break;
-                    }
-
-                    if next.additional_sections.contains(&entry.class_section) {
-                        if let Some(mut pattern) = parse_meeting_times(
-                            &next.meeting_times,
-                            &next.class_section,
-                            Some(&next.instructor),
-                        ) {
-                            section.blocks.append(&mut pattern.blocks);
-                        }
-                    }
-
-                    j += 1;
-                }
-
-                sections.push(section);
-            }
-
-            i += 1;
+        if course_list.contains(&course_code) && entry.registration_number.is_empty() {
+            lecture_map.insert(entry.class_section.clone(), entry.clone());
         }
+    }
+
+    // =========================
+    // STEP 2: build sections
+    // =========================
+    for entry in &raw_data {
+        let course_code = format!("{} {}", entry.subject, entry.catalog_number);
+
+        if !course_list.contains(&course_code) {
+            continue;
+        }
+
+        // Skip lecture rows as schedulable items
+        if entry.registration_number.is_empty() {
+            continue;
+        }
+
+        // Default: standalone section (no lecture dependency)
+        let mut lecture_opt: Option<&RawCourseEntry> = None;
+
+        // Check if this lab links to a lecture
+        for (lecture_section, lecture) in &lecture_map {
+            if entry.additional_sections.contains(lecture_section) {
+                lecture_opt = Some(lecture);
+                break;
+            }
+        }
+
+        let section = match lecture_opt {
+            Some(lecture) => build_section_from_lab(entry, lecture),
+            None => build_standalone_section(entry),
+        };
+
+        sections.push(section);
     }
 
     sections
 }
 
-fn build_section_from_lecture(entry: &RawCourseEntry) -> Section {
+fn build_standalone_section(entry: &RawCourseEntry) -> Section {
     let capacity = entry.enrollment_capacity.parse().unwrap_or(0);
     let total = entry.enrollment_total.parse().unwrap_or(0);
     let seats = entry.seats_available.parse().unwrap_or(0);
@@ -248,6 +249,56 @@ fn build_section_from_lecture(entry: &RawCourseEntry) -> Section {
     }
 }
 
+fn build_section_from_lab(
+    lab: &RawCourseEntry,
+    lecture: &RawCourseEntry,
+) -> Section {
+    let capacity = lab.enrollment_capacity.parse().unwrap_or(0);
+    let total = lab.enrollment_total.parse().unwrap_or(0);
+    let seats = lab.seats_available.parse().unwrap_or(0);
+    let waitlist = lab.waitlist_available.parse().unwrap_or(0);
+
+    // =========================
+    // LAB blocks (enrollable time)
+    // =========================
+    let mut blocks = parse_meeting_times(
+        &lab.meeting_times,
+        &lab.class_section,
+        Some(&lab.instructor),
+    )
+    .map(|m| m.blocks)
+    .unwrap_or(vec![]);
+
+    // Add lecture blocks
+    if let Some(mut lecture_blocks) = parse_meeting_times(
+        &lecture.meeting_times,
+        &lab.class_section,
+        Some(&lecture.instructor),
+    ) {
+        blocks.append(&mut lecture_blocks.blocks);
+    }
+
+    Section {
+        registration_number: lab.registration_number.clone(),
+
+        subject: lecture.subject.clone(),
+        catalog_number: lecture.catalog_number.clone(),
+        class_section: lab.class_section.clone(),
+
+        academic_career: lecture.academic_career.clone(),
+        campus: lecture.campus.clone(),
+        session: lecture.session.clone(),
+        instruction_mode: lab.instruction_mode.clone(),
+
+        enrollment_capacity: capacity,
+        enrollment_total: total,
+        seats_available: seats,
+        capacity_available: None,
+        waitlist_available: waitlist,
+
+        blocks,
+    }
+}
 //
 // =========================
 // GROUPING
@@ -312,7 +363,14 @@ fn can_add_section(current: &Vec<Section>, candidate: &Section) -> bool {
 
 pub fn sections_conflict(a: &Section, b: &Section) -> bool {
     for ba in &a.blocks {
+        if ba.start_min == ba.end_min && ba.start_min == 0 {
+            return false;
+        }
+
         for bb in &b.blocks {
+            if bb.start_min == bb.end_min && bb.start_min == 0 {
+                return false;
+            }
             if ba.day == bb.day
                 && ba.start_min < bb.end_min
                 && bb.start_min < ba.end_min
@@ -416,7 +474,7 @@ fn parse_single_meeting(
 
     let (start, end) = parse_time_range(time_part)?;
 
-    if start >= end {
+    if start > end {
         panic!("Invalid time range");
     }
 

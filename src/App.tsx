@@ -116,6 +116,8 @@ export default function App() {
       classesDataRaw,
     );
 
+    const schedules = JSON.parse(result)
+    console.log("Found:", schedules.length)
     console.log("Schedules:", result);
   };
   useEffect(() => {
