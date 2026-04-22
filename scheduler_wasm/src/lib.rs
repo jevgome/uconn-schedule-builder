@@ -10,7 +10,7 @@ use std::collections::HashMap;
 // =========================
 //
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Block {
     pub day: String,
     pub start_min: u16,
@@ -21,7 +21,7 @@ pub struct Block {
     pub instructor: Option<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Section {
     pub registration_number: String,
     pub subject: String,
@@ -128,6 +128,39 @@ pub fn generate_schedules_wasm(
     generate_schedules(course_list, raw_data)
 }
 
+#[wasm_bindgen]
+pub fn get_sections_for_courses(
+    course_list: JsValue,
+    raw_data: JsValue,
+) -> String {
+    let course_list: Vec<String> =
+        serde_wasm_bindgen::from_value(course_list).unwrap();
+
+    let raw_data: Vec<RawCourseEntry> =
+        serde_wasm_bindgen::from_value(raw_data).unwrap();
+
+    let sections = build_sections(course_list, raw_data);
+
+    serde_json::to_string(&sections).unwrap()
+}
+
+#[wasm_bindgen]
+pub fn generate_schedules_from_sections(sections: JsValue) -> String {
+    let sections: Vec<Section> =
+        serde_wasm_bindgen::from_value(sections).unwrap();
+
+    let grouped = group_by_course(sections);
+
+    let course_groups: Vec<Vec<Section>> =
+        grouped.into_iter().map(|(_, v)| v).collect();
+
+    let mut results = Vec::new();
+    let mut current = Vec::new();
+
+    backtrack(&course_groups, 0, &mut current, &mut results);
+
+    schedules_to_json(results)
+}
 //
 // =========================
 // MAIN GENERATOR

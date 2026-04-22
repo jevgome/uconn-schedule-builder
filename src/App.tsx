@@ -1,4 +1,4 @@
-import init, { generate_schedules_wasm } from "./wasm_pkg/scheduler_wasm";
+import init, { generate_schedules_from_sections, get_sections_for_courses } from "./wasm_pkg/scheduler_wasm";
 import { useEffect, useState, useRef } from "react";
 import {
   DndContext,
@@ -92,34 +92,42 @@ function DraggableBlock({ id, name, onDelete }: BlockProps) {
 
 export default function App() {
   const [courses, setCourses] = useState<Course[]>([]);
-  const [classesDataRaw, setClassesDataRaw] = useState<any[]>([]);
+  const [sections, setSections] = useState<any[]>([]);
   const [blocks, setBlocks] = useState<DraggableBlockData[]>([]);
+  const [classesDataRaw, setClassesDataRaw] = useState<any[]>([]);
   const [selectedSemester, setSelectedSemester] = useState<string>('');
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [input, setInput] = useState("");
   const [suggestions, setSuggestions] = useState<Course[]>([]);
-  const [sidebarWidth, setSidebarWidth] = useState(400);
-  const [isResizing, setIsResizing] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [mode, setMode] = useState<"typing" | "suggestions">("typing");
+  const [selectedSuggestion, setSelectedSuggestion] = useState(0);
 
   // Scheduler call
   const runScheduler = async () => {
-    if (classesDataRaw.length === 0) return;
+    if (sections.length === 0) {
+      console.log("No sections available yet.");
+      return;
+    }
 
     await init();
 
-    const selectedCodes = blocks.map((b) => b.name);
+    // =========================
+    // STEP 1: GENERATE SCHEDULES
+    // =========================
+    const schedulesJson = generate_schedules_from_sections(sections);
 
-    console.log("courses:", selectedCodes);
+    const schedules = JSON.parse(schedulesJson);
+    setSchedules(schedules)
 
-    const result = generate_schedules_wasm(
-      selectedCodes,
-      classesDataRaw,
-    );
+    console.log("Found schedules:", schedules.length);
+    console.log("Schedules:", schedules);
 
-    const schedules = JSON.parse(result)
-    console.log("Found:", schedules.length)
-    console.log("Schedules:", result);
+    // later you will:
+    // setSchedules(schedules);
   };
+
   useEffect(() => {
     Promise.all([
       fetch("/uconn-schedule-builder/semesters/1268/classes.json").then((res) => res.json()),
@@ -147,6 +155,7 @@ export default function App() {
       })
       .catch((err) => console.error("Error loading courses:", err));
   }, []);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
@@ -183,29 +192,158 @@ export default function App() {
       .slice(0, 8);
     setSuggestions(filtered);
   }, [input, courses]);
-  // Handle sidebar resizing
+
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (isResizing) {
-        const newWidth = Math.max(300, Math.min(800, e.clientX));
-        setSidebarWidth(newWidth);
-      }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only trigger on "i"
+      if (e.key !== "i") return;
+
+      // Ignore if modifier keys are pressed
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      // Only run on desktop (basic mobile detection)
+      const isMobile =
+        /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|Mobile/i.test(
+          navigator.userAgent
+        );
+
+      if (isMobile) return;
+
+      // Don't trigger if user is already typing
+      const active = document.activeElement;
+      const isTyping =
+        active &&
+        (active.tagName === "INPUT" ||
+          active.tagName === "TEXTAREA" ||
+          (active as HTMLElement).isContentEditable);
+
+      if (isTyping) return;
+
+      e.preventDefault();
+
+      searchInputRef.current?.focus();
     };
 
-    const handleMouseUp = () => {
-      setIsResizing(false);
-    };
-
-    if (isResizing) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    }
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isResizing]);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const active = document.activeElement;
+      const isTyping =
+        active &&
+        (active.tagName === "INPUT" ||
+          active.tagName === "TEXTAREA" ||
+          (active as HTMLElement).isContentEditable);
+
+      // ESC → exit suggestion mode / blur input
+      if (e.key === "Escape") {
+        setMode("typing");
+        setSelectedSuggestion(0);
+        searchInputRef.current?.blur();
+        return;
+      }
+
+      // i → focus search
+      if (e.key === "i") {
+        const isMobile =
+          /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|Mobile/i.test(
+            navigator.userAgent
+          );
+
+        if (isMobile) return;
+
+        setMode("typing");
+        searchInputRef.current?.focus();
+        return;
+      }
+
+      // Enter suggestion mode via Tab (still only when suggestions exist)
+      if (e.key === "Tab") {
+        const active = document.activeElement;
+
+        const isSearchFocused =
+          searchInputRef.current &&
+          active === searchInputRef.current;
+
+        if (!isSearchFocused) return;
+
+        if (suggestions.length === 0) return;
+
+        e.preventDefault();
+        setMode("suggestions");
+        setSelectedSuggestion(0);
+        return;
+      }
+      // =========================
+      // ARROW NAVIGATION (ALWAYS)
+      // =========================
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+
+        if (suggestions.length === 0) return;
+
+        setSelectedSuggestion((prev) =>
+          Math.min(prev + 1, suggestions.length - 1)
+        );
+
+        if (mode === "typing") setMode("suggestions");
+        return;
+      }
+
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+
+        if (suggestions.length === 0) return;
+
+        setSelectedSuggestion((prev) => Math.max(prev - 1, 0));
+
+        if (mode === "typing") setMode("suggestions");
+        return;
+      }
+
+      // =========================
+      // VIM KEYS (ONLY suggestion mode)
+      // =========================
+      if (mode === "suggestions") {
+        if (e.key === "j") {
+          e.preventDefault();
+          setSelectedSuggestion((prev) =>
+            Math.min(prev + 1, suggestions.length - 1)
+          );
+        }
+
+        if (e.key === "k") {
+          e.preventDefault();
+          setSelectedSuggestion((prev) =>
+            Math.max(prev - 1, 0)
+          );
+        }
+
+        if (e.key === "Enter") {
+          const course = suggestions[selectedSuggestion];
+          if (!course) return;
+
+          const already = blocks.some(
+            (b) => b.name === course.code
+          );
+
+          if (!already) addBlock(course);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mode, suggestions, selectedSuggestion, blocks]);
+  useEffect(() => {
+    setMode("typing");
+    setSelectedSuggestion(0);
+  }, [input]);
+
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -224,20 +362,40 @@ export default function App() {
     }
   };
 
-  const addBlock = (course: Course) => {
+  const addBlock = async (course: Course) => {
     const courseName = course.code;
-    
+
     if (blocks.some(block => block.name === courseName)) {
       return;
     }
-    
-    setBlocks((prev) => [
-      ...prev,
-      { 
-        id: `${course.code}-${Date.now()}`, 
-        name: courseName 
+
+    const newBlocks = [
+      ...blocks,
+      {
+        id: `${course.code}-${Date.now()}`,
+        name: courseName,
       },
-    ]);
+    ];
+
+    setBlocks(newBlocks);
+
+    // =========================
+    // NEW: IMMEDIATE SECTION FETCH
+    // =========================
+    await init();
+
+    const selectedCodes = newBlocks.map(b => b.name);
+
+    const sectionsJson = get_sections_for_courses(
+      selectedCodes,
+      classesDataRaw
+    );
+
+    const sections = JSON.parse(sectionsJson);
+
+    console.log("Updated Sections:", sections);
+
+    setSections(sections);
     setInput("");
     setSuggestions([]);
   };
@@ -247,9 +405,22 @@ export default function App() {
   };
 
   const handleInputSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && suggestions.length > 0) {
+    if (e.key === "Enter" && suggestions.length > 0) {
       e.preventDefault();
-      addBlock(suggestions[0]);
+
+      const firstAvailable = suggestions.find(
+        (course) => !blocks.some((block) => block.name === course.code)
+      );
+
+      if (firstAvailable) addBlock(firstAvailable);
+    }
+
+    if (e.key === "Tab") {
+      if (suggestions.length === 0) return;
+
+      e.preventDefault();
+      setMode("suggestions");
+      setSelectedSuggestion(0);
     }
   };
 
@@ -273,100 +444,63 @@ export default function App() {
 
   return (
     <div className="h-screen flex bg-gray-100">
-      <style>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px) scale(0.9);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-        .animate-fadeInUp {
-          animation: fadeInUp 0.6s ease-out forwards;
-        }
-      `}</style>
-      
-      {/* Sidebar */}
-      <div 
-        className="bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl flex flex-col overflow-hidden relative"
-        style={{ width: sidebarWidth }}
-      >
+
+      {/* LEFT SIDEBAR */}
+      <div className="w-[300px] bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-hidden border-r border-gray-200">
         {/* Header */}
         <div className="p-6 border-b border-gray-200">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">UConn Schedule Builder</h1>
-          <p className="text-gray-600 text-sm">Search and organize your courses</p>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">
+            UConn Schedule Builder
+          </h1>
+          <p className="text-gray-600 text-sm">
+            Search and organize your courses
+          </p>
         </div>
 
-        {/* Search Section */}
+        {/* Search */}
         <div className="p-6">
           <div ref={searchRef} className="relative">
-            <div className="relative transition-all duration-300 transform focus-within:scale-105">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleInputSubmit}
-                placeholder="🔍 Search catalog # or title..."
-                className="w-full px-4 py-3 text-base border-0 rounded-xl bg-white shadow-lg focus:shadow-xl focus:outline-none transition-all duration-300 ring-2 ring-transparent focus:ring-indigo-300 focus:ring-4"
-                style={{
-                  background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-                  boxShadow: '0 8px 20px rgba(79, 70, 229, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1)',
-                }}
-              />
-              {input && (
-                <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                  </div>
-                </div>
-              )}
-            </div>
-            
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleInputSubmit}
+              placeholder="🔍 Search catalog # or title..."
+              className="w-full px-4 py-3 text-base border-0 rounded-xl bg-white shadow-lg focus:shadow-xl focus:outline-none transition-all duration-300 ring-2 ring-transparent focus:ring-indigo-300 focus:ring-4"
+              style={{
+                background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                boxShadow: '0 8px 20px rgba(79, 70, 229, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1)',
+              }}
+            />
             {/* Suggestions Dropdown */}
             {suggestions.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl z-50 border border-gray-100 p-3"
-                   style={{
-                     background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-                     maxHeight: '250px',
-                     overflowY: 'auto',
-                     display: 'flex',
-                     flexDirection: 'column',
-                     gap: '8px'
-                   }}>
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl z-50 border p-3">
                 {suggestions.map((course, index) => {
-                  const isAlreadyAdded = blocks.some(block => block.name === course.code);
-                  
+                  const isAlreadyAdded = blocks.some(
+                    (block) => block.name === course.code
+                  );
+
+                  const isSelected = index == selectedSuggestion;
+
                   return (
                     <button
                       key={index}
-                      className={`font-medium transition-all duration-200 text-left text-sm ${
-                        isAlreadyAdded 
-                          ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed shadow-sm' 
-                          : 'border-indigo-200 bg-white hover:border-indigo-400 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 hover:text-indigo-700 hover:shadow-md hover:transform hover:scale-102 text-gray-700 shadow-sm hover:shadow-lg'
+                      className={`w-full text-left p-3 rounded-lg border text-sm transition-all duration-200 ${
+                        isAlreadyAdded
+                          ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                          : isSelected
+                            ? "bg-indigo-100 border-indigo-500 shadow-md"
+                            : "bg-white text-gray-700 border-indigo-200 hover:bg-indigo-50 hover:border-indigo-400"
                       }`}
-                      style={{
-                        width: '100%',
-                        padding: '12px 16px 20px',
-                        borderRadius: '8px',
-                        border: '2px solid',
-                        borderColor: isAlreadyAdded ? '#d1d5db' : '#c7d2fe',
-                        display: 'block',
-                        textAlign: 'left',
-                        minHeight: '64px'
-                      }}
                       onClick={() => !isAlreadyAdded && addBlock(course)}
                       disabled={isAlreadyAdded}
                     >
                       <div className="font-semibold">
-                        {highlightMatch(course.code, input)}
+                        {course.code}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {highlightMatch(course.title, input)}
+                      <div className="text-xs mt-1">
+                        {course.title}
                       </div>
                     </button>
                   );
@@ -376,71 +510,68 @@ export default function App() {
           </div>
         </div>
 
-        {/* Course Blocks */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {blocks.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="text-4xl mb-3 select-none">📚</div>
-              <h3 className="text-lg font-semibold text-gray-700 mb-1 select-none">No courses yet</h3>
-              <p className="text-gray-500 text-sm select-none">Start by searching above</p>
-            </div>
-          ) : (
-            <>
-              <h2 className="text-lg font-semibold text-gray-700 mb-4">
-                Your Schedule ({blocks.length} course{blocks.length !== 1 ? 's' : ''})
-              </h2>
-              <DndContext 
-                sensors={sensors} 
-                collisionDetection={closestCenter} 
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext 
-                  items={blocks.map(block => block.id)} 
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="flex flex-col items-center">
-                    {blocks.map((block) => (
-                      <DraggableBlock 
-                        key={block.id} 
-                        id={block.id} 
-                        name={block.name} 
-                        onDelete={removeBlock} 
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
-            </>
-          )}
+        {/* Generate button */}
+        <div className="px-6">
+          <button
+            type="button"
+            onClick={() => runScheduler()}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl shadow-lg"
+          >
+            Generate Schedules
+          </button>
         </div>
-        <button onClick={() => runScheduler(courses)}>
-          Generate Schedules
-        </button>
-        {/* Instructions */}
-        {blocks.length > 0 && (
-          <div className="p-4 border-t border-gray-200">
-            <p className="text-xs text-gray-500 text-center">💡 Drag to reorder • Hover to delete</p>
-          </div>
-        )}
-
-        {/* Resize Handle */}
-        <div 
-          className="absolute top-0 right-0 w-1 h-full bg-gray-300 hover:bg-indigo-400 cursor-col-resize transition-colors duration-200"
-          onMouseDown={() => setIsResizing(true)}
-        />
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 p-8 bg-white">
+      {/* CENTER */}
+      <div className="flex-1 p-8 bg-white z-0">
         <div className="h-full flex items-center justify-center">
           <div className="text-center">
-            <div className="text-8xl mb-6 select-none">🎓</div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-4 select-none">Welcome to Schedule Builder</h2>
-            <p className="text-gray-600 text-lg select-none">Use the sidebar to search and organize your courses</p>
-            <p className="text-gray-500 text-sm mt-2 select-none">You can resize the sidebar by dragging its right edge</p>
+            <div className="text-8xl mb-6">🎓</div>
+            <h2 className="text-3xl font-bold mb-4">
+              Welcome to Schedule Builder
+            </h2>
+            <p className="text-gray-600">
+              Use the sidebars to build your schedule
+            </p>
           </div>
         </div>
       </div>
+
+      {/* RIGHT SIDEBAR */}
+      <div className="w-[300px] bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-y-auto p-6 border-l border-gray-200">
+        <h2 className="text-lg font-semibold mb-4">
+          Your Schedule ({blocks.length})
+        </h2>
+
+        {blocks.length === 0 ? (
+          <div className="text-center text-gray-500 mt-10">
+            📚 No courses added yet
+          </div>
+        ) : (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={blocks.map((b) => b.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="flex flex-col items-center">
+                {blocks.map((block) => (
+                  <DraggableBlock
+                    key={block.id}
+                    id={block.id}
+                    name={block.name}
+                    onDelete={removeBlock}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        )}
+      </div>
+
     </div>
   );
 }
