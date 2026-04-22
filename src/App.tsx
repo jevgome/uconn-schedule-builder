@@ -92,6 +92,7 @@ function DraggableBlock({ id, name, onDelete }: BlockProps) {
 
 export default function App() {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [classesDataRaw, setClassesDataRaw] = useState<any[]>([]);
   const [blocks, setBlocks] = useState<DraggableBlockData[]>([]);
   const [selectedSemester, setSelectedSemester] = useState<string>('');
   const [input, setInput] = useState("");
@@ -102,25 +103,48 @@ export default function App() {
 
   // Scheduler call
   const runScheduler = async () => {
-    if (!courses || courses.length === 0) return;
+    if (classesDataRaw.length === 0) return;
 
     await init();
+
     const selectedCodes = blocks.map((b) => b.name);
 
+    console.log("courses:", selectedCodes);
+
     const result = generate_schedules_wasm(
-      JSON.stringify(selectedCodes),
-      JSON.stringify(courses),
+      selectedCodes,
+      classesDataRaw,
     );
+
     console.log("Schedules:", result);
   };
   useEffect(() => {
-    fetch("/uconn-schedule-builder/semesters/1268/classes.json")
-      .then((res) => res.json())
-      .then((data: Course[]) => setCourses(data))
+    Promise.all([
+      fetch("/uconn-schedule-builder/semesters/1268/classes.json").then((res) => res.json()),
+      fetch("/uconn-schedule-builder/courses.json").then((res) => res.json()),
+    ])
+      .then(([classesData, coursesData]) => {
+        const titleMap = new Map<string, string>();
+
+        for (const c of coursesData) {
+          const key = `${c.course} ${c.catalog_number}`;
+          titleMap.set(key, c.name);
+        }
+
+        const uiCourses: Course[] = classesData.map((c: any) => {
+          const code = `${c.subject} ${c.catalog_number}`;
+
+          return {
+            code,
+            title: titleMap.get(code) ?? "Unknown Course",
+          };
+        });
+
+        setCourses(uiCourses);
+        setClassesDataRaw(classesData);
+      })
       .catch((err) => console.error("Error loading courses:", err));
   }, []);
-
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
@@ -144,7 +168,7 @@ export default function App() {
     const filtered = courses
       .filter((course) => {
         const fullName = course.code.toLowerCase();
-        const courseName = course.title.toLowerCase();
+        const courseName = (course.title ?? "").toLowerCase();
         return fullName.includes(query) || 
                courseName.includes(query);
       })
@@ -155,10 +179,8 @@ export default function App() {
         return unique;
       }, [] as Course[])
       .slice(0, 8);
-    
     setSuggestions(filtered);
   }, [input, courses]);
-
   // Handle sidebar resizing
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
