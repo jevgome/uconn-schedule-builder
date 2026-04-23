@@ -45,11 +45,18 @@ function isKeyboardDevice() {
 function DraggableBlock({ id, name, onDelete }: BlockProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
+  const clampedTransform = transform
+    ? { ...transform, x: Math.min(transform.x, 0) } // allow only left drag
+    : null;
+
   const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
+    backgroundColor: transform?.x < -80 ? "#7f1d1d" : undefined,
+    transform: CSS.Transform.toString(clampedTransform),
     transition,
     opacity: isDragging ? 0.9 : 1,
-    zIndex: isDragging ? 10 : 1,
+    zIndex: isDragging ? 999999 : 1,
+    position: isDragging ? "relative" : "relative",
+    willChange: "transform",
   };
 
   return (
@@ -58,10 +65,10 @@ function DraggableBlock({ id, name, onDelete }: BlockProps) {
       style={style}
       {...attributes}
       {...listeners}
-      className={`group relative bg-blue-950 text-white rounded-2xl p-4 m-2 w-64 shadow-lg cursor-grab active:cursor-grabbing select-none ${
+      className={`group relative bg-blue-950 text-white rounded-lg px-3 py-2 m-1 w-[180px] max-w-[180px] mx-auto self-stretch shadow-md cursor-grab active:cursor-grabbing select-none text-sm ${
         isDragging 
-          ? 'shadow-2xl scale-110 rotate-3 z-50' 
-          : 'hover:shadow-2xl hover:scale-105 hover:-rotate-1'
+          ? 'shadow-xl scale-105 rotate-1 z-50' 
+          : 'hover:shadow-lg hover:scale-[1.02]'
       }`}
       onMouseEnter={(e) => {
         if (!isDragging) {
@@ -78,11 +85,11 @@ function DraggableBlock({ id, name, onDelete }: BlockProps) {
         }
       }}
     >
-      <div className="relative z-10 font-semibold text-center text-lg tracking-wide">
+      <div className="relative z-10 font-medium text-center text-sm tracking-wide">
         {name}
       </div>
       <button
-        className="absolute -top-3 -right-3 w-7 h-7 bg-red-600 hover:bg-red-700 cursor-pointer text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center text-sm font-bold shadow-lg transform hover:scale-110 hover:rotate-90"
+        className="absolute -top-3 -right-3 w-5 h-5 text-xs bg-red-600 hover:bg-red-700 cursor-pointer text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center text-sm font-bold shadow-lg transform hover:scale-110 hover:rotate-90"
         onClick={(e) => {
           e.stopPropagation();
           onDelete(id);
@@ -497,10 +504,22 @@ export default function App() {
   );
 
   const handleDragEnd = (event: any) => {
-    const { active, over } = event;
+    const { active, delta, over } = event;
+
+    const SWIPE_THRESHOLD = -120; // how far left before delete
+
+    // 🗑️ SWIPE DELETE
+    if (delta.x < SWIPE_THRESHOLD) {
+      setBlocks((prev) =>
+        prev.filter((block) => block.id !== active.id)
+      );
+      return;
+    }
+
+    // 🔄 NORMAL SORTING
     if (over && active.id !== over.id) {
-      const oldIndex = blocks.findIndex((block) => block.id === active.id);
-      const newIndex = blocks.findIndex((block) => block.id === over.id);
+      const oldIndex = blocks.findIndex((b) => b.id === active.id);
+      const newIndex = blocks.findIndex((b) => b.id === over.id);
       setBlocks(arrayMove(blocks, oldIndex, newIndex));
     }
   };
@@ -540,7 +559,7 @@ export default function App() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-gray-100">
+    <div className="h-screen flex flex-col bg-gray-100 relative z-0">
       {/* HEADER */}
       <div className="h-14 w-full bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm">
         <div className="font-bold text-lg text-gray-800">
@@ -694,50 +713,68 @@ export default function App() {
 
         {/* RIGHT SIDEBAR */}
         <div 
-          className="w-[300px] bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-y-auto p-6 border-l border-gray-200"
+          className="w-[300px] bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-0 flex flex-col overflow-y-auto overflow-x-clip p-6 border-l border-gray-200"
           onClick={() => setFocusContext("blocks")}
         >
 
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">
-              Your Schedule ({blocks.length})
-            </h2>
+          <div className="flex flex-col h-full">
 
-            <button
-              onClick={clearBlocks}
-              title="Clear all courses"
-              className="p-2 rounded-md hover:bg-red-100 text-red-600 transition"
-            >
-              🗑️
-            </button>
-          </div>
-          {blocks.length === 0 ? (
-            <div className="text-center text-gray-500 mt-10">
-              📚 No courses added yet
-            </div>
-          ) : (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={blocks.map((b) => b.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="flex flex-col items-center">
-                  {blocks.map((block) => (
-                    <DraggableBlock
-                      key={block.id}
-                      id={block.id}
-                      name={block.code}
-                      onDelete={removeBlock}
-                    />
-                  ))}
+            {/* TOP HALF */}
+            <div className="flex-1 overflow-y-auto">
+              
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">
+                  Your Schedule ({blocks.length})
+                </h2>
+
+                <button
+                  onClick={clearBlocks}
+                  className="p-2 rounded-md hover:bg-red-100 text-red-600 transition"
+                  title="Clear all courses"
+                >
+                  🗑️
+                </button>
+              </div>
+
+              {blocks.length === 0 ? (
+                <div className="text-center text-gray-500 mt-10">
+                  📚 No courses added yet
                 </div>
-              </SortableContext>
-            </DndContext>
-          )}
+              ) : (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={blocks.map((b) => b.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="flex flex-col items-center w-full">
+                      {blocks.map((block) => (
+                        <DraggableBlock
+                          key={block.id}
+                          id={block.id}
+                          name={block.code}
+                          onDelete={removeBlock}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              )}
+
+            </div>
+
+            {/* DIVIDER */}
+            <div className="h-px bg-gray-300 my-4" />
+
+            {/* BOTTOM HALF (EMPTY FOR NOW) */}
+            <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
+              Bottom panel (unused)
+            </div>
+
+          </div>
         </div>
       </div>
     </div>
