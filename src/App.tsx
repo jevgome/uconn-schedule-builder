@@ -201,6 +201,25 @@ export default function App() {
     return score;
   };
 
+  const getGhostText = () => {
+    if (!input.trim()) return "";
+
+    const first = suggestions.find(
+      (c) =>
+        c.code.toLowerCase().startsWith(input.toLowerCase().trim())
+    );
+
+    if (!first) return "";
+
+    const normalizedInput = input.replace(/\s+$/, " "); // keep single trailing space if present
+
+    if (!first.code.toLowerCase().startsWith(normalizedInput.toLowerCase())) {
+      return "";
+    }
+
+    return first.code.slice(normalizedInput.length);
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isInputFocused =
@@ -283,6 +302,18 @@ export default function App() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [focusContext, suggestions, selectedSuggestion, blocks]);
+
+  const getEnterCandidate = (): Course | undefined => {
+    if (suggestions.length === 0) return undefined;
+
+    if (hasNavigatedSuggestions) {
+      return suggestions[selectedSuggestion];
+    }
+
+    return suggestions.find(
+      (c) => !blocks.some((b) => b.code === c.code)
+    );
+  };
 
   useEffect(() => {
     Promise.all([
@@ -445,7 +476,7 @@ export default function App() {
     );
   };
 
-  const handleEnter = () => {
+    const handleEnter = () => {
     if (suggestions.length === 0) return;
 
     let course: Course | undefined;
@@ -454,31 +485,10 @@ export default function App() {
       (c) => !blocks.some((b) => b.code === c.code)
     );
 
-    // =========================
-    // CASE 1: user navigated manually
-    // =========================
     if (hasNavigatedSuggestions) {
       course = suggestions[selectedSuggestion];
-    }
-
-    // =========================
-    // CASE 2: smart fallback (THIS is the fix)
-    // =========================
-    else {
-      course =
-        hasNavigatedSuggestions
-          ? suggestions[selectedSuggestion]
-          : available[0];
-    }
-
-    // =========================
-    // FINAL SAFETY: if selected is blocked, keep searching
-    // =========================
-    if (!course) {
-      course =
-        hasNavigatedSuggestions
-          ? suggestions[selectedSuggestion]
-          : available[0];
+    } else {
+      course = available[0];
     }
 
     if (!course) return;
@@ -491,20 +501,6 @@ export default function App() {
     setSelectedSuggestion(0);
     setHasNavigatedSuggestions(false);
     searchInputRef.current?.blur();
-  };
-
-  const getEnterCandidate = (): Course | undefined => {
-    if (suggestions.length === 0) return undefined;
-
-    // if user manually navigated
-    if (hasNavigatedSuggestions) {
-      return suggestions[selectedSuggestion];
-    }
-
-    // otherwise pick first available
-    return suggestions.find(
-      (c) => !blocks.some((b) => b.code === c.code)
-    );
   };
 
   return (
@@ -525,21 +521,34 @@ export default function App() {
         {/* Search */}
         <div className="p-6">
           <div ref={searchRef} className="relative">
+
+            {/* INPUT */}
             <input
               ref={searchInputRef}
-              type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onFocus={() => setFocusContext("search")}
-              onBlur={() => setFocusContext("global")}
-              onKeyDown={handleInputSubmit}
-              placeholder="🔍 Search catalog # or title..."
-              className="w-full px-4 py-3 text-base border-0 rounded-xl bg-white shadow-lg focus:shadow-xl focus:outline-none transition-all duration-300 ring-2 ring-transparent focus:ring-indigo-300 focus:ring-4"
-              style={{
-                background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-                boxShadow: '0 8px 20px rgba(79, 70, 229, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1)',
-              }}
+              className="w-full px-4 py-3 text-base bg-white border border-gray-300 rounded-xl shadow-md
+                         focus:outline-none focus:ring-2 focus:ring-indigo-500 relative z-10"
+              placeholder="Search catalog # or title..."
             />
+
+            {/* GHOST LAYER */}
+            {getGhostText() && (
+              <div className="absolute inset-0 flex items-center px-4 py-3 pointer-events-none text-base z-20">
+                
+                {/* invisible input text to push cursor position */}
+                <span className="text-transparent whitespace-pre">
+                  {input}
+                </span>
+
+                {/* ghost completion */}
+                <span className="text-gray-400 whitespace-pre">
+                  {getGhostText()}
+                </span>
+
+              </div>
+            )}
+
             {/* Suggestions Dropdown */}
             {suggestions.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl z-50 border p-3">
@@ -547,9 +556,10 @@ export default function App() {
                   const isAlreadyAdded = blocks.some(
                     (block) => block.code === course.code
                   );
-                  const ghostCandidate = getEnterCandidate();
+                  const candidate = getEnterCandidate();
+
                   const isGhost =
-                    ghostCandidate?.code === course.code &&
+                    candidate?.code === course.code &&
                     !hasNavigatedSuggestions;
 
                   const isSelected = index == selectedSuggestion;
