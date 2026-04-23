@@ -1,5 +1,6 @@
+import { useKeyboardFSM } from "./hooks/useKeyboardFSM";
 import init, { generate_schedules_from_sections, get_sections_for_courses } from "./wasm_pkg/scheduler_wasm";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import {
   DndContext,
   closestCenter,
@@ -105,7 +106,167 @@ export default function App() {
   const [selectedSuggestion, setSelectedSuggestion] = useState(0);
   type FocusContext = "global" | "search" | "suggestions" | "blocks";
   const [focusContext, setFocusContext] = useState<FocusContext>("global");
-  const [hasNavigatedSuggestions, setHasNavigatedSuggestions] = useState(false);
+  const [hasMovedSelection, setHasMovedSelection] = useState(false);
+
+  const addBlock = async (course: Course) => {
+    const courseName = course.code;
+
+    if (blocks.some(block => block.code === courseName)) {
+      return;
+    }
+
+
+    const newBlocks = [
+      ...blocks,
+      {
+        id: `${course.code}-${Date.now()}`,
+        code: course.code,
+        title: course.title,
+      },
+    ];
+    setBlocks(newBlocks);
+
+    // =========================
+    // NEW: IMMEDIATE SECTION FETCH
+    // =========================
+    await init();
+
+    const selectedCodes = newBlocks.map(b => b.code);
+
+    const sectionsJson = get_sections_for_courses(
+      selectedCodes,
+      classesDataRaw
+    );
+
+    const sections = JSON.parse(sectionsJson);
+
+    console.log("Updated Sections:", sections);
+
+    setSections(sections);
+    setInput("");
+    setSuggestions([]);
+    setFocusContext("search");
+    setSelectedSuggestion(0);
+
+    // optional but strongly recommended
+    searchInputRef.current?.focus();
+  };
+
+  const handleEnter = useCallback(() => {
+    if (suggestions.length === 0) return;
+
+    const available = suggestions.filter(
+      (c) => !blocks.some((b) => b.code === c.code)
+    );
+
+    if (available.length === 0) return;
+
+    // clamp selection to valid range
+    const index = Math.min(
+      selectedSuggestion,
+      available.length - 1
+    );
+
+    const course = visibleSuggestions[selectedSuggestion];
+
+    if (!course) return;
+
+    addBlock(course);
+  }, [suggestions, blocks, selectedSuggestion, addBlock]);
+
+  const visibleSuggestions = suggestions.filter(
+    (c) => !blocks.some((b) => b.code === c.code)
+  );
+
+  const effectiveSelectedSuggestion =
+    focusContext === "search"
+      ? 0
+      : selectedSuggestion;
+
+  const fsm = {
+    global: {
+      i: {
+        next: "search",
+        action: (_, ctx) => {
+          ctx.searchInputRef.current?.focus();
+        },
+      },
+    },
+
+    search: {
+      Enter: {
+        action: (_, ctx) => ctx.handleEnter(),
+      },
+
+      ArrowDown: {
+        next: "suggestions",
+        action: (_, ctx) => {
+          ctx.setHasMovedSelection(true);
+          ctx.setSelectedSuggestion(
+            Math.min(1, ctx.visibleSuggestions.length - 1)
+          );
+        },
+      },
+
+      Tab: {
+        next: "suggestions",
+        action: (_, ctx) => {
+          ctx.setSelectedSuggestion(
+            Math.min(0, ctx.visibleSuggestions.length - 1)
+          );
+        },
+      },
+    },
+
+    suggestions: {
+      Enter: {
+        action: (_, ctx) => ctx.handleEnter(),
+      },
+
+      Escape: {
+        next: "search",
+        action: (_, ctx) => {
+          ctx.searchInputRef.current?.focus();
+        },
+      },
+
+      j: {
+        action: (_, ctx) => {
+          ctx.setHasMovedSelection(true);
+          ctx.setSelectedSuggestion((p: number) =>
+            Math.min(p + 1, ctx.visibleSuggestions.length - 1)
+  );
+        },
+      },
+
+      k: {
+        action: (_, ctx) => {
+          ctx.setHasMovedSelection(true);
+          ctx.setSelectedSuggestion((p: number) =>
+            Math.max(p - 1, 0)
+          );
+        },
+      },
+
+      ArrowDown: {
+        action: (_, ctx) => {
+          ctx.setHasMovedSelection(true);
+          ctx.setSelectedSuggestion((p: number) =>
+            Math.min(p + 1, ctx.visibleSuggestions.length - 1)
+          );
+        },
+      },
+
+      ArrowUp: {
+        action: (_, ctx) => {
+          ctx.setHasMovedSelection(true);
+          ctx.setSelectedSuggestion((p: number) =>
+            Math.max(p - 1, 0)
+          );
+        },
+      },
+    },
+  };
 
   // Scheduler call
   const runScheduler = async () => {
@@ -131,51 +292,7 @@ export default function App() {
     // setSchedules(schedules);
   };
 
-  const getKeymaps = () => ({
-    global: {
-      i: () => {
-        setFocusContext("search");
-        searchInputRef.current?.focus();
-      },
-    },
-  
-    search: {
-      ArrowDown: () => {
-        if (suggestions.length > 0) {
-          setFocusContext("suggestions");
-          setSelectedSuggestion(0);
-        }
-      },
-    },
-  
-    suggestions: {
-      ArrowDown: () =>
-        setSelectedSuggestion((prev) =>
-          Math.min(prev + 1, suggestions.length - 1)
-        ),
-  
-      ArrowUp: () =>
-        setSelectedSuggestion((prev) => Math.max(prev - 1, 0)),
-  
-      j: () => {
-        setHasNavigatedSuggestions(true);
-        setSelectedSuggestion((prev) =>
-          Math.min(prev + 1, suggestions.length - 1)
-        );
-      },
-  
-      k: () => {
-        setHasNavigatedSuggestions(true);
-        setSelectedSuggestion((prev) => Math.max(prev - 1, 0));
-      },
-  
-    },
-  
-    blocks: {
-      j: () => console.log("move down blocks"),
-      k: () => console.log("move up blocks"),
-    },
-  });
+
 
   const scoreCourse = (course: Course, query: string) => {
     const q = query.toLowerCase().trim();
@@ -204,116 +321,57 @@ export default function App() {
   const getGhostText = () => {
     if (!input.trim()) return "";
 
-    const first = suggestions.find(
-      (c) =>
-        c.code.toLowerCase().startsWith(input.toLowerCase().trim())
-    );
+    const query = input.toLowerCase().trim();
 
-    if (!first) return "";
+    const baseCourse =
+      focusContext === "suggestions"
+        ? visibleSuggestions[selectedSuggestion]
+        : visibleSuggestions[0];
 
-    const normalizedInput = input.replace(/\s+$/, " "); // keep single trailing space if present
+    if (!baseCourse) return "";
 
-    if (!first.code.toLowerCase().startsWith(normalizedInput.toLowerCase())) {
+    const code = baseCourse.code;
+
+    if (!code.toLowerCase().startsWith(query)) return "";
+
+    const normalizedInput = input.replace(/\s+$/, " ");
+
+    if (!code.toLowerCase().startsWith(normalizedInput.toLowerCase())) {
       return "";
     }
 
-    return first.code.slice(normalizedInput.length);
+    return code.slice(normalizedInput.length);
   };
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const isInputFocused =
-        document.activeElement === searchInputRef.current;
-
-      const keymaps = getKeymaps();
-
-      if (e.key === "Escape" || (e.ctrlKey && e.key === "[")) {
-        e.preventDefault();
-        goGlobal();
-        return;
-      }
-
-      // =========================
-      // ALWAYS allow arrows
-      // =========================
-      if (e.key === "ArrowDown") {
-        if (suggestions.length === 0) return;
-
-        e.preventDefault();
-        setFocusContext("suggestions");
-
-        setHasNavigatedSuggestions(true);
-
-        setSelectedSuggestion((prev) =>
-          Math.min(prev + 1, suggestions.length - 1)
-        );
-        return;
-      }
-
-      if (e.key === "ArrowUp") {
-        if (suggestions.length === 0) return;
-
-        e.preventDefault();
-        setFocusContext("suggestions");
-
-        setHasNavigatedSuggestions(true);
-
-        setSelectedSuggestion((prev) => Math.max(prev - 1, 0));
-        return;
-      }
-
-      if (e.key === "Enter") {
-        e.preventDefault();
-        handleEnter();
-        return;
-      }
-
-      // =========================
-      // If typing in input → DO NOTHING
-      // (THIS fixes your j/k problem)
-      // =========================
-      if (isInputFocused && focusContext === "search") {
-        return;
-      }
-
-      // =========================
-      // Tab-entered suggestion mode
-      // =========================
-      if (focusContext === "suggestions") {
-        const handler = keymaps.suggestions?.[e.key];
-
-        if (handler) {
-          e.preventDefault();
-          handler();
-        }
-        return;
-      }
-
-      // =========================
-      // Global keys
-      // =========================
-      const globalHandler = keymaps.global?.[e.key];
-      if (globalHandler) {
-        e.preventDefault();
-        globalHandler();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [focusContext, suggestions, selectedSuggestion, blocks]);
 
   const getEnterCandidate = (): Course | undefined => {
     if (suggestions.length === 0) return undefined;
-
-    if (hasNavigatedSuggestions) {
-      return suggestions[selectedSuggestion];
-    }
 
     return suggestions.find(
       (c) => !blocks.some((b) => b.code === c.code)
     );
   };
+
+  useKeyboardFSM({
+    state: focusContext,
+    setState: setFocusContext,
+
+    inputRef: searchInputRef,
+
+    getContext: () => ({
+      visibleSuggestions,
+      suggestions,
+      blocks,
+      selectedSuggestion,
+      setSelectedSuggestion,
+      setSuggestions,
+      handleEnter,
+      searchInputRef,
+      hasMovedSelection,
+      setHasMovedSelection,
+    }),
+
+    fsm,
+  });
 
   useEffect(() => {
     Promise.all([
@@ -363,6 +421,11 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    setHasMovedSelection(false);
+    setSelectedSuggestion(0);
+  }, [input]);
+
+  useEffect(() => {
     if (!input.trim() || input.trim().length < 2) {
       setSuggestions([]);
       return;
@@ -400,62 +463,8 @@ export default function App() {
     }
   };
 
-  const addBlock = async (course: Course) => {
-    const courseName = course.code;
-
-    if (blocks.some(block => block.code === courseName)) {
-      return;
-    }
-
-
-    const newBlocks = [
-      ...blocks,
-      {
-        id: `${course.code}-${Date.now()}`,
-        code: course.code,
-        title: course.title,
-      },
-    ];
-    setBlocks(newBlocks);
-
-    // =========================
-    // NEW: IMMEDIATE SECTION FETCH
-    // =========================
-    await init();
-
-    const selectedCodes = newBlocks.map(b => b.code);
-
-    const sectionsJson = get_sections_for_courses(
-      selectedCodes,
-      classesDataRaw
-    );
-
-    const sections = JSON.parse(sectionsJson);
-
-    console.log("Updated Sections:", sections);
-
-    setSections(sections);
-    setInput("");
-    setSuggestions([]);
-  };
-
-  useEffect(() => {
-    setHasNavigatedSuggestions(false);
-    setSelectedSuggestion(0);
-  }, [input]);
-
   const removeBlock = (id: string) => {
     setBlocks((prev) => prev.filter((block) => block.id !== id));
-  };
-  const handleInputSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Tab") {
-      if (suggestions.length === 0) return;
-  
-      e.preventDefault();
-      setFocusContext("suggestions");
-      setHasNavigatedSuggestions(true);
-      setSelectedSuggestion(0);
-    }
   };
 
   const highlightMatch = (text: string, query: string) => {
@@ -476,30 +485,10 @@ export default function App() {
     );
   };
 
-    const handleEnter = () => {
-    if (suggestions.length === 0) return;
-
-    let course: Course | undefined;
-
-    const available = suggestions.filter(
-      (c) => !blocks.some((b) => b.code === c.code)
-    );
-
-    if (hasNavigatedSuggestions) {
-      course = suggestions[selectedSuggestion];
-    } else {
-      course = available[0];
-    }
-
-    if (!course) return;
-
-    addBlock(course);
-  };
 
   const goGlobal = () => {
     setFocusContext("global");
     setSelectedSuggestion(0);
-    setHasNavigatedSuggestions(false);
     searchInputRef.current?.blur();
   };
 
@@ -530,6 +519,16 @@ export default function App() {
               className="w-full px-4 py-3 text-base bg-white border border-gray-300 rounded-xl shadow-md
                          focus:outline-none focus:ring-2 focus:ring-indigo-500 relative z-10"
               placeholder="Search catalog # or title..."
+              onFocus={() => setFocusContext("search")}
+              onBlur={(e) => {
+                // delay so click on suggestion doesn't instantly kill state
+                setTimeout(() => {
+                  const active = document.activeElement;
+                  if (active !== searchInputRef.current) {
+                    setFocusContext("global");
+                  }
+                }, 0);
+              }}
             />
 
             {/* GHOST LAYER */}
@@ -550,19 +549,16 @@ export default function App() {
             )}
 
             {/* Suggestions Dropdown */}
-            {suggestions.length > 0 && (
+            {focusContext != "global" && suggestions.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl z-50 border p-3">
-                {suggestions.map((course, index) => {
-                  const isAlreadyAdded = blocks.some(
-                    (block) => block.code === course.code
-                  );
+                {visibleSuggestions.map((course, index) => {
                   const candidate = getEnterCandidate();
 
-                  const isGhost =
-                    candidate?.code === course.code &&
-                    !hasNavigatedSuggestions;
+                  const isSelected =
+                    hasMovedSelection
+                      ? index === selectedSuggestion
+                      : index === 0;
 
-                  const isSelected = index == selectedSuggestion;
 
                   return (
                     <button
@@ -570,17 +566,12 @@ export default function App() {
 
                       className={`w-full text-left p-3 rounded-lg border text-sm transition-all duration-200
                         ${
-                          isGhost
-                            ? "bg-indigo-50 border-indigo-300 text-gray-900"
-                            : isAlreadyAdded
-                              ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                              : isSelected
+                           isSelected
                                 ? "bg-indigo-100 border-indigo-500 shadow-md"
                                 : "bg-white text-gray-700 border-indigo-200 hover:bg-indigo-50"
                         }
                       `}
-                      onClick={() => !isAlreadyAdded && addBlock(course)}
-                      disabled={isAlreadyAdded}
+                      onClick={() => addBlock(course)}
                     >
                       <div className="font-semibold">
                         {course.code}
