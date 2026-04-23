@@ -32,6 +32,16 @@ interface BlockProps {
   name: string;
   onDelete: (id: string) => void;
 }
+
+function isKeyboardDevice() {
+  if (typeof window === "undefined") return false;
+
+  const hasFinePointer = window.matchMedia("(pointer: fine)").matches;
+  const hasHover = window.matchMedia("(hover: hover)").matches;
+
+  return hasFinePointer && hasHover;
+}
+
 function DraggableBlock({ id, name, onDelete }: BlockProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
@@ -107,6 +117,14 @@ export default function App() {
   type FocusContext = "global" | "search" | "suggestions" | "blocks";
   const [focusContext, setFocusContext] = useState<FocusContext>("global");
   const [hasMovedSelection, setHasMovedSelection] = useState(false);
+  const [vimMode, setVimMode] = useState(() => {
+    if (typeof window === "undefined") return false;
+
+    const saved = localStorage.getItem("vimMode");
+    return saved === "true";
+  });
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
 
   const addBlock = async (course: Course) => {
     const courseName = course.code;
@@ -368,6 +386,7 @@ export default function App() {
       searchInputRef,
       hasMovedSelection,
       setHasMovedSelection,
+      vimMode,
     }),
 
     fsm,
@@ -446,6 +465,29 @@ export default function App() {
     setSuggestions(ranked);
   }, [input, courses]);
 
+  useEffect(() => {
+    localStorage.setItem("vimMode", String(vimMode));
+  }, [vimMode]);
+
+  useEffect(() => {
+    if (!isKeyboardDevice()) {
+      setVimMode(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!settingsRef.current) return;
+
+      if (!settingsRef.current.contains(e.target as Node)) {
+        setSettingsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -465,6 +507,11 @@ export default function App() {
 
   const removeBlock = (id: string) => {
     setBlocks((prev) => prev.filter((block) => block.id !== id));
+  };
+
+  const clearBlocks = () => {
+    setBlocks([]);
+    setSections([]);
   };
 
   const highlightMatch = (text: string, query: string) => {
@@ -493,165 +540,206 @@ export default function App() {
   };
 
   return (
-    <div className="h-screen flex bg-gray-100">
-
-      {/* LEFT SIDEBAR */}
-      <div className="w-[300px] bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-hidden border-r border-gray-200">
-        {/* Header */}
-        <div className="p-6 border-b border-gray-200">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            UConn Schedule Builder
-          </h1>
-          <p className="text-gray-600 text-sm">
-            Search and organize your courses
-          </p>
+    <div className="h-screen flex flex-col bg-gray-100">
+      {/* HEADER */}
+      <div className="h-14 w-full bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm">
+        <div className="font-bold text-lg text-gray-800">
+          UConn Schedule Builder
         </div>
-
-        {/* Search */}
-        <div className="p-6">
-          <div ref={searchRef} className="relative">
-
-            {/* INPUT */}
-            <input
-              ref={searchInputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              className="w-full px-4 py-3 text-base bg-white border border-gray-300 rounded-xl shadow-md
-                         focus:outline-none focus:ring-2 focus:ring-indigo-500 relative z-10"
-              placeholder="Search catalog # or title..."
-              onFocus={() => setFocusContext("search")}
-              onBlur={(e) => {
-                // delay so click on suggestion doesn't instantly kill state
-                setTimeout(() => {
-                  const active = document.activeElement;
-                  if (active !== searchInputRef.current) {
-                    setFocusContext("global");
-                  }
-                }, 0);
-              }}
-            />
-
-            {/* GHOST LAYER */}
-            {getGhostText() && (
-              <div className="absolute inset-0 flex items-center px-4 py-3 pointer-events-none text-base z-20">
-                
-                {/* invisible input text to push cursor position */}
-                <span className="text-transparent whitespace-pre">
-                  {input}
-                </span>
-
-                {/* ghost completion */}
-                <span className="text-gray-400 whitespace-pre">
-                  {getGhostText()}
-                </span>
-
-              </div>
-            )}
-
-            {/* Suggestions Dropdown */}
-            {focusContext != "global" && suggestions.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl z-50 border p-3">
-                {visibleSuggestions.map((course, index) => {
-                  const candidate = getEnterCandidate();
-
-                  const isSelected =
-                    hasMovedSelection
-                      ? index === selectedSuggestion
-                      : index === 0;
-
-
-                  return (
-                    <button
-                      key={index}
-
-                      className={`w-full text-left p-3 rounded-lg border text-sm transition-all duration-200
-                        ${
-                           isSelected
-                                ? "bg-indigo-100 border-indigo-500 shadow-md"
-                                : "bg-white text-gray-700 border-indigo-200 hover:bg-indigo-50"
-                        }
-                      `}
-                      onClick={() => addBlock(course)}
-                    >
-                      <div className="font-semibold">
-                        {course.code}
-                      </div>
-                      <div className="text-xs mt-1">
-                        {course.title}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Generate button */}
-        <div className="px-6">
-          <button
-            type="button"
-            onClick={() => runScheduler()}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl shadow-lg"
-          >
-            Generate Schedules
-          </button>
-        </div>
-      </div>
-
-      {/* CENTER */}
-      <div className="flex-1 p-8 bg-white z-0">
-        <div className="h-full flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-8xl mb-6">🎓</div>
-            <h2 className="text-3xl font-bold mb-4">
-              Welcome to Schedule Builder
-            </h2>
-            <p className="text-gray-600">
-              Use the sidebars to build your schedule
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* RIGHT SIDEBAR */}
-      <div 
-        className="w-[300px] bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-y-auto p-6 border-l border-gray-200"
-        onClick={() => setFocusContext("blocks")}
-      >
-        <h2 className="text-lg font-semibold mb-4">
-          Your Schedule ({blocks.length})
-        </h2>
-
-        {blocks.length === 0 ? (
-          <div className="text-center text-gray-500 mt-10">
-            📚 No courses added yet
-          </div>
-        ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={blocks.map((b) => b.id)}
-              strategy={verticalListSortingStrategy}
+        <div className="relative">
+          <div className="relative" ref={settingsRef}>
+            <button
+              onClick={() => setSettingsOpen(v => !v)}
+              className="px-3 py-1 rounded-md hover:bg-gray-100"
             >
-              <div className="flex flex-col items-center">
-                {blocks.map((block) => (
-                  <DraggableBlock
-                    key={block.id}
-                    id={block.id}
-                    name={block.code}
-                    onDelete={removeBlock}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
-        )}
-      </div>
+              Settings ⚙️
+            </button>
 
+            {settingsOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg p-3 z-50">
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Vim mode</span>
+
+                  <button
+                    onClick={() => setVimMode(v => !v)}
+                    className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors duration-200 ${
+                      vimMode ? "bg-indigo-600" : "bg-gray-300"
+                    }`}
+                  >
+                    <div
+                      className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-200 ${
+                        vimMode ? "translate-x-4" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+              </div>
+            )}
+          </div>
+        </div>
+      </div> {/* end header */}
+
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* LEFT SIDEBAR */}
+        <div className="w-[300px] bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-hidden border-r border-gray-200">
+          {/* Search */}
+          <div className="p-6">
+            <div ref={searchRef} className="relative">
+
+              {/* INPUT */}
+              <input
+                ref={searchInputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                className="w-full px-4 py-3 text-base bg-white border border-gray-300 rounded-xl shadow-md
+                           focus:outline-none focus:ring-2 focus:ring-indigo-500 relative z-10"
+                placeholder="Search catalog # or title..."
+                onFocus={() => setFocusContext("search")}
+                onBlur={(e) => {
+                  // delay so click on suggestion doesn't instantly kill state
+                  setTimeout(() => {
+                    const active = document.activeElement;
+                    if (active !== searchInputRef.current) {
+                      setFocusContext("global");
+                    }
+                  }, 0);
+                }}
+              />
+
+              {/* GHOST LAYER */}
+              {getGhostText() && (
+                <div className="absolute inset-0 flex items-center px-4 py-3 pointer-events-none text-base z-20">
+                  
+                  {/* invisible input text to push cursor position */}
+                  <span className="text-transparent whitespace-pre">
+                    {input}
+                  </span>
+
+                  {/* ghost completion */}
+                  <span className="text-gray-400 whitespace-pre">
+                    {getGhostText()}
+                  </span>
+
+                </div>
+              )}
+
+              {/* Suggestions Dropdown */}
+              {focusContext != "global" && suggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl z-50 border p-3">
+                  {visibleSuggestions.map((course, index) => {
+                    const candidate = getEnterCandidate();
+
+                    const isSelected =
+                      hasMovedSelection
+                        ? index === selectedSuggestion
+                        : index === 0;
+
+
+                    return (
+                      <button
+                        key={index}
+
+                        className={`w-full text-left p-3 rounded-lg border text-sm transition-all duration-200
+                          ${
+                             isSelected
+                                  ? "bg-indigo-100 border-indigo-500 shadow-md"
+                                  : "bg-white text-gray-700 border-indigo-200 hover:bg-indigo-50"
+                          }
+                        `}
+                        onClick={() => addBlock(course)}
+                      >
+                        <div className="font-semibold">
+                          {course.code}
+                        </div>
+                        <div className="text-xs mt-1">
+                          {course.title}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Generate button */}
+          <div className="px-6">
+            <button
+              type="button"
+              onClick={() => runScheduler()}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl shadow-lg"
+            >
+              Generate Schedules
+            </button>
+          </div>
+        </div>
+
+        {/* CENTER */}
+        <div className="flex-1 p-8 bg-white z-0">
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-8xl mb-6">🎓</div>
+              <h2 className="text-3xl font-bold mb-4">
+                Welcome to Schedule Builder
+              </h2>
+              <p className="text-gray-600">
+                Use the sidebars to build your schedule
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT SIDEBAR */}
+        <div 
+          className="w-[300px] bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-y-auto p-6 border-l border-gray-200"
+          onClick={() => setFocusContext("blocks")}
+        >
+
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">
+              Your Schedule ({blocks.length})
+            </h2>
+
+            <button
+              onClick={clearBlocks}
+              title="Clear all courses"
+              className="p-2 rounded-md hover:bg-red-100 text-red-600 transition"
+            >
+              🗑️
+            </button>
+          </div>
+          {blocks.length === 0 ? (
+            <div className="text-center text-gray-500 mt-10">
+              📚 No courses added yet
+            </div>
+          ) : (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={blocks.map((b) => b.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="flex flex-col items-center">
+                  {blocks.map((block) => (
+                    <DraggableBlock
+                      key={block.id}
+                      id={block.id}
+                      name={block.code}
+                      onDelete={removeBlock}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

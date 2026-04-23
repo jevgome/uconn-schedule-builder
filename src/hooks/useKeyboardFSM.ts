@@ -40,6 +40,7 @@ export function useKeyboardFSM({
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if(!getContext().vimMode) return;
       const currentState = stateRef.current;
       if (e.key === "Tab") {
         e.preventDefault();
