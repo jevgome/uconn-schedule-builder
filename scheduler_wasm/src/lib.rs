@@ -132,6 +132,7 @@ pub fn generate_schedules_wasm(
 pub fn get_sections_for_courses(
     course_list: JsValue,
     raw_data: JsValue,
+    allowed_campuses: JsValue,
 ) -> String {
     let course_list: Vec<String> =
         serde_wasm_bindgen::from_value(course_list).unwrap();
@@ -139,7 +140,10 @@ pub fn get_sections_for_courses(
     let raw_data: Vec<RawCourseEntry> =
         serde_wasm_bindgen::from_value(raw_data).unwrap();
 
-    let sections = build_sections(course_list, raw_data);
+    let allowed_campuses: Vec<String> =
+        serde_wasm_bindgen::from_value(allowed_campuses).unwrap();
+
+    let sections = build_sections(course_list, raw_data, allowed_campuses);
 
     serde_json::to_string(&sections).unwrap()
 }
@@ -161,30 +165,6 @@ pub fn generate_schedules_from_sections(sections: JsValue) -> String {
 
     schedules_to_json(results)
 }
-//
-// =========================
-// MAIN GENERATOR
-// =========================
-//
-
-pub fn generate_schedules(
-    course_list: Vec<String>,
-    raw_data: Vec<RawCourseEntry>,
-) -> String {
-    let sections = build_sections(course_list, raw_data);
-    let grouped = group_by_course(sections);
-
-    // FIX: correct grouping extraction
-    let course_groups: Vec<Vec<Section>> =
-        grouped.into_iter().map(|(_, v)| v).collect();
-
-    let mut results = Vec::new();
-    let mut current = Vec::new();
-
-    backtrack(&course_groups, 0, &mut current, &mut results);
-
-    schedules_to_json(results)
-}
 
 //
 // =========================
@@ -194,6 +174,7 @@ pub fn generate_schedules(
 fn build_sections(
     course_list: Vec<String>,
     raw_data: Vec<RawCourseEntry>,
+    allowed_campuses: Vec<String>,
 ) -> Vec<Section> {
     let mut sections = Vec::new();
 
@@ -203,6 +184,8 @@ fn build_sections(
     let mut lecture_map: HashMap<String, RawCourseEntry> = HashMap::new();
 
     for entry in &raw_data {
+        if !allowed_campuses.contains(&entry.campus) continue;
+
         let course_code = format!("{} {}", entry.subject, entry.catalog_number);
 
         if course_list.contains(&course_code) && entry.registration_number.is_empty() {
@@ -214,6 +197,8 @@ fn build_sections(
     // STEP 2: build sections
     // =========================
     for entry in &raw_data {
+        if !allowed_campuses.contains(&entry.campus) continue;
+
         let course_code = format!("{} {}", entry.subject, entry.catalog_number);
 
         if !course_list.contains(&course_code) {

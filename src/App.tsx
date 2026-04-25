@@ -33,6 +33,19 @@ interface BlockProps {
   onDelete: (id: string) => void;
 }
 
+const CAMPUS_MAP: Record<string, string> = {
+  STORR: "Storrs",
+  AVYPT: "Avery Point",
+  HRTFD: "Hartford",
+  OFF: "Off-campus",
+  LAW: "School of Law",
+  STMFD: "Stamford",
+  UCHC: "UConn Health Center",
+  WTBY: "Waterbury",
+};
+
+const CAMPUSES = Object.keys(CAMPUS_MAP);
+
 function isKeyboardDevice() {
   if (typeof window === "undefined") return false;
 
@@ -109,13 +122,117 @@ function DraggableBlock({ id, name, onDelete }: BlockProps) {
   );
 }
 
+function parseTime(t: string) {
+  // expects "13:00" or "9:30"
+  const [h] = t.split(":");
+  return parseInt(h);
+}
+
+function WeeklyCalendar({ schedule }: { schedule: any[] }) {
+  const days = ["Mo", "Tu", "We", "Th", "Fr"];
+
+  const startHour = 8;
+  const endHour = 20;
+  const totalMinutes = (endHour - startHour) * 60;
+
+  // color per course
+  const getColor = (code: string) => {
+    const colors = [
+      "bg-indigo-500",
+      "bg-pink-500",
+      "bg-green-500",
+      "bg-blue-500",
+      "bg-purple-500",
+      "bg-orange-500",
+    ];
+    let hash = 0;
+    for (let i = 0; i < code.length; i++) {
+      hash += code.charCodeAt(i);
+    }
+    return colors[hash % colors.length];
+  };
+
+  return (
+    <div className="h-full flex">
+
+      {/* TIME COLUMN */}
+      <div className="w-14 pr-2 text-xs text-gray-400">
+        {Array.from({ length: endHour - startHour }).map((_, i) => (
+          <div key={i} className="h-[80px] flex items-start justify-end pr-1">
+            {startHour + i}
+          </div>
+        ))}
+      </div>
+
+      {/* DAYS */}
+      <div className="flex-1 grid grid-cols-5 gap-2 relative">
+
+        {days.map((day) => (
+          <div key={day} className="relative">
+
+            {/* Day label */}
+            <div className="text-center text-sm font-semibold mb-1 text-gray-600">
+              {day}
+            </div>
+
+            {/* Background grid */}
+            <div className="relative">
+              {Array.from({ length: endHour - startHour }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-[80px] border-t border-gray-200"
+                />
+              ))}
+
+              {/* BLOCKS */}
+              {schedule.flatMap((section, si) =>
+                section.blocks.map((block: any, bi: number) => {
+                  if (block.day !== day) return null;
+
+                  const startOffset = block.start_min - startHour * 60;
+                  const duration = block.end_min - block.start_min;
+
+                  const top = (startOffset / totalMinutes) * 100;
+                  const height = (duration / totalMinutes) * 100;
+
+                  const code = `${section.subject} ${section.catalog_number}`;
+
+                  return (
+                    <div
+                      key={`${si}-${bi}`}
+                      className={`absolute left-1 right-1 ${getColor(
+                        code
+                      )} text-white rounded-xl p-2 shadow-lg`}
+                      style={{
+                        top: `${top}%`,
+                        height: `${height}%`,
+                      }}
+                    >
+                      <div className="text-xs font-semibold leading-tight">
+                        {code}
+                      </div>
+                      <div className="text-[10px] opacity-90">
+                        {section.class_section}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [sections, setSections] = useState<any[]>([]);
   const [blocks, setBlocks] = useState<DraggableBlockData[]>([]);
   const [classesDataRaw, setClassesDataRaw] = useState<any[]>([]);
-  const [selectedSemester, setSelectedSemester] = useState<string>('');
   const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [selectedSchedule, setSelectedSchedule] = useState<any | null>(null);
   const [input, setInput] = useState("");
   const [suggestions, setSuggestions] = useState<Course[]>([]);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -132,6 +249,23 @@ export default function App() {
   });
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
+
+  const [selectedScheduleIndex, setSelectedScheduleIndex] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const SCHEDULES_PER_PAGE = 16; // 4 rows × 4 columns
+  const totalPages = Math.ceil(schedules.length / SCHEDULES_PER_PAGE);
+  const paginatedSchedules = schedules.slice(
+    (currentPage - 1) * SCHEDULES_PER_PAGE,
+    currentPage * SCHEDULES_PER_PAGE
+  );
+
+  const [selectedCampuses, setSelectedCampuses] = useState<string[]>(["STORR"]);
+  const [campusOpen, setCampusOpen] = useState(false);
+  const campusRef = useRef<HTMLDivElement>(null);
+
+  const [semesterOpen, setSemesterOpen] = useState(false);
+  const [selectedSemester, setSelectedSemester] = useState("");
+  const semesterRef = useRef<HTMLDivElement>(null);
 
   const addBlock = async (course: Course) => {
     const courseName = course.code;
@@ -160,7 +294,8 @@ export default function App() {
 
     const sectionsJson = get_sections_for_courses(
       selectedCodes,
-      classesDataRaw
+      classesDataRaw,
+      selectedCampuses
     );
 
     const sections = JSON.parse(sectionsJson);
@@ -260,7 +395,7 @@ export default function App() {
           ctx.setHasMovedSelection(true);
           ctx.setSelectedSuggestion((p: number) =>
             Math.min(p + 1, ctx.visibleSuggestions.length - 1)
-  );
+          );
         },
       },
 
@@ -291,6 +426,15 @@ export default function App() {
         },
       },
     },
+
+    blocks: {
+      i: {
+        next: "search",
+        action: (_, ctx) => {
+          ctx.searchInputRef.current?.focus();
+        },
+      },
+    }
   };
 
   // Scheduler call
@@ -495,6 +639,26 @@ export default function App() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+
+      if (campusRef.current && !campusRef.current.contains(target)) {
+        setCampusOpen(false);
+      }
+
+      if (semesterRef.current && !semesterRef.current.contains(target)) {
+        setSemesterOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -603,89 +767,175 @@ export default function App() {
       <div className="flex flex-1 overflow-hidden">
 
         {/* LEFT SIDEBAR */}
-        <div className="w-[300px] bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-hidden border-r border-gray-200">
-          {/* Search */}
-          <div className="p-6">
-            <div ref={searchRef} className="relative">
+        <div className="w-[300px] h-full bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-hidden border-r border-gray-200">
+          {/* TOP CONTENT */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Search */}
+            <div className="p-6">
+              <div ref={searchRef} className="relative">
 
-              {/* INPUT */}
-              <input
-                ref={searchInputRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                className="w-full px-4 py-3 text-base bg-white border border-gray-300 rounded-xl shadow-md
-                           focus:outline-none focus:ring-2 focus:ring-indigo-500 relative z-10"
-                placeholder="Search catalog # or title..."
-                onFocus={() => setFocusContext("search")}
-                onBlur={(e) => {
-                  // delay so click on suggestion doesn't instantly kill state
-                  setTimeout(() => {
-                    const active = document.activeElement;
-                    if (active !== searchInputRef.current) {
-                      setFocusContext("global");
-                    }
-                  }, 0);
-                }}
-              />
+                {/* INPUT */}
+                <input
+                  ref={searchInputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  className="w-full px-4 py-3 text-base bg-white border border-gray-300 rounded-xl shadow-md
+                             focus:outline-none focus:ring-2 focus:ring-indigo-500 relative z-10"
+                  placeholder="Search catalog # or title..."
+                  onFocus={() => setFocusContext("search")}
+                  onBlur={(e) => {
+                    // delay so click on suggestion doesn't instantly kill state
+                    setTimeout(() => {
+                      const active = document.activeElement;
+                      if (active !== searchInputRef.current) {
+                        setFocusContext("global");
+                      }
+                    }, 0);
+                  }}
+                />
 
-              {/* GHOST LAYER */}
-              {getGhostText() && (
-                <div className="absolute inset-0 flex items-center px-4 py-3 pointer-events-none text-base z-20">
-                  
-                  {/* invisible input text to push cursor position */}
-                  <span className="text-transparent whitespace-pre">
-                    {input}
-                  </span>
+                {/* GHOST LAYER */}
+                {getGhostText() && (
+                  <div className="absolute inset-0 flex items-center px-4 py-3 pointer-events-none text-base z-20">
+                    
+                    {/* invisible input text to push cursor position */}
+                    <span className="text-transparent whitespace-pre">
+                      {input}
+                    </span>
 
-                  {/* ghost completion */}
-                  <span className="text-gray-400 whitespace-pre">
-                    {getGhostText()}
-                  </span>
+                    {/* ghost completion */}
+                    <span className="text-gray-400 whitespace-pre">
+                      {getGhostText()}
+                    </span>
 
+                  </div>
+                )}
+
+                {/* Suggestions Dropdown */}
+                {focusContext != "global" && suggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl z-50 border p-3">
+                    {visibleSuggestions.map((course, index) => {
+                      const candidate = getEnterCandidate();
+
+                      const isSelected =
+                        hasMovedSelection
+                          ? index === selectedSuggestion
+                          : index === 0;
+
+
+                      return (
+                        <button
+                          key={index}
+
+                          className={`w-full text-left p-3 rounded-lg border text-sm transition-all duration-200
+                            ${
+                               isSelected
+                                    ? "bg-indigo-100 border-indigo-500 shadow-md"
+                                    : "bg-white text-gray-700 border-indigo-200 hover:bg-indigo-50"
+                            }
+                          `}
+                          onClick={() => addBlock(course)}
+                        >
+                          <div className="font-semibold">
+                            {course.code}
+                          </div>
+                          <div className="text-xs mt-1">
+                            {course.title}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="px-6">
+              <div className="flex gap-2">
+                {/* CAMPUS DROPDOWN */}
+                <div className="w-1/2 relative" ref={campusRef}>
+                  {/* Button */}
+                  <button
+                    onClick={() => setCampusOpen((v) => !v)}
+                    className="w-full px-3 py-2 bg-white border rounded-lg text-sm flex justify-between items-center shadow-sm"
+                  >
+                    <span>
+                      {selectedCampuses.length === 0
+                        ? "Select campus"
+                        : selectedCampuses.length === 1
+                          ? CAMPUS_MAP[selectedCampuses[0]]
+                          : `${CAMPUS_MAP[selectedCampuses[0]]}, (+${selectedCampuses.length - 1})`}
+                    </span>
+
+                    <span className="text-gray-400">▾</span>
+                  </button>
+
+                  {/* Dropdown */}
+                  {campusOpen && (
+                    <div className="absolute z-50 mt-1 w-full left-1/2 -translate-x-1/2 bg-white border rounded-lg shadow-lg p-2">
+                      {CAMPUSES.map((code) => {
+                        const isSelected = selectedCampuses.includes(code);
+
+                        return (
+                          <label
+                            key={code}
+                            className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {
+                                setSelectedCampuses((prev) => {
+                                  if (prev.includes(code)) {
+                                    return prev.filter((c) => c !== code);
+                                  }
+
+                                  // ensure first selected stays first
+                                  return [...prev, code];
+                                });
+                              }}
+                            />
+                            <span className="text-sm">
+                              {CAMPUS_MAP[code]}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              )}
+                <div className="w-1/2 relative" ref={semesterRef}>
+                  <button
+                    onClick={() => setSemesterOpen((v) => !v)}
+                    className="w-full px-3 py-2 bg-white border rounded-lg text-sm flex justify-between items-center shadow-sm"
+                  >
+                    {selectedSemester ? selectedSemester : "Semester"}
+                    <span className="text-gray-400">▾</span>
+                  </button>
 
-              {/* Suggestions Dropdown */}
-              {focusContext != "global" && suggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl z-50 border p-3">
-                  {visibleSuggestions.map((course, index) => {
-                    const candidate = getEnterCandidate();
-
-                    const isSelected =
-                      hasMovedSelection
-                        ? index === selectedSuggestion
-                        : index === 0;
-
-
-                    return (
-                      <button
-                        key={index}
-
-                        className={`w-full text-left p-3 rounded-lg border text-sm transition-all duration-200
-                          ${
-                             isSelected
-                                  ? "bg-indigo-100 border-indigo-500 shadow-md"
-                                  : "bg-white text-gray-700 border-indigo-200 hover:bg-indigo-50"
-                          }
-                        `}
-                        onClick={() => addBlock(course)}
-                      >
-                        <div className="font-semibold">
-                          {course.code}
-                        </div>
-                        <div className="text-xs mt-1">
-                          {course.title}
-                        </div>
-                      </button>
-                    );
-                  })}
+                  {semesterOpen && (
+                    <div className="absolute z-50 mt-1 w-full bg-white border rounded-lg shadow-lg p-2">
+                      {["Fall 2026", "Spring 2026", "Summer 2026"].map((sem) => (
+                        <button
+                          key={sem}
+                          onClick={() => {
+                            setSelectedSemester(sem);
+                            setSemesterOpen(false);
+                          }}
+                          className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 text-sm"
+                        >
+                          {sem}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </div>
 
           {/* Generate button */}
-          <div className="px-6">
+          <div className="p-6 border-t border-gray-200 bg-gradient-to-br from-slate-50 to-blue-50">
             <button
               type="button"
               onClick={() => runScheduler()}
@@ -697,18 +947,14 @@ export default function App() {
         </div>
 
         {/* CENTER */}
-        <div className="flex-1 p-8 bg-white z-0">
-          <div className="h-full flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-8xl mb-6">🎓</div>
-              <h2 className="text-3xl font-bold mb-4">
-                Welcome to Schedule Builder
-              </h2>
-              <p className="text-gray-600">
-                Use the sidebars to build your schedule
-              </p>
+        <div className="flex-1 bg-white p-4 overflow-hidden">
+          {!selectedSchedule ? (
+            <div className="h-full flex items-center justify-center text-gray-500">
+              Select a schedule to view it
             </div>
-          </div>
+          ) : (
+            <WeeklyCalendar schedule={selectedSchedule.sections} />
+          )}
         </div>
 
         {/* RIGHT SIDEBAR */}
@@ -718,23 +964,23 @@ export default function App() {
         >
 
           <div className="flex flex-col h-full">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">
+                Your Classes ({blocks.length})
+              </h2>
+
+              <button
+                onClick={clearBlocks}
+                className="p-2 rounded-md hover:bg-red-100 text-red-600 transition"
+                title="Clear all courses"
+              >
+                🗑️
+              </button>
+            </div>
 
             {/* TOP HALF */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="h-[60%] overflow-y-auto">
               
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">
-                  Your Schedule ({blocks.length})
-                </h2>
-
-                <button
-                  onClick={clearBlocks}
-                  className="p-2 rounded-md hover:bg-red-100 text-red-600 transition"
-                  title="Clear all courses"
-                >
-                  🗑️
-                </button>
-              </div>
 
               {blocks.length === 0 ? (
                 <div className="text-center text-gray-500 mt-10">
@@ -767,11 +1013,92 @@ export default function App() {
             </div>
 
             {/* DIVIDER */}
-            <div className="h-px bg-gray-300 my-4" />
+            <div className="border-t border-gray-300" />
 
-            {/* BOTTOM HALF (EMPTY FOR NOW) */}
-            <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
-              Bottom panel (unused)
+            {/* BOTTOM HALF */}
+            <div className="h-[40%] flex flex-col p-2">
+              {/* GRID */}
+              <div className="grid grid-cols-4 grid-rows-4 gap-2 flex-1">
+                {paginatedSchedules.map((schedule, index) => {
+                  const globalIndex = (currentPage - 1) * SCHEDULES_PER_PAGE + index;
+
+                  return (
+                    <button
+                      key={globalIndex}
+                      onClick={() => {setSelectedSchedule(schedule); console.log(selectedSchedule)}}
+                      className={`aspect-square rounded-md border text-sm font-semibold flex items-center justify-center transition
+                        ${
+                          selectedScheduleIndex === globalIndex
+                            ? "bg-indigo-600 text-white border-indigo-700"
+                            : "bg-white hover:bg-indigo-50 border-gray-300"
+                        }
+                      `}
+                    >
+                      {globalIndex + 1}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* PAGINATION */}
+              <div className="mt-2 flex items-center justify-center gap-2 text-sm">
+
+                {/* PREV */}
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-2 py-1 rounded hover:bg-gray-200 disabled:opacity-30"
+                >
+                  ←
+                </button>
+
+                {/* PAGE NUMBERS */}
+                {Array.from({ length: totalPages }).map((_, i) => {
+                  const page = i + 1;
+
+                  // Google-style truncation
+                  if (
+                    page === 1 ||
+                    page === totalPages ||
+                    Math.abs(page - currentPage) <= 1
+                  ) {
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-2 py-1 rounded ${
+                          currentPage === page
+                            ? "bg-indigo-600 text-white"
+                            : "hover:bg-gray-200"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  }
+
+                  // Ellipsis
+                  if (
+                    page === currentPage - 2 ||
+                    page === currentPage + 2
+                  ) {
+                    return <span key={page}>...</span>;
+                  }
+
+                  return null;
+                })}
+
+                {/* NEXT */}
+                <button
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(p + 1, totalPages))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="px-2 py-1 rounded hover:bg-gray-200 disabled:opacity-30"
+                >
+                  →
+                </button>
+              </div>
             </div>
 
           </div>
