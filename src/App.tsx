@@ -351,6 +351,12 @@ export default function App() {
           ctx.searchInputRef.current?.focus();
         },
       },
+
+      g: {
+        action: (_,ctx) => {
+          ctx.runScheduler();
+        },
+      },
     },
 
     search: {
@@ -452,7 +458,13 @@ export default function App() {
     const schedulesJson = generate_schedules_from_sections(sections);
 
     const schedules = JSON.parse(schedulesJson);
-    setSchedules(schedules)
+    setSchedules(schedules);
+
+    if (schedules.length > 0) {
+      setSelectedSchedule(schedules[0]);
+      setSelectedScheduleIndex(0);
+      setCurrentPage(1);
+    }
 
     console.log("Found schedules:", schedules.length);
     console.log("Schedules:", schedules);
@@ -538,6 +550,7 @@ export default function App() {
       hasMovedSelection,
       setHasMovedSelection,
       vimMode,
+      runScheduler,
     }),
 
     fsm,
@@ -889,6 +902,7 @@ export default function App() {
                                   if (prev.includes(code)) {
                                     return prev.filter((c) => c !== code);
                                   }
+                                  console.log(code);
 
                                   // ensure first selected stays first
                                   return [...prev, code];
@@ -1025,11 +1039,15 @@ export default function App() {
                   return (
                     <button
                       key={globalIndex}
-                      onClick={() => {setSelectedSchedule(schedule); console.log(selectedSchedule)}}
+                      onClick={() => {
+                        setSelectedSchedule(schedule);
+                        setSelectedScheduleIndex(globalIndex);
+                      }
+                      }
                       className={`aspect-square rounded-md border text-sm font-semibold flex items-center justify-center transition
                         ${
                           selectedScheduleIndex === globalIndex
-                            ? "bg-indigo-600 text-white border-indigo-700"
+                            ? "bg-indigo-600 text-white border-indigo-700 shadow-md"
                             : "bg-white hover:bg-indigo-50 border-gray-300"
                         }
                       `}

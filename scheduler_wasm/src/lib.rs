@@ -115,20 +115,6 @@ pub struct BlockJson {
 //
 
 #[wasm_bindgen]
-pub fn generate_schedules_wasm(
-    course_list: JsValue,
-    raw_data: JsValue,
-) -> String {
-    let course_list: Vec<String> =
-        serde_wasm_bindgen::from_value(course_list).unwrap();
-
-    let raw_data: Vec<RawCourseEntry> =
-        serde_wasm_bindgen::from_value(raw_data).unwrap();
-
-    generate_schedules(course_list, raw_data)
-}
-
-#[wasm_bindgen]
 pub fn get_sections_for_courses(
     course_list: JsValue,
     raw_data: JsValue,
@@ -184,7 +170,9 @@ fn build_sections(
     let mut lecture_map: HashMap<String, RawCourseEntry> = HashMap::new();
 
     for entry in &raw_data {
-        if !allowed_campuses.contains(&entry.campus) continue;
+        if !allowed_campuses.contains(&entry.campus) {
+            continue;
+        }
 
         let course_code = format!("{} {}", entry.subject, entry.catalog_number);
 
@@ -197,7 +185,9 @@ fn build_sections(
     // STEP 2: build sections
     // =========================
     for entry in &raw_data {
-        if !allowed_campuses.contains(&entry.campus) continue;
+        if !allowed_campuses.contains(&entry.campus) {
+            continue;
+        }
 
         let course_code = format!("{} {}", entry.subject, entry.catalog_number);
 
