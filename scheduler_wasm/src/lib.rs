@@ -26,7 +26,6 @@ pub struct Section {
     pub registration_number: String,
     pub subject: String,
     pub catalog_number: String,
-    pub class_section: String,
 
     pub academic_career: String,
     pub campus: String,
@@ -92,7 +91,6 @@ pub struct SectionJson {
     pub registration_number: String,
     pub subject: String,
     pub catalog_number: String,
-    pub class_section: String,
 
     pub campus: String,
     pub instruction_mode: String,
@@ -106,6 +104,7 @@ pub struct BlockJson {
     pub start_min: u16,
     pub end_min: u16,
     pub instructor: Option<String>,
+    pub class_section: String,
 }
 
 //
@@ -267,7 +266,6 @@ fn build_standalone_section(entry: &RawCourseEntry) -> Section {
         registration_number: entry.registration_number.clone(),
         subject: entry.subject.clone(),
         catalog_number: entry.catalog_number.clone(),
-        class_section: entry.class_section.clone(),
 
         academic_career: entry.academic_career.clone(),
         campus: entry.campus.clone(),
@@ -307,7 +305,7 @@ fn build_section_from_lab(
     // Add lecture blocks
     if let Some(mut lecture_blocks) = parse_meeting_times(
         &lecture.meeting_times,
-        &lab.class_section,
+        &lecture.class_section,
         Some(&lecture.instructor),
     ) {
         blocks.append(&mut lecture_blocks.blocks);
@@ -318,7 +316,6 @@ fn build_section_from_lab(
 
         subject: lecture.subject.clone(),
         catalog_number: lecture.catalog_number.clone(),
-        class_section: lab.class_section.clone(),
 
         academic_career: lecture.academic_career.clone(),
         campus: lecture.campus.clone(),
@@ -439,7 +436,6 @@ fn section_to_json(section: &Section) -> SectionJson {
         registration_number: section.registration_number.clone(),
         subject: section.subject.clone(),
         catalog_number: section.catalog_number.clone(),
-        class_section: section.class_section.clone(),
 
         campus: section.campus.clone(),
         instruction_mode: section.instruction_mode.clone(),
@@ -452,6 +448,7 @@ fn section_to_json(section: &Section) -> SectionJson {
                 start_min: b.start_min,
                 end_min: b.end_min,
                 instructor: b.instructor.clone(),
+                class_section: b.class_section.clone(),
             })
             .collect(),
     }

@@ -1,6 +1,6 @@
 import { useKeyboardFSM } from "./hooks/useKeyboardFSM";
 import init, { generate_schedules_from_sections, get_sections_for_courses } from "./wasm_pkg/scheduler_wasm";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, memo, useMemo } from "react";
 import {
   DndContext,
   closestCenter,
@@ -31,8 +31,17 @@ interface BlockProps {
   id: string;
   name: string;
   onDelete: (id: string) => void;
+  onEdit: (id: string) => void;
   selected?: boolean;
 }
+
+interface Professor {
+  name: string;
+  rating: number;
+  num_ratings: number;
+  link: string;
+}
+
 
 const CAMPUS_MAP: Record<string, string> = {
   STORR: "Storrs",
@@ -56,21 +65,29 @@ function isKeyboardDevice() {
   return hasFinePointer && hasHover;
 }
 
-function DraggableBlock({ id, name, onDelete, selected }: BlockProps) {
+const DraggableBlock = memo(function DraggableBlock({ id, name, onDelete, selected, onEdit }: BlockProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
-  const clampedTransform = transform
-    ? { ...transform, x: Math.min(transform.x, 0) } // allow only left drag
-    : null;
-
-  const style: React.CSSProperties = {
-    backgroundColor: transform?.x < -80 ? "#7f1d1d" : undefined,
-    transform: CSS.Transform.toString(clampedTransform),
+  // const clampedTransform = transform
+  //   ? { ...transform, x: Math.min(transform.x, 0) } // allow only left drag
+  //   : null;
+  //
+  // const style: React.CSSProperties = {
+  //   backgroundColor: transform?.x < -80 ? "#7f1d1d" : undefined,
+  //   transform: CSS.Transform.toString(clampedTransform),
+  //   transition,
+  //   opacity: isDragging ? 0.9 : 1,
+  //   zIndex: isDragging ? 999999 : 1,
+  //   position: isDragging ? "relative" : "relative",
+  //   willChange: "transform",
+  //   transition: isDragging ? undefined : transition,
+  // };
+  //
+  const style = {
+    transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.9 : 1,
     zIndex: isDragging ? 999999 : 1,
-    position: isDragging ? "relative" : "relative",
-    willChange: "transform",
   };
 
   return (
@@ -87,33 +104,44 @@ function DraggableBlock({ id, name, onDelete, selected }: BlockProps) {
         }
         cursor-grab active:cursor-grabbing
       `}
-      onMouseEnter={(e) => {
-        if (!isDragging) {
-          const btn = e.currentTarget.querySelector("button");
-          if (btn) (btn as HTMLButtonElement).style.opacity = "1";
-        }
-      }}
-      onMouseLeave={(e) => {
-        const btn = e.currentTarget.querySelector("button");
-        if (btn) (btn as HTMLButtonElement).style.opacity = "0";
-      }}
     >
       <div className="relative z-10 font-medium text-center text-sm tracking-wide">
         {name}
       </div>
       <div
         className="
+          absolute top-0 left-0 h-full w-6
+          bg-blue-500
+          rounded-l-lg
+          cursor-pointer
+          opacity-0 group-hover:opacity-100
+          transition-opacity duration-150
+          flex items-center justify-center
+          z-50
+        "
+        onClick={(e) => {
+          e.stopPropagation();
+          onEdit(id); // NEW
+        }}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-4 h-4 text-white opacity-90"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
+          <path d="M12 8a4 4 0 100 8 4 4 0 000-8zm8.94 4a7.94 7.94 0 00-.34-2l2.1-1.64-2-3.46-2.49 1a8.12 8.12 0 00-1.73-1L16 2h-4l-.48 2.9a8.12 8.12 0 00-1.73 1l-2.49-1-2 3.46 2.1 1.64a7.94 7.94 0 000 4L5.3 15.64l2 3.46 2.49-1c.53.42 1.11.77 1.73 1L12 22h4l.48-2.9c.62-.23 1.2-.58 1.73-1l2.49 1 2-3.46-2.1-1.64c.22-.64.34-1.31.34-2z"/>
+        </svg>
+    </div>
+      <div
+        className="
           absolute top-0 right-0 h-full w-6
           bg-red-500
           rounded-r-lg
           cursor-pointer
-
-          opacity-0
-          group-hover:opacity-100
+          opacity-0 group-hover:opacity-100
           transition-opacity duration-150
-
-          flex items-stretch justify-stretch
-
+          flex items-center justify-center
           z-50
         "
         onClick={(e) => {
@@ -121,23 +149,20 @@ function DraggableBlock({ id, name, onDelete, selected }: BlockProps) {
           onDelete(id);
         }}
       >
-        {/* full invisible hit surface */}
-        <div className="w-full h-full flex items-center justify-center pointer-events-none">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="w-4 h-4 text-white"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-          >
-            <path d="M9 3h6l1 2h5v2H3V5h5l1-2zm1 6h2v10h-2V9zm4 0h2v10h-2V9z" />
-          </svg>
-        </div>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-4 h-4 text-white"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
+          <path d="M9 3h6l1 2h5v2H3V5h5l1-2zm1 6h2v10h-2V9zm4 0h2v10h-2V9z" />
+        </svg>
       </div>
     </div>
   );
-}
+});
 
-function WeeklyCalendar({ schedule }: { schedule: any[] }) {
+function WeeklyCalendar({ schedule, professorMap }: { schedule: any[]; professorMap: Map<string, Professor>; }) {
   const days = ["Mo", "Tu", "We", "Th", "Fr"];
 
   const startHour = 8;
@@ -148,13 +173,13 @@ function WeeklyCalendar({ schedule }: { schedule: any[] }) {
   // color per course
   const getColor = (code: string) => {
     const colors = [
-      "bg-indigo-500",
-      "bg-pink-500",
-      "bg-green-500",
-      "bg-blue-500",
-      "bg-purple-500",
-      "bg-orange-500",
-    ];
+    "bg-indigo-700",
+    "bg-slate-700",
+    "bg-emerald-700",
+    "bg-blue-700",
+    "bg-purple-700",
+    "bg-zinc-700",
+  ];
     let hash = 0;
     for (let i = 0; i < code.length; i++) {
       hash += code.charCodeAt(i);
@@ -170,6 +195,13 @@ function WeeklyCalendar({ schedule }: { schedule: any[] }) {
 
     return `${h}:${minutes.toString().padStart(2, "0")} ${ampm}`;
   }
+  const getRatingColor = (rating: number) => {
+    if (rating >= 4.5) return "text-green-400";
+    if (rating >= 4.0) return "text-green-300";
+    if (rating >= 3.5) return "text-yellow-300";
+    if (rating >= 3.0) return "text-orange-300";
+    return "text-red-300";
+  };
 
   return (
     <div className="h-full flex items-stretch overflow-hidden">
@@ -177,8 +209,8 @@ function WeeklyCalendar({ schedule }: { schedule: any[] }) {
       {/* TIME COLUMN */}
       <div className="w-14 pr-2 text-xs text-gray-400 flex flex-col h-full">
         {Array.from({ length: hours }).map((_, i) => (
-          <div className="flex-1 flex items-start justify-end pr-1">
-            {startHour + i}
+          <div key={i} className="flex-1 flex items-start justify-end pr-1">
+            {startHour + i <= 12 ? startHour+i : startHour+i-12}
           </div>
         ))}
       </div>
@@ -212,13 +244,23 @@ function WeeklyCalendar({ schedule }: { schedule: any[] }) {
                   const duration = block.end_min - block.start_min;
 
                   const top = (startOffset / totalMinutes) * 100;
-                  const height = (duration / totalMinutes) * 100;
+                  const height = ((duration+15) / totalMinutes) * 100;
+                  const normalizeProfessorNameKey = (name: string) => {
+                    return name
+                      .trim()
+                      .replace(/\s+/g, " ")
+                      .replace(/\s*\([^)]*\)\s*$/, "") // 👈 removes trailing "(SI)", "(TA)", etc.
+                      .toLowerCase();
+                  };
 
                   const code = `${section.subject} ${section.catalog_number}`;
+                  const prof = professorMap.get(
+                    normalizeProfessorNameKey(block.instructor ?? "")
+                  );
 
                   return (
                     <div
-                      key={`${si}-${bi}`}
+                      key={`${section.subject}-${section.catalog_number}-${section.class_section}-${block.day}-${block.start_min}`}
                       className={`absolute left-1 right-1 ${getColor(
                         code
                       )} text-white rounded-xl p-2 shadow-lg`}
@@ -235,13 +277,29 @@ function WeeklyCalendar({ schedule }: { schedule: any[] }) {
 
                         {/* right: class section */}
                         <div className="text-[10px] opacity-90 whitespace-nowrap text-right">
-                          {section.class_section}
+                          {block.class_section}
                         </div>
                       </div>
 
                       {/* time below */}
                       <div className="text-[10px] mt-1 opacity-80">
                         {formatTime(block.start_min)} - {formatTime(block.end_min)}
+                      </div>
+
+                      {/*Professor data*/}
+                      <div className="text-[10px] opacity-80 w-full min-w-0 truncate flex items-center gap-1">
+                        <span className="truncate">
+                          {block.instructor ?? "TBA"}
+                        </span>
+
+                        {prof?.rating != null && (
+                          <span
+                            className={`flex items-center gap-[2px] shrink-0 ${getRatingColor(prof.rating)}`}
+                          >
+                            <span>★</span>
+                            <span>{prof.rating.toFixed(1)}</span>
+                          </span>
+                        )}
                       </div>
                     </div>
                   );
@@ -314,6 +372,21 @@ export default function App() {
   const [semesters, setSemesters] = useState<Semester[]>([]);
   const [selectedSemester, setSelectedSemester] = useState<Semester | null>(null);
 
+  const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
+
+  const [professors, setProfessors] = useState<Professor[]>([]);
+
+
+  const openBlockEditor = (id: string) => {
+    setEditingBlockId(id);
+  };
+
+  const closeBlockEditor = () => {
+    setEditingBlockId(null);
+  };
+
+  const [sectionSelections, setSectionSelections] = useState<Record<string, Set<string>>>({});
+
   const [lastKey, setLastKey] = useState<string | null>(null);
 
   const addBlock = async (course: Course) => {
@@ -348,6 +421,7 @@ export default function App() {
     );
 
     const sections = JSON.parse(sectionsJson);
+    initializeSelections(sections);
 
     console.log("Updated Sections:", sections);
 
@@ -391,6 +465,32 @@ export default function App() {
     focusContext === "search"
       ? 0
       : selectedSuggestion;
+
+  const normalizeProfessorName = (name: string) => {
+    return name
+      .trim()              // remove leading/trailing spaces
+      .replace(/\s+/g, " "); // collapse multiple spaces into one
+  };
+  const normalizeProfessorNameKey = (name: string) => {
+    return name
+      .trim()
+      .replace(/\s+/g, " ")
+      .toLowerCase();
+  };
+
+  const professorMap = useMemo(() => {
+    const map = new Map<string, Professor>();
+
+    for (const prof of professors) {
+      map.set(normalizeProfessorNameKey(prof.name), {
+        ...prof,
+        name: normalizeProfessorName(prof.name),
+      });
+    }
+
+    return map;
+  }, [professors]);
+
 
   const fsm = {
     global: {
@@ -679,7 +779,16 @@ export default function App() {
     // =========================
     // STEP 1: GENERATE SCHEDULES
     // =========================
-    const schedulesJson = generate_schedules_from_sections(sections);
+    const filtered = sections.filter((s) => {
+      const code = `${s.subject} ${s.catalog_number}`;
+      return sectionSelections[code]?.has(s.class_section);
+    });
+
+    const schedulesJson = generate_schedules_from_sections(filtered);
+    if (filtered.length === 0) {
+      console.log("No valid sections selected");
+      return;
+    }
 
     const schedules = JSON.parse(schedulesJson);
     setSchedules(schedules);
@@ -785,6 +894,8 @@ export default function App() {
     });
   };
 
+
+
   useKeyboardFSM({
     state: focusContext,
     setState: setFocusContext,
@@ -845,6 +956,12 @@ export default function App() {
 
         buildCourses(classesData, coursesData);
         setClassesDataRaw(classesData);
+
+        const professorsData = await fetch(
+          "/uconn-schedule-builder/professors.json"
+        ).then(res => res.json());
+
+        setProfessors(professorsData);
 
       } catch (err) {
         console.error("Error loading data:", err);
@@ -968,6 +1085,22 @@ export default function App() {
     loadClasses();
   }, [selectedSemester]);
 
+  const getBlockCode = (id: string) => {
+    return blocks.find(b => b.id === id)?.code;
+  };
+
+  const initializeSelections = (sections: any[]) => {
+    const map: Record<string, Set<string>> = {};
+
+    sections.forEach((s) => {
+      const key = `${s.subject} ${s.catalog_number}`;
+      if (!map[key]) map[key] = new Set();
+      map[key].add(s.class_section);
+    });
+
+    setSectionSelections(map);
+  };
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -993,7 +1126,11 @@ export default function App() {
     if (over && active.id !== over.id) {
       const oldIndex = blocks.findIndex((b) => b.id === active.id);
       const newIndex = blocks.findIndex((b) => b.id === over.id);
-      setBlocks(arrayMove(blocks, oldIndex, newIndex));
+      setBlocks(prev => {
+        const oldIndex = prev.findIndex(b => b.id === active.id);
+        const newIndex = prev.findIndex(b => b.id === over.id);
+        return arrayMove(prev, oldIndex, newIndex);
+      });
     }
   };
 
@@ -1008,6 +1145,7 @@ export default function App() {
     );
 
     const sections = JSON.parse(sectionsJson);
+    initializeSelections(sections);
     setSections(sections);
   };
 
@@ -1327,7 +1465,7 @@ export default function App() {
             </div>
           ) : (
             <div className="flex-1 min-h-0 overflow-hidden">
-              <WeeklyCalendar schedule={selectedSchedule.sections} />
+              <WeeklyCalendar schedule={selectedSchedule.sections}  professorMap={professorMap} />
             </div>
           )}
         </div>
@@ -1335,7 +1473,6 @@ export default function App() {
         {/* RIGHT SIDEBAR */}
         <div 
           className="w-[300px] bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-0 flex flex-col overflow-y-auto overflow-x-clip p-6 border-l border-gray-200"
-          onClick={() => setFocusContext("blocks")}
         >
 
           <div className="flex flex-col h-full">
@@ -1366,6 +1503,7 @@ export default function App() {
                   sensors={sensors}
                   collisionDetection={closestCenter}
                   onDragEnd={handleDragEnd}
+                  autoScroll={false}
                 >
                   <SortableContext
                     items={blocks.map((b) => b.id)}
@@ -1378,6 +1516,7 @@ export default function App() {
                           id={block.id}
                           name={block.code}
                           onDelete={removeBlock}
+                          onEdit={openBlockEditor}
                           selected={focusContext === "blocks" && index === selectedBlockIndex}
                         />
                       ))}
@@ -1484,6 +1623,56 @@ export default function App() {
           </div>
         </div>
       </div>
+      {editingBlockId && (
+      <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999]">
+        <div className="bg-white w-[1000px] max-h-[90vh] overflow-y-auto rounded-xl shadow-xl p-4">
+
+          <div className="flex justify-between mb-4">
+            <h2 className="font-semibold text-lg">{getBlockCode(editingBlockId)}</h2>
+            <button onClick={closeBlockEditor}>✕</button>
+          </div>
+
+          {sections
+            .filter(s => `${s.subject} ${s.catalog_number}` === getBlockCode(editingBlockId))
+            .map((section, i) => {
+              const code = `${section.subject} ${section.catalog_number}`;
+              const isChecked =
+                sectionSelections[code]?.has(section.class_section);
+
+              return (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 p-2 border-b"
+                >
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => {
+                      setSectionSelections(prev => {
+                        const next = { ...prev };
+                        const set = new Set(next[code]);
+
+                        if (set.has(section.registration_number)) {
+                          set.delete(section.registration_number);
+                        } else {
+                          set.add(section.registration_number);
+                        }
+
+                        next[code] = set;
+                        return next;
+                      });
+                    }}
+                  />
+
+                  <div className="text-sm">
+                    {section.registration_number} • {section.blocks[0].instructor ?? "TBA"}
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+      </div>
+    )}
     </div>
   );
 }
