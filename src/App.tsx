@@ -1,4 +1,5 @@
 import { useKeyboardFSM } from "./hooks/useKeyboardFSM";
+import type { FSM } from "./hooks/useKeyboardFSM";
 import init, { generate_schedules_from_sections, get_sections_for_courses } from "./wasm_pkg/scheduler_wasm";
 import { useEffect, useState, useRef, useCallback, memo, useMemo } from "react";
 import {
@@ -40,6 +41,15 @@ interface Professor {
   rating: number;
   num_ratings: number;
   link: string;
+}
+
+interface Room {
+  class: string;
+  room: string;
+}
+
+interface Schedule {
+  sections: any[];
 }
 
 
@@ -162,7 +172,7 @@ const DraggableBlock = memo(function DraggableBlock({ id, name, onDelete, select
   );
 });
 
-function WeeklyCalendar({ schedule, professorMap }: { schedule: any[]; professorMap: Map<string, Professor>; }) {
+function WeeklyCalendar({ schedule, professorMap, roomMap }: { schedule: any[]; professorMap: Map<string, Professor>; }) {
   const days = ["Mo", "Tu", "We", "Th", "Fr"];
 
   const startHour = 8;
@@ -236,8 +246,8 @@ function WeeklyCalendar({ schedule, professorMap }: { schedule: any[]; professor
               ))}
 
               {/* BLOCKS */}
-              {schedule.flatMap((section, si) =>
-                section.blocks.map((block: any, bi: number) => {
+              {schedule.flatMap((section) =>
+                section.blocks.map((block: any) => {
                   if (block.day !== day) return null;
 
                   const startOffset = block.start_min - startHour * 60;
@@ -257,6 +267,7 @@ function WeeklyCalendar({ schedule, professorMap }: { schedule: any[]; professor
                   const prof = professorMap.get(
                     normalizeProfessorNameKey(block.instructor ?? "")
                   );
+                  const room = roomMap.get(section.registration_number);
 
                   return (
                     <div
@@ -283,7 +294,7 @@ function WeeklyCalendar({ schedule, professorMap }: { schedule: any[]; professor
 
                       {/* time below */}
                       <div className="text-[10px] mt-1 opacity-80">
-                        {formatTime(block.start_min)} - {formatTime(block.end_min)}
+                        {formatTime(block.start_min)} - {formatTime(block.end_min)}{room ? ", " : ""} {room.trim() === "Pending Dept Room Assignment" ? "TBA" : room}
                       </div>
 
                       {/*Professor data*/}
@@ -325,8 +336,8 @@ export default function App() {
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [selectedSuggestion, setSelectedSuggestion] = useState(0);
-  type FocusContext = "global" | "search" | "suggestions" | "blocks" | "schedules";
-  const [focusContext, setFocusContext] = useState<FocusContext>("global");
+  type State = "global" | "search" | "suggestions" | "blocks" | "schedules";
+  const [state, setState] = useState<State>("global");
   const [hasMovedSelection, setHasMovedSelection] = useState(false);
   const [vimMode, setVimMode] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -375,7 +386,39 @@ export default function App() {
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
 
   const [professors, setProfessors] = useState<Professor[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const norm = (x: any) => String(x).trim();
+  const baseRoomMap = new Map<string, string>();
 
+  for (const r of rooms) {
+    baseRoomMap.set(norm(r.class), r.room);
+  }
+  const buildRoomMap = (rooms: Room[]) => {
+    const map = new Map<string, string>();
+
+    const normalized = rooms.map(r => ({
+      reg: Number(r.class),
+      room: r.room,
+    }));
+
+    // 1. real mappings
+    for (const r of normalized) {
+      map.set(String(r.reg), r.room);
+    }
+
+    // 2. infer lecture ONLY when pattern is valid
+    for (const r of normalized) {
+      const lectureReg = r.reg - 1;
+
+      if (!map.has(String(lectureReg))) {
+        map.set(String(lectureReg), r.room);
+      }
+    }
+
+    return map;
+  };
+
+  const roomMap = useMemo(() => buildRoomMap(rooms), [rooms]);
 
   const openBlockEditor = (id: string) => {
     setEditingBlockId(id);
@@ -386,8 +429,6 @@ export default function App() {
   };
 
   const [sectionSelections, setSectionSelections] = useState<Record<string, Set<string>>>({});
-
-  const [lastKey, setLastKey] = useState<string | null>(null);
 
   const addBlock = async (course: Course) => {
     const courseName = course.code;
@@ -428,7 +469,7 @@ export default function App() {
     setSections(sections);
     setInput("");
     setSuggestions([]);
-    setFocusContext("search");
+    setState("search");
     setSelectedSuggestion(0);
 
     // optional but strongly recommended
@@ -444,12 +485,6 @@ export default function App() {
 
     if (available.length === 0) return;
 
-    // clamp selection to valid range
-    const index = Math.min(
-      selectedSuggestion,
-      available.length - 1
-    );
-
     const course = visibleSuggestions[selectedSuggestion];
 
     if (!course) return;
@@ -460,11 +495,6 @@ export default function App() {
   const visibleSuggestions = suggestions.filter(
     (c) => !blocks.some((b) => b.code === c.code)
   );
-
-  const effectiveSelectedSuggestion =
-    focusContext === "search"
-      ? 0
-      : selectedSuggestion;
 
   const normalizeProfessorName = (name: string) => {
     return name
@@ -496,20 +526,20 @@ export default function App() {
     global: {
       i: {
         next: "search",
-        action: (_, ctx) => {
+        action: (_: any, ctx: any) => {
           ctx.searchInputRef.current?.focus();
         },
       },
 
       g: {
-        action: (_,ctx) => {
+        action: (_: any, ctx: any) => {
           ctx.runScheduler();
         },
       },
 
       b: {
         next: "blocks",
-        action: (_, ctx) => {
+        action: (_: any, ctx: any) => {
           if (!ctx.blocks || ctx.blocks.length === 0) return;
 
           // optional: mark selection system if you have one later
@@ -528,12 +558,12 @@ export default function App() {
 
     search: {
       Enter: {
-        action: (_, ctx) => ctx.handleEnter(),
+        action: (_: any, ctx: any) => ctx.handleEnter(),
       },
 
       ArrowDown: {
         next: "suggestions",
-        action: (_, ctx) => {
+        action: (_: any, ctx: any) => {
           ctx.setHasMovedSelection(true);
           ctx.setSelectedSuggestion(
             Math.min(1, ctx.visibleSuggestions.length - 1)
@@ -543,7 +573,7 @@ export default function App() {
 
       Tab: {
         next: "suggestions",
-        action: (_, ctx) => {
+        action: (_: any, ctx: any) => {
           ctx.setSelectedSuggestion(
             Math.min(0, ctx.visibleSuggestions.length - 1)
           );
@@ -553,18 +583,18 @@ export default function App() {
 
     suggestions: {
       Enter: {
-        action: (_, ctx) => ctx.handleEnter(),
+        action: (_: any, ctx: any) => ctx.handleEnter(),
       },
 
       Escape: {
         next: "search",
-        action: (_, ctx) => {
+        action: (_: any, ctx: any) => {
           ctx.searchInputRef.current?.focus();
         },
       },
 
       j: {
-        action: (_, ctx) => {
+        action: (_: any, ctx: any) => {
           ctx.setHasMovedSelection(true);
           ctx.setSelectedSuggestion((p: number) =>
             Math.min(p + 1, ctx.visibleSuggestions.length - 1)
@@ -573,7 +603,7 @@ export default function App() {
       },
 
       k: {
-        action: (_, ctx) => {
+        action: (_: any, ctx: any) => {
           ctx.setHasMovedSelection(true);
           ctx.setSelectedSuggestion((p: number) =>
             Math.max(p - 1, 0)
@@ -582,7 +612,7 @@ export default function App() {
       },
 
       ArrowDown: {
-        action: (_, ctx) => {
+        action: (_: any, ctx: any) => {
           ctx.setHasMovedSelection(true);
           ctx.setSelectedSuggestion((p: number) =>
             Math.min(p + 1, ctx.visibleSuggestions.length - 1)
@@ -591,7 +621,7 @@ export default function App() {
       },
 
       ArrowUp: {
-        action: (_, ctx) => {
+        action: (_: any, ctx: any) => {
           ctx.setHasMovedSelection(true);
           ctx.setSelectedSuggestion((p: number) =>
             Math.max(p - 1, 0)
@@ -603,13 +633,13 @@ export default function App() {
     blocks: {
       i: {
         next: "search",
-        action: (_, ctx) => {
+        action: (_: any, ctx: any) => {
           ctx.searchInputRef.current?.focus();
         },
       },
 
       j: {
-        action: (_, ctx) => {
+        action: (_: any, ctx: any) => {
           ctx.setSelectedBlockIndex((i: number) =>
             Math.min(i + 1, ctx.blocks.length - 1)
           );
@@ -617,7 +647,7 @@ export default function App() {
       },
 
       k: {
-        action: (_, ctx) => {
+        action: (_: any, ctx: any) => {
           ctx.setSelectedBlockIndex((i: number) =>
             Math.max(i - 1, 0)
           );
@@ -625,7 +655,7 @@ export default function App() {
       },
 
       x: {
-        action: (_, ctx) => {
+        action: (_: any, ctx: any) => {
           const idx = ctx.selectedBlockIndex;
           const block = ctx.blocks[idx];
 
@@ -641,19 +671,19 @@ export default function App() {
       },
 
       J: {
-        action: (_,ctx) => {
+        action: (_: any, ctx: any) => {
           ctx.onMoveBlockDown?.();
         }
       },
 
       K: {
-        action: (_,ctx) => {
+        action: (_: any, ctx: any) => {
           ctx.onMoveBlockUp?.();
         }
       },
       
       g: {
-        action: (_,ctx) => {
+        action: (_: any, ctx: any) => {
           ctx.runScheduler();
         },
       },
@@ -662,13 +692,13 @@ export default function App() {
     schedules: {
       i: {
         next: "search",
-        action: (_, ctx) => {
+        action: (_: any, ctx: any) => {
           ctx.searchInputRef.current?.focus();
         },
       },
  
       j: {
-        action: (_, ctx) => {
+        action: (_: any, ctx: any) => {
           ctx.setSelectedScheduleIndex((i: number | null) => {
             const pageStart = (ctx.currentPage - 1) * PAGE_SIZE;
             const local = i === null ? 0 : i - pageStart;
@@ -685,7 +715,7 @@ export default function App() {
       },
 
       k: {
-        action: (_, ctx) => {
+        action: (_: any, ctx: any) => {
           ctx.setSelectedScheduleIndex((i: number | null) => {
             const pageStart = (ctx.currentPage - 1) * PAGE_SIZE;
             const local = i === null ? 0 : i - pageStart;
@@ -702,7 +732,7 @@ export default function App() {
       },
 
       h: {
-        action: (_, ctx) => {
+        action: (_: any, ctx: any) => {
           ctx.setSelectedScheduleIndex((i: number | null) => {
             const pageStart = (ctx.currentPage - 1) * PAGE_SIZE;
             const local = i === null ? 0 : i - pageStart;
@@ -719,7 +749,7 @@ export default function App() {
       },
 
       l: {
-        action: (_, ctx) => {
+        action: (_: any, ctx: any) => {
           ctx.setSelectedScheduleIndex((i: number | null) => {
             const pageStart = (ctx.currentPage - 1) * PAGE_SIZE;
             const local = i === null ? 0 : i - pageStart;
@@ -736,7 +766,7 @@ export default function App() {
       },
 
       H: {
-        action: (_,ctx) => {
+        action: (_: any, ctx: any) => {
           ctx.setCurrentPage((i: number) =>
             Math.max(i-1, 1)
           )
@@ -744,7 +774,7 @@ export default function App() {
       },
 
       L: {
-        action: (_,ctx) => {
+        action: (_: any, ctx: any) => {
           ctx.setCurrentPage((i: number) =>
             Math.min(i+1, ctx.totalPages)
           )
@@ -752,7 +782,7 @@ export default function App() {
       },
 
       Enter: {
-        action: (_, ctx) => {
+        action: (_: any, ctx: any) => {
           const i = ctx.selectedScheduleIndex;
 
           if (i === null) return;
@@ -765,7 +795,7 @@ export default function App() {
         },
       },
     }
-  };
+  } as const satisfies FSM;
 
   // Scheduler call
   const runScheduler = async () => {
@@ -839,7 +869,7 @@ export default function App() {
     const query = input.toLowerCase().trim();
 
     const baseCourse =
-      focusContext === "suggestions"
+      state === "suggestions"
         ? visibleSuggestions[selectedSuggestion]
         : visibleSuggestions[0];
 
@@ -856,14 +886,6 @@ export default function App() {
     }
 
     return code.slice(normalizedInput.length);
-  };
-
-  const getEnterCandidate = (): Course | undefined => {
-    if (suggestions.length === 0) return undefined;
-
-    return suggestions.find(
-      (c) => !blocks.some((b) => b.code === c.code)
-    );
   };
 
   const moveBlockDown = () => {
@@ -897,8 +919,8 @@ export default function App() {
 
 
   useKeyboardFSM({
-    state: focusContext,
-    setState: setFocusContext,
+    state: state,
+    setState: setState,
 
     inputRef: searchInputRef,
 
@@ -932,7 +954,7 @@ export default function App() {
       selectedScheduleIndex,
     }),
 
-    fsm,
+    fsm: fsm as FSM,
   });
 
   useEffect(() => {
@@ -947,15 +969,18 @@ export default function App() {
         const defaultSemester = semestersData[0];
         setSelectedSemester(defaultSemester);
 
-        const [classesData, coursesData] = await Promise.all([
+        const [classesData, coursesData, roomsData] = await Promise.all([
           fetch(`/uconn-schedule-builder/semesters/${defaultSemester.value}/classes.json`)
             .then(res => res.json()),
           fetch("/uconn-schedule-builder/courses.json")
+            .then(res => res.json()),
+          fetch(`/uconn-schedule-builder/semesters/${defaultSemester.value}/rooms.json`)
             .then(res => res.json()),
         ]);
 
         buildCourses(classesData, coursesData);
         setClassesDataRaw(classesData);
+        setRooms(roomsData);
 
         const professorsData = await fetch(
           "/uconn-schedule-builder/professors.json"
@@ -1067,15 +1092,18 @@ export default function App() {
 
     const loadClasses = async () => {
       try {
-        const [classesData, coursesData] = await Promise.all([
+        const [classesData, coursesData, roomsData] = await Promise.all([
           fetch(`/uconn-schedule-builder/semesters/${selectedSemester.value}/classes.json`)
             .then(res => res.json()),
           fetch("/uconn-schedule-builder/courses.json")
+            .then(res => res.json()),
+          fetch(`/uconn-schedule-builder/semesters/${selectedSemester.value}/rooms.json`)
             .then(res => res.json()),
         ]);
 
         buildCourses(classesData, coursesData);
         setClassesDataRaw(classesData);
+        setRooms(roomsData);
 
       } catch (err) {
         console.error("Error loading semester data:", err);
@@ -1124,8 +1152,6 @@ export default function App() {
 
     // 🔄 NORMAL SORTING
     if (over && active.id !== over.id) {
-      const oldIndex = blocks.findIndex((b) => b.id === active.id);
-      const newIndex = blocks.findIndex((b) => b.id === over.id);
       setBlocks(prev => {
         const oldIndex = prev.findIndex(b => b.id === active.id);
         const newIndex = prev.findIndex(b => b.id === over.id);
@@ -1159,31 +1185,6 @@ export default function App() {
   const clearBlocks = () => {
     setBlocks([]);
     setSections([]);
-  };
-
-  const highlightMatch = (text: string, query: string) => {
-    const lowerText = text.toLowerCase();
-    const lowerQuery = query.toLowerCase();
-    const index = lowerText.indexOf(lowerQuery);
-    
-    if (index === -1) return text;
-    
-    return (
-      <>
-        {text.slice(0, index)}
-        <span style={{ backgroundColor: "yellow", fontWeight: "bold" }}>
-          {text.slice(index, index + query.length)}
-        </span>
-        {text.slice(index + query.length)}
-      </>
-    );
-  };
-
-
-  const goGlobal = () => {
-    setFocusContext("global");
-    setSelectedSuggestion(0);
-    searchInputRef.current?.blur();
   };
 
   const buildCourses = (classesData: any[], coursesData: any[]) => {
@@ -1221,7 +1222,7 @@ export default function App() {
           <div className="flex items-center" ref={settingsRef}>
             {vimMode && (
               <div className="mr-3 text-xs px-2 py-1 rounded-md bg-gray-100 text-gray-600 font-mono border border-gray-700 tracking-widest">
-                -- {vimFocusLabelMap[focusContext] ?? focusContext} --
+                -- {vimFocusLabelMap[state] ?? state} --
               </div>
             )}
             <button
@@ -1275,13 +1276,13 @@ export default function App() {
                   className="w-full px-4 py-3 text-base bg-white border border-gray-300 rounded-xl shadow-md
                              focus:outline-none focus:ring-2 focus:ring-blue-900 relative z-10"
                   placeholder="Search catalog # or title..."
-                  onFocus={() => setFocusContext("search")}
-                  onBlur={(e) => {
+                  onFocus={() => setState("search")}
+                  onBlur={() => {
                     // delay so click on suggestion doesn't instantly kill state
                     setTimeout(() => {
                       const active = document.activeElement;
                       if (active !== searchInputRef.current) {
-                        setFocusContext("global");
+                        setState("global");
                       }
                     }, 0);
                   }}
@@ -1305,11 +1306,9 @@ export default function App() {
                 )}
 
                 {/* Suggestions Dropdown */}
-                {focusContext != "global" && suggestions.length > 0 && (
+                {state != "global" && suggestions.length > 0 && (
                   <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl z-50 border p-3">
                     {visibleSuggestions.map((course, index) => {
-                      const candidate = getEnterCandidate();
-
                       const isSelected =
                         hasMovedSelection
                           ? index === selectedSuggestion
@@ -1465,7 +1464,7 @@ export default function App() {
             </div>
           ) : (
             <div className="flex-1 min-h-0 overflow-hidden">
-              <WeeklyCalendar schedule={selectedSchedule.sections}  professorMap={professorMap} />
+              <WeeklyCalendar schedule={selectedSchedule.sections}  professorMap={professorMap} roomMap={roomMap} />
             </div>
           )}
         </div>
@@ -1517,7 +1516,7 @@ export default function App() {
                           name={block.code}
                           onDelete={removeBlock}
                           onEdit={openBlockEditor}
-                          selected={focusContext === "blocks" && index === selectedBlockIndex}
+                          selected={state === "blocks" && index === selectedBlockIndex}
                         />
                       ))}
                     </div>

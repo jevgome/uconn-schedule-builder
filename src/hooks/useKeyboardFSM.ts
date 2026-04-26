@@ -1,22 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 
-type State = "global" | "search" | "suggestions" | "blocks";
+export type State = "global" | "search" | "suggestions" | "blocks" | "schedules";
 
-type FSMAction = (e: KeyboardEvent, ctx: any) => void;
+export type FSMRule = {
+  next?: State;
+  action?: (event: any, ctx: any) => void;
+};
 
-type FSMRule =
-  | { next?: State; action?: FSMAction }
-  | FSMAction;
+export type FSM = Record<State, Record<string, FSMRule>>;
 
-type FSM = Record<State, Record<string, FSMRule>>;
-
-interface Props {
+type Props = {
+  inputRef?: React.RefObject<HTMLInputElement | null>;
+  fsm: FSM;
   state: State;
   setState: (s: State) => void;
-  fsm: FSM;
   getContext: () => any;
-  inputRef?: React.RefObject<HTMLElement>;
-}
+};
 
 export function useKeyboardFSM({
   state,
@@ -25,7 +24,7 @@ export function useKeyboardFSM({
   getContext,
   inputRef,
 }: Props) {
-  const stateRef = useRef(state);
+  const stateRef = useRef<State>(state);
   const ctxRef = useRef<any>(null);
   const [lastKey, setLastKey] = useState<string | null>(null);
 
@@ -68,7 +67,15 @@ export function useKeyboardFSM({
 
       if (!ctx.vimMode && !alwaysAllow) return;
 
-      const currentState = stateRef.current;
+      stateRef.current = state;
+
+      const currentState: State = stateRef.current;
+
+      const stateMap: Record<string, FSMRule> =
+        fsm[currentState] as Record<string, FSMRule>;
+
+      const rule: FSMRule | undefined = stateMap[key];
+
       if (e.key === "Tab") {
         e.preventDefault();
       }
@@ -97,20 +104,9 @@ export function useKeyboardFSM({
         return;
       }
 
-      // Normalize key
-
-      const stateMap = fsm[currentState];
-      const rule = stateMap?.[key];
-
-
       // 1. FSM rule exists
       if (rule) {
         e.preventDefault();
-
-        if (typeof rule === "function") {
-          rule(e, ctx);
-          return;
-        }
 
         rule.action?.(e, ctx);
         if (rule.next) setState(rule.next);
