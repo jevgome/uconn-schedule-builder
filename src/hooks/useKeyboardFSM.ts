@@ -40,7 +40,20 @@ export function useKeyboardFSM({
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if(!getContext().vimMode) return;
+      const key = e.key === " " ? "Space" : e.key;
+      const alwaysEnabledKeys = new Set([
+        "Enter",
+        "ArrowUp",
+        "ArrowDown",
+      ]);
+
+      const ctx = ctxRef.current;
+
+      const alwaysAllow =
+        alwaysEnabledKeys.has(e.key) || alwaysEnabledKeys.has(key);
+
+      if (!ctx.vimMode && !alwaysAllow) return;
+
       const currentState = stateRef.current;
       if (e.key === "Tab") {
         e.preventDefault();
@@ -71,12 +84,10 @@ export function useKeyboardFSM({
       }
 
       // Normalize key
-      const key = e.key === " " ? "Space" : e.key;
 
       const stateMap = fsm[currentState];
       const rule = stateMap?.[key];
 
-      const ctx = ctxRef.current;
 
       // 1. FSM rule exists
       if (rule) {
