@@ -200,10 +200,10 @@ function WeeklyCalendar({ schedule, professorMap, roomMap }: { schedule: any[]; 
   function formatTime(min: number) {
     const hours = Math.floor(min / 60);
     const minutes = min % 60;
-    const ampm = hours >= 12 ? "PM" : "AM";
+    const ampm = hours >= 12 ? "P" : "A";
     const h = hours % 12 === 0 ? 12 : hours % 12;
 
-    return `${h}:${minutes.toString().padStart(2, "0")} ${ampm}`;
+    return `${h}:${minutes.toString().padStart(2, "0")}`;
   }
   const getRatingColor = (rating: number) => {
     if (rating >= 4.5) return "text-green-400";
@@ -294,7 +294,7 @@ function WeeklyCalendar({ schedule, professorMap, roomMap }: { schedule: any[]; 
 
                       {/* time below */}
                       <div className="text-[10px] mt-1 opacity-80">
-                        {formatTime(block.start_min)} - {formatTime(block.end_min)}{room ? ", " : ""} {room.trim() === "Pending Dept Room Assignment" ? "TBA" : room}
+                        {formatTime(block.start_min)} - {formatTime(block.end_min)}{room ? ", " : ""} {room.trim() === "Pending Dept Room Assignment" ? "Room TBA" : room}
                       </div>
 
                       {/*Professor data*/}
@@ -326,6 +326,7 @@ function WeeklyCalendar({ schedule, professorMap, roomMap }: { schedule: any[]; 
 
 export default function App() {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [coursesDataRaw, setCoursesDataRaw] = useState<any[]>([]);
   const [sections, setSections] = useState<any[]>([]);
   const [blocks, setBlocks] = useState<DraggableBlockData[]>([]);
   const [classesDataRaw, setClassesDataRaw] = useState<any[]>([]);
@@ -520,7 +521,34 @@ export default function App() {
 
     return map;
   }, [professors]);
+  
+  const creditsMap = useMemo(() => {
+    const map = new Map<string, number>();
 
+    for (const c of coursesDataRaw) {
+      const key = `${c.course} ${c.catalog_number}`;
+      map.set(key, c.num_credits);
+    }
+
+    return map;
+  }, [coursesDataRaw]);
+
+  const totalCredits = useMemo(() => {
+    if (!selectedSchedule?.sections) return 0;
+
+    const seen = new Set<string>();
+    let total = 0;
+
+    for (const s of selectedSchedule.sections) {
+      const key = `${s.subject} ${s.catalog_number}`;
+
+      seen.add(key);
+
+      total += Number(creditsMap.get(key)) ?? 0;
+    }
+
+    return total;
+  }, [selectedSchedule, creditsMap]);
 
   const fsm = {
     global: {
@@ -978,6 +1006,7 @@ export default function App() {
             .then(res => res.json()),
         ]);
 
+        setCoursesDataRaw(coursesData);
         buildCourses(classesData, coursesData);
         setClassesDataRaw(classesData);
         setRooms(roomsData);
@@ -1214,47 +1243,45 @@ export default function App() {
   return (
     <div className="h-screen flex flex-col bg-gray-100 relative z-0">
       {/* HEADER */}
-      <div className="h-14 w-full bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm">
+      <div className="relative h-14 w-full bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm">
         <div className="font-bold text-lg text-gray-800">
           UConn Schedule Builder
         </div>
-        <div className="relative">
-          <div className="flex items-center" ref={settingsRef}>
-            {vimMode && (
-              <div className="mr-3 text-xs px-2 py-1 rounded-md bg-gray-100 text-gray-600 font-mono border border-gray-700 tracking-widest">
-                -- {vimFocusLabelMap[state] ?? state} --
-              </div>
-            )}
-            <button
-              onClick={() => setSettingsOpen(v => !v)}
-              className="px-3 py-1 rounded-md hover:bg-gray-100"
-            >
-              Settings ⚙️
-            </button>
+        <div className="relative flex items-center" ref={settingsRef}>
+          {vimMode && (
+            <div className="mr-3 text-xs px-2 py-1 rounded-md bg-gray-100 text-gray-600 font-mono border border-gray-700 tracking-widest">
+              -- {vimFocusLabelMap[state] ?? state} --
+            </div>
+          )}
+          <button
+            onClick={() => setSettingsOpen(v => !v)}
+            className="px-3 py-1 rounded-md hover:bg-gray-100"
+          >
+            Settings ⚙️
+          </button>
 
-            {settingsOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg p-3 z-50">
-                
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Vim mode</span>
+          {settingsOpen && (
+            <div className="absolute right-0 top-full mt-2 w-48 bg-white border rounded-lg shadow-lg p-3 z-[9999]">
+              
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Vim mode</span>
 
-                  <button
-                    onClick={() => setVimMode(v => !v)}
-                    className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors duration-200 ${
-                      vimMode ? "bg-blue-950" : "bg-gray-300"
+                <button
+                  onClick={() => setVimMode(v => !v)}
+                  className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors duration-200 ${
+                    vimMode ? "bg-blue-950" : "bg-gray-300"
+                  }`}
+                >
+                  <div
+                    className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-200 ${
+                      vimMode ? "translate-x-4" : "translate-x-0"
                     }`}
-                  >
-                    <div
-                      className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-200 ${
-                        vimMode ? "translate-x-4" : "translate-x-0"
-                      }`}
-                    />
-                  </button>
-                </div>
-
+                  />
+                </button>
               </div>
-            )}
-          </div>
+
+            </div>
+          )}
         </div>
       </div> {/* end header */}
 
@@ -1452,7 +1479,7 @@ export default function App() {
 
             {selectedSchedule && (
               <div className="text-xs text-gray-500">
-                {selectedSchedule.sections?.length ?? 0} sections
+                {selectedSchedule.sections?.length ?? 0} sections • {totalCredits} credits
               </div>
             )}
           </div>
