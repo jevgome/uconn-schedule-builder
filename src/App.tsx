@@ -1310,7 +1310,7 @@ export default function App() {
             <div className="text-sm font-semibold text-gray-700">
               {selectedScheduleIndex !== null
                 ? `Schedule ${selectedScheduleIndex + 1} / ${schedules.length}`
-                : "No schedule selected"}
+                : ""}
             </div>
 
             {selectedSchedule && (

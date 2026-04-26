@@ -1,6 +1,7 @@
 - Section view
 - Filter classes
 - Room distances
+- Dark Mode (?)
 
 # Future Stuff:
 - Gen ed finder
