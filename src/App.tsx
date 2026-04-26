@@ -142,7 +142,8 @@ function WeeklyCalendar({ schedule }: { schedule: any[] }) {
 
   const startHour = 8;
   const endHour = 20;
-  const totalMinutes = (endHour - startHour) * 60;
+  const hours = endHour-startHour
+  const totalMinutes = hours* 60;
 
   // color per course
   const getColor = (code: string) => {
@@ -171,12 +172,12 @@ function WeeklyCalendar({ schedule }: { schedule: any[] }) {
   }
 
   return (
-    <div className="h-full flex">
+    <div className="h-full flex items-stretch overflow-hidden">
 
       {/* TIME COLUMN */}
-      <div className="w-14 pr-2 text-xs text-gray-400">
-        {Array.from({ length: endHour - startHour }).map((_, i) => (
-          <div key={i} className="h-[80px] flex items-start justify-end pr-1">
+      <div className="w-14 pr-2 text-xs text-gray-400 flex flex-col h-full">
+        {Array.from({ length: hours }).map((_, i) => (
+          <div className="flex-1 flex items-start justify-end pr-1">
             {startHour + i}
           </div>
         ))}
@@ -186,19 +187,19 @@ function WeeklyCalendar({ schedule }: { schedule: any[] }) {
       <div className="flex-1 grid grid-cols-5 gap-2 relative">
 
         {days.map((day) => (
-          <div key={day} className="relative">
+          <div key={day} className="relative h-full">
 
             {/* Day label */}
-            <div className="text-center text-sm font-semibold mb-1 text-gray-600">
+            <div className="text-center text-sm font-semibold mb-1 text-gray-600 shrink-0">
               {day}
             </div>
 
             {/* Background grid */}
-            <div className="relative">
-              {Array.from({ length: endHour - startHour }).map((_, i) => (
+            <div className="relative flex flex-col h-full">
+              {Array.from({ length: hours }).map((_, i) => (
                 <div
                   key={i}
-                  className="h-[80px] border-t border-gray-200"
+                  className="flex-1 border-t border-gray-200"
                 />
               ))}
 
@@ -226,12 +227,19 @@ function WeeklyCalendar({ schedule }: { schedule: any[] }) {
                         height: `${height}%`,
                       }}
                     >
-                      <div className="text-xs font-semibold leading-tight">
-                        {code}
+                      <div className="flex items-start justify-between text-xs font-semibold leading-tight">
+                        {/* left: course code */}
+                        <div className="truncate pr-2">
+                          {code}
+                        </div>
+
+                        {/* right: class section */}
+                        <div className="text-[10px] opacity-90 whitespace-nowrap text-right">
+                          {section.class_section}
+                        </div>
                       </div>
-                      <div className="text-[10px] opacity-90">
-                        {section.class_section}
-                      </div>
+
+                      {/* time below */}
                       <div className="text-[10px] mt-1 opacity-80">
                         {formatTime(block.start_min)} - {formatTime(block.end_min)}
                       </div>
@@ -1295,13 +1303,32 @@ export default function App() {
         </div>
 
         {/* CENTER */}
-        <div className="flex-1 bg-white p-4 overflow-hidden">
+        <div className="flex-1 bg-white p-4 overflow-hidden flex flex-col min-h-0">
+          
+          {/* HEADER LABEL */}
+          <div className="mb-3 flex items-center justify-between">
+            <div className="text-sm font-semibold text-gray-700">
+              {selectedScheduleIndex !== null
+                ? `Schedule ${selectedScheduleIndex + 1} / ${schedules.length}`
+                : "No schedule selected"}
+            </div>
+
+            {selectedSchedule && (
+              <div className="text-xs text-gray-500">
+                {selectedSchedule.sections?.length ?? 0} sections
+              </div>
+            )}
+          </div>
+
+          {/* CALENDAR */}
           {!selectedSchedule ? (
             <div className="h-full flex items-center justify-center text-gray-500">
               No schedules yet
             </div>
           ) : (
-            <WeeklyCalendar schedule={selectedSchedule.sections} />
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <WeeklyCalendar schedule={selectedSchedule.sections} />
+            </div>
           )}
         </div>
 
