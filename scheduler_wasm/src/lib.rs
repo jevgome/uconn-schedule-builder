@@ -216,7 +216,34 @@ fn build_sections(
             None => build_standalone_section(entry),
         };
 
-        sections.push(section);
+        if section.blocks.len() < 2 {
+            sections.push(section);
+            continue;
+        }
+        let mut conflict = false;
+        'outer: for i in 0..(section.blocks.len() - 1) {
+            let ba = &section.blocks[i];
+            if ba.start_min == ba.end_min && ba.start_min == 0 {
+                continue;
+            }
+
+            for j in (i+1)..(section.blocks.len()) {
+                let bb = &section.blocks[j];
+                if bb.start_min == bb.end_min && bb.start_min == 0 {
+                    continue;
+                }
+                if ba.day == bb.day
+                    && ba.start_min < bb.end_min + 15
+                    && bb.start_min < ba.end_min + 15
+                {
+                    conflict = true;
+                    break 'outer;
+                }
+            }
+        }
+        if !conflict {
+            sections.push(section);
+        }
     }
 
     sections
@@ -372,16 +399,16 @@ fn can_add_section(current: &Vec<Section>, candidate: &Section) -> bool {
 pub fn sections_conflict(a: &Section, b: &Section) -> bool {
     for ba in &a.blocks {
         if ba.start_min == ba.end_min && ba.start_min == 0 {
-            return false;
+            continue;
         }
 
         for bb in &b.blocks {
             if bb.start_min == bb.end_min && bb.start_min == 0 {
-                return false;
+                continue;
             }
             if ba.day == bb.day
-                && ba.start_min < bb.end_min
-                && bb.start_min < ba.end_min
+                && ba.start_min < bb.end_min + 15
+                && bb.start_min < ba.end_min + 15
             {
                 return true;
             }

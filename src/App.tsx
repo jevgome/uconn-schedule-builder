@@ -122,12 +122,6 @@ function DraggableBlock({ id, name, onDelete }: BlockProps) {
   );
 }
 
-function parseTime(t: string) {
-  // expects "13:00" or "9:30"
-  const [h] = t.split(":");
-  return parseInt(h);
-}
-
 function WeeklyCalendar({ schedule }: { schedule: any[] }) {
   const days = ["Mo", "Tu", "We", "Th", "Fr"];
 
@@ -151,6 +145,15 @@ function WeeklyCalendar({ schedule }: { schedule: any[] }) {
     }
     return colors[hash % colors.length];
   };
+
+  function formatTime(min: number) {
+    const hours = Math.floor(min / 60);
+    const minutes = min % 60;
+    const ampm = hours >= 12 ? "PM" : "AM";
+    const h = hours % 12 === 0 ? 12 : hours % 12;
+
+    return `${h}:${minutes.toString().padStart(2, "0")} ${ampm}`;
+  }
 
   return (
     <div className="h-full flex">
@@ -214,6 +217,9 @@ function WeeklyCalendar({ schedule }: { schedule: any[] }) {
                       <div className="text-[10px] opacity-90">
                         {section.class_section}
                       </div>
+                      <div className="text-[10px] mt-1 opacity-80">
+                        {formatTime(block.start_min)} - {formatTime(block.end_min)}
+                      </div>
                     </div>
                   );
                 })
@@ -252,7 +258,7 @@ export default function App() {
 
   const [selectedScheduleIndex, setSelectedScheduleIndex] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const SCHEDULES_PER_PAGE = 16; // 4 rows × 4 columns
+  const SCHEDULES_PER_PAGE = 12; // 4 rows × 3 columns
   const totalPages = Math.ceil(schedules.length / SCHEDULES_PER_PAGE);
   const paginatedSchedules = schedules.slice(
     (currentPage - 1) * SCHEDULES_PER_PAGE,
@@ -466,6 +472,7 @@ export default function App() {
       setCurrentPage(1);
     }
 
+    console.log("Num sections: ", sections.length);
     console.log("Found schedules:", schedules.length);
     console.log("Schedules:", schedules);
 
@@ -701,8 +708,26 @@ export default function App() {
     }
   };
 
-  const removeBlock = (id: string) => {
-    setBlocks((prev) => prev.filter((block) => block.id !== id));
+  const recomputeSections = async (blockList: DraggableBlockData[]) => {
+    await init();
+
+    const selectedCodes = blockList.map(b => b.code);
+
+    const sectionsJson = get_sections_for_courses(
+      selectedCodes,
+      classesDataRaw,
+      selectedCampuses
+    );
+
+    const sections = JSON.parse(sectionsJson);
+    setSections(sections);
+  };
+
+  const removeBlock = async (id: string) => {
+    const updated = blocks.filter((block) => block.id !== id);
+    setBlocks(updated);
+
+    await recomputeSections(updated);
   };
 
   const clearBlocks = () => {
@@ -1030,9 +1055,9 @@ export default function App() {
             <div className="border-t border-gray-300" />
 
             {/* BOTTOM HALF */}
-            <div className="h-[40%] flex flex-col p-2">
+            <div className="h-[30%] flex flex-col p-2">
               {/* GRID */}
-              <div className="grid grid-cols-4 grid-rows-4 gap-2 flex-1">
+              <div className="grid grid-cols-4 grid-rows-3 gap-2 flex-1">
                 {paginatedSchedules.map((schedule, index) => {
                   const globalIndex = (currentPage - 1) * SCHEDULES_PER_PAGE + index;
 
