@@ -82,7 +82,7 @@ function DraggableBlock({ id, name, onDelete, selected }: BlockProps) {
       className={`group relative rounded-lg px-3 py-2 m-1 w-[180px] max-w-[180px] mx-auto text-sm select-none transition-all duration-150
         ${
           selected
-            ? "bg-indigo-600 text-white shadow-xl ring-2 ring-indigo-300 scale-[1.03]"
+            ? "bg-blue-900 text-white shadow-xl ring-2 ring-indigo-300 scale-[1.03]"
             : "bg-blue-950 text-white shadow-md hover:shadow-lg hover:scale-[1.01]"
         }
         cursor-grab active:cursor-grabbing
@@ -1102,7 +1102,7 @@ export default function App() {
                   <button
                     onClick={() => setVimMode(v => !v)}
                     className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors duration-200 ${
-                      vimMode ? "bg-indigo-600" : "bg-gray-300"
+                      vimMode ? "bg-blue-950" : "bg-gray-300"
                     }`}
                   >
                     <div
@@ -1135,7 +1135,7 @@ export default function App() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   className="w-full px-4 py-3 text-base bg-white border border-gray-300 rounded-xl shadow-md
-                             focus:outline-none focus:ring-2 focus:ring-indigo-500 relative z-10"
+                             focus:outline-none focus:ring-2 focus:ring-blue-900 relative z-10"
                   placeholder="Search catalog # or title..."
                   onFocus={() => setFocusContext("search")}
                   onBlur={(e) => {
@@ -1185,8 +1185,8 @@ export default function App() {
                           className={`w-full text-left p-3 rounded-lg border text-sm transition-all duration-200
                             ${
                                isSelected
-                                    ? "bg-indigo-100 border-indigo-500 shadow-md"
-                                    : "bg-white text-gray-700 border-indigo-200 hover:bg-indigo-50"
+                                    ? "bg-indigo-100 border-blue-500 shadow-md"
+                                    : "bg-white text-gray-700 border-blue-200 hover:bg-blue-50"
                             }
                           `}
                           onClick={() => addBlock(course)}
@@ -1212,7 +1212,7 @@ export default function App() {
                   {/* Button */}
                   <button
                     onClick={() => setCampusOpen((v) => !v)}
-                    className="w-full px-3 py-2 bg-white border rounded-lg text-sm flex justify-between items-center shadow-sm"
+                    className="w-full px-3 py-2 bg-white rounded-lg text-sm flex justify-between items-center shadow-sm"
                   >
                     <span>
                       {selectedCampuses.length === 0
@@ -1227,7 +1227,7 @@ export default function App() {
 
                   {/* Dropdown */}
                   {campusOpen && (
-                    <div className="absolute z-50 mt-1 w-full left-1/2 -translate-x-1/2 bg-white border rounded-lg shadow-lg p-2">
+                    <div className="absolute z-50 mt-1 w-full left-1/2 -translate-x-1/2 bg-white rounded-lg shadow-lg p-2">
                       {CAMPUSES.map((code) => {
                         const isSelected = selectedCampuses.includes(code);
 
@@ -1263,14 +1263,14 @@ export default function App() {
                 <div className="w-1/2 relative" ref={semesterRef}>
                   <button
                     onClick={() => setSemesterOpen((v) => !v)}
-                    className="w-full px-3 py-2 bg-white border rounded-lg text-sm flex justify-between items-center shadow-sm"
+                    className="w-full px-3 py-2 bg-white rounded-lg text-sm flex justify-between items-center shadow-sm"
                   >
                     {selectedSemester ? selectedSemester.name : "Semester"}
                     <span className="text-gray-400">▾</span>
                   </button>
 
                   {semesterOpen && (
-                    <div className="absolute z-50 mt-1 w-full bg-white border rounded-lg shadow-lg p-2">
+                    <div className="absolute z-50 mt-1 w-full bg-white rounded-lg shadow-lg p-2">
                       {semesters.map((sem) => (
                         <button
                           key={sem.value}
@@ -1295,7 +1295,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => runScheduler()}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl shadow-lg"
+              className="w-full bg-blue-950 hover:bg-blue-900 text-white font-semibold py-3 rounded-xl shadow-lg"
             >
               Generate Schedules
             </button>
@@ -1409,7 +1409,7 @@ export default function App() {
                       className={`aspect-square rounded-md border text-sm font-semibold flex items-center justify-center transition
                         ${
                           selectedScheduleIndex === globalIndex
-                            ? "bg-indigo-600 text-white border-indigo-700 shadow-md"
+                            ? "bg-blue-950 text-white border-indigo-700 shadow-md"
                             : "bg-white hover:bg-indigo-50 border-gray-300"
                         }
                       `}
@@ -1448,7 +1448,7 @@ export default function App() {
                         onClick={() => setCurrentPage(page)}
                         className={`px-2 py-1 rounded ${
                           currentPage === page
-                            ? "bg-indigo-600 text-white"
+                            ? "bg-blue-950 text-white"
                             : "hover:bg-gray-200"
                         }`}
                       >

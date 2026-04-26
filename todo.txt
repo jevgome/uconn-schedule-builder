@@ -1,5 +1,5 @@
-- Build schedule
-- Show schedule
+- Section view
+- Filter classes
 - Room distances
 
 # Future Stuff:
