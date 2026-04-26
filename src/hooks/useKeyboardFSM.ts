@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type State = "global" | "search" | "suggestions" | "blocks";
 
@@ -27,6 +27,7 @@ export function useKeyboardFSM({
 }: Props) {
   const stateRef = useRef(state);
   const ctxRef = useRef<any>(null);
+  const [lastKey, setLastKey] = useState<string | null>(null);
 
   // keep latest state
   useEffect(() => {
@@ -37,6 +38,19 @@ export function useKeyboardFSM({
   useEffect(() => {
     ctxRef.current = getContext();
   });
+
+  useEffect(() => {
+    if (state !== "blocks") {
+      setLastKey(null);
+    }
+  }, [state]);
+
+  useEffect(() => {
+    if (!lastKey) return;
+
+    const t = setTimeout(() => setLastKey(null), 600);
+    return () => clearTimeout(t);
+  }, [lastKey]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -122,6 +136,19 @@ export function useKeyboardFSM({
 
           return;
         }
+      }
+
+      // dd detection
+      if (state === "blocks") {
+        if (lastKey === "d" && key === "d") {
+          ctx.setBlocks([]);
+          ctx.setSections([]);
+          ctx.setSelectedBlockIndex(0);
+          setLastKey(null);
+          return;
+        }
+
+        setLastKey(key);
       }
 
       // 3. search mode restrictions (only when typing)

@@ -31,6 +31,7 @@ interface BlockProps {
   id: string;
   name: string;
   onDelete: (id: string) => void;
+  selected?: boolean;
 }
 
 const CAMPUS_MAP: Record<string, string> = {
@@ -55,7 +56,7 @@ function isKeyboardDevice() {
   return hasFinePointer && hasHover;
 }
 
-function DraggableBlock({ id, name, onDelete }: BlockProps) {
+function DraggableBlock({ id, name, onDelete, selected }: BlockProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
   const clampedTransform = transform
@@ -78,46 +79,60 @@ function DraggableBlock({ id, name, onDelete }: BlockProps) {
       style={style}
       {...attributes}
       {...listeners}
-      className={`group relative bg-blue-950 text-white rounded-lg px-3 py-2 m-1 w-[180px] max-w-[180px] mx-auto self-stretch shadow-md cursor-grab active:cursor-grabbing select-none text-sm ${
-        isDragging 
-          ? 'shadow-xl scale-105 rotate-1 z-50' 
-          : 'hover:shadow-lg hover:scale-[1.02]'
-      }`}
+      className={`group relative rounded-lg px-3 py-2 m-1 w-[180px] max-w-[180px] mx-auto text-sm select-none transition-all duration-150
+        ${
+          selected
+            ? "bg-indigo-600 text-white shadow-xl ring-2 ring-indigo-300 scale-[1.03]"
+            : "bg-blue-950 text-white shadow-md hover:shadow-lg hover:scale-[1.01]"
+        }
+        cursor-grab active:cursor-grabbing
+      `}
       onMouseEnter={(e) => {
         if (!isDragging) {
           const btn = e.currentTarget.querySelector("button");
           if (btn) (btn as HTMLButtonElement).style.opacity = "1";
-          e.currentTarget.style.boxShadow = "0 25px 50px rgba(99, 102, 241, 0.4), 0 0 30px rgba(139, 92, 246, 0.3)";
         }
       }}
       onMouseLeave={(e) => {
         const btn = e.currentTarget.querySelector("button");
         if (btn) (btn as HTMLButtonElement).style.opacity = "0";
-        if (!isDragging) {
-          e.currentTarget.style.boxShadow = "0 10px 25px rgba(0, 0, 0, 0.1)";
-        }
       }}
     >
       <div className="relative z-10 font-medium text-center text-sm tracking-wide">
         {name}
       </div>
-      <button
-        className="absolute -top-3 -right-3 w-5 h-5 text-xs bg-red-600 hover:bg-red-700 cursor-pointer text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center text-sm font-bold shadow-lg transform hover:scale-110 hover:rotate-90"
+      <div
+        className="
+          absolute top-0 right-0 h-full w-6
+          bg-red-500
+          rounded-r-lg
+          cursor-pointer
+
+          opacity-0
+          group-hover:opacity-100
+          transition-opacity duration-150
+
+          flex items-stretch justify-stretch
+
+          z-50
+        "
         onClick={(e) => {
           e.stopPropagation();
           onDelete(id);
         }}
-        onPointerDown={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
-        }}
-        onMouseDown={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
-        }}
       >
-        ×
-      </button>
+        {/* full invisible hit surface */}
+        <div className="w-full h-full flex items-center justify-center pointer-events-none">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="w-4 h-4 text-white"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M9 3h6l1 2h5v2H3V5h5l1-2zm1 6h2v10h-2V9zm4 0h2v10h-2V9z" />
+          </svg>
+        </div>
+      </div>
     </div>
   );
 }
@@ -256,6 +271,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
 
+  const [selectedBlockIndex, setSelectedBlockIndex] = useState(0);
   const [selectedScheduleIndex, setSelectedScheduleIndex] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const SCHEDULES_PER_PAGE = 12; // 4 rows × 3 columns
@@ -285,6 +301,8 @@ export default function App() {
 
   const [semesters, setSemesters] = useState<Semester[]>([]);
   const [selectedSemester, setSelectedSemester] = useState<Semester | null>(null);
+
+  const [lastKey, setLastKey] = useState<string | null>(null);
 
   const addBlock = async (course: Course) => {
     const courseName = course.code;
@@ -376,6 +394,19 @@ export default function App() {
           ctx.runScheduler();
         },
       },
+
+      b: {
+        next: "blocks",
+        action: (_, ctx) => {
+          if (!ctx.blocks || ctx.blocks.length === 0) return;
+
+          // optional: mark selection system if you have one later
+          ctx.setSelectedBlockIndex?.(0);
+
+          // focus should leave input mode
+          ctx.searchInputRef.current?.blur?.();
+        },
+      },
     },
 
     search: {
@@ -457,6 +488,56 @@ export default function App() {
         next: "search",
         action: (_, ctx) => {
           ctx.searchInputRef.current?.focus();
+        },
+      },
+
+      j: {
+        action: (_, ctx) => {
+          ctx.setSelectedBlockIndex((i: number) =>
+            Math.min(i + 1, ctx.blocks.length - 1)
+          );
+        },
+      },
+
+      k: {
+        action: (_, ctx) => {
+          ctx.setSelectedBlockIndex((i: number) =>
+            Math.max(i - 1, 0)
+          );
+        },
+      },
+
+      x: {
+        action: (_, ctx) => {
+          const idx = ctx.selectedBlockIndex;
+          const block = ctx.blocks[idx];
+
+          if (!block) return;
+
+          ctx.removeBlock(block.id);
+
+          const newLength = ctx.blocks.length - 1;
+          ctx.setSelectedBlockIndex((i: number) =>
+            Math.max(0, Math.min(i, newLength - 1))
+          );
+        },
+      },
+
+      J: {
+        action: (_,ctx) => {
+          ctx.onMoveBlockDown?.();
+        }
+      },
+
+      K: {
+        action: (_,ctx) => {
+          ctx.onMoveBlockUp?.();
+        }
+      },
+      
+      g: {
+        action: (_,ctx) => {
+          ctx.runScheduler();
         },
       },
     }
@@ -552,6 +633,34 @@ export default function App() {
     );
   };
 
+  const moveBlockDown = () => {
+    setBlocks((prev) => {
+      const i = selectedBlockIndex;
+      if (i >= prev.length - 1) return prev;
+
+      const newBlocks = [...prev];
+      [newBlocks[i], newBlocks[i + 1]] = [newBlocks[i + 1], newBlocks[i]];
+
+      setSelectedBlockIndex(i + 1);
+      recomputeSections(newBlocks);
+      return newBlocks;
+    });
+  };
+
+  const moveBlockUp = () => {
+    setBlocks((prev) => {
+      const i = selectedBlockIndex;
+      if (i <= 0) return prev;
+
+      const newBlocks = [...prev];
+      [newBlocks[i], newBlocks[i - 1]] = [newBlocks[i - 1], newBlocks[i]];
+
+      recomputeSections(newBlocks);
+      setSelectedBlockIndex(i - 1);
+      return newBlocks;
+    });
+  };
+
   useKeyboardFSM({
     state: focusContext,
     setState: setFocusContext,
@@ -561,6 +670,7 @@ export default function App() {
     getContext: () => ({
       visibleSuggestions,
       suggestions,
+      setBlocks,
       blocks,
       selectedSuggestion,
       setSelectedSuggestion,
@@ -571,6 +681,12 @@ export default function App() {
       setHasMovedSelection,
       vimMode,
       runScheduler,
+      setSelectedBlockIndex,
+      selectedBlockIndex,
+      setSections,
+      onMoveBlockUp: moveBlockUp,
+      onMoveBlockDown: moveBlockDown,
+      removeBlock,
     }),
 
     fsm,
@@ -749,9 +865,8 @@ export default function App() {
     }
   };
 
-  const recomputeSections = async (blockList: DraggableBlockData[]) => {
-    await init();
-
+  const recomputeSections = (blockList: DraggableBlockData[]) => {
+    if(!classesDataRaw.length) return;
     const selectedCodes = blockList.map(b => b.code);
 
     const sectionsJson = get_sections_for_courses(
@@ -764,11 +879,11 @@ export default function App() {
     setSections(sections);
   };
 
-  const removeBlock = async (id: string) => {
+  const removeBlock = (id: string) => {
     const updated = blocks.filter((block) => block.id !== id);
     setBlocks(updated);
 
-    await recomputeSections(updated);
+    recomputeSections(updated);
   };
 
   const clearBlocks = () => {
@@ -1106,12 +1221,13 @@ export default function App() {
                     strategy={verticalListSortingStrategy}
                   >
                     <div className="flex flex-col items-center w-full">
-                      {blocks.map((block) => (
+                      {blocks.map((block, index) => (
                         <DraggableBlock
                           key={block.id}
                           id={block.id}
                           name={block.code}
                           onDelete={removeBlock}
+                          selected={focusContext === "blocks" && index === selectedBlockIndex}
                         />
                       ))}
                     </div>
