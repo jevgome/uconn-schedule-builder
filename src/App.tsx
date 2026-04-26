@@ -259,7 +259,7 @@ export default function App() {
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [selectedSuggestion, setSelectedSuggestion] = useState(0);
-  type FocusContext = "global" | "search" | "suggestions" | "blocks";
+  type FocusContext = "global" | "search" | "suggestions" | "blocks" | "schedules";
   const [focusContext, setFocusContext] = useState<FocusContext>("global");
   const [hasMovedSelection, setHasMovedSelection] = useState(false);
   const [vimMode, setVimMode] = useState(() => {
@@ -274,11 +274,14 @@ export default function App() {
   const [selectedBlockIndex, setSelectedBlockIndex] = useState(0);
   const [selectedScheduleIndex, setSelectedScheduleIndex] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const SCHEDULES_PER_PAGE = 12; // 4 rows × 3 columns
-  const totalPages = Math.ceil(schedules.length / SCHEDULES_PER_PAGE);
+  const COLS = 4;
+  const ROWS = 3;
+  const PAGE_SIZE = COLS * ROWS; // 12
+
+  const totalPages = Math.ceil(schedules.length / PAGE_SIZE);
   const paginatedSchedules = schedules.slice(
-    (currentPage - 1) * SCHEDULES_PER_PAGE,
-    currentPage * SCHEDULES_PER_PAGE
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
   );
 
   const [selectedCampuses, setSelectedCampuses] = useState<string[]>(["STORR"]);
@@ -297,6 +300,7 @@ export default function App() {
     search: "INSERT",
     suggestions: "SELECT",
     blocks: "BLOCKS",
+    schedules: "SCHEDULES"
   };
 
   const [semesters, setSemesters] = useState<Semester[]>([]);
@@ -407,6 +411,11 @@ export default function App() {
           ctx.searchInputRef.current?.blur?.();
         },
       },
+
+      s: {
+        next: "schedules",
+      },
+
     },
 
     search: {
@@ -538,6 +547,113 @@ export default function App() {
       g: {
         action: (_,ctx) => {
           ctx.runScheduler();
+        },
+      },
+    },
+
+    schedules: {
+      i: {
+        next: "search",
+        action: (_, ctx) => {
+          ctx.searchInputRef.current?.focus();
+        },
+      },
+ 
+      j: {
+        action: (_, ctx) => {
+          ctx.setSelectedScheduleIndex((i: number | null) => {
+            const pageStart = (ctx.currentPage - 1) * PAGE_SIZE;
+            const local = i === null ? 0 : i - pageStart;
+
+            const row = Math.floor(local / COLS);
+            const col = local % COLS;
+
+            const nextRow = Math.min(row + 1, ROWS - 1);
+
+            const next = nextRow * COLS + col;
+            return pageStart + next;
+          });
+        },
+      },
+
+      k: {
+        action: (_, ctx) => {
+          ctx.setSelectedScheduleIndex((i: number | null) => {
+            const pageStart = (ctx.currentPage - 1) * PAGE_SIZE;
+            const local = i === null ? 0 : i - pageStart;
+
+            const row = Math.floor(local / COLS);
+            const col = local % COLS;
+
+            const nextRow = Math.max(row - 1, 0);
+
+            const next = nextRow * COLS + col;
+            return pageStart + next;
+          });
+        },
+      },
+
+      h: {
+        action: (_, ctx) => {
+          ctx.setSelectedScheduleIndex((i: number | null) => {
+            const pageStart = (ctx.currentPage - 1) * PAGE_SIZE;
+            const local = i === null ? 0 : i - pageStart;
+
+            const row = Math.floor(local / COLS);
+            const col = local % COLS;
+
+            const nextCol = Math.max(col - 1, 0);
+
+            const next = row * COLS + nextCol;
+            return pageStart + next;
+          });
+        },
+      },
+
+      l: {
+        action: (_, ctx) => {
+          ctx.setSelectedScheduleIndex((i: number | null) => {
+            const pageStart = (ctx.currentPage - 1) * PAGE_SIZE;
+            const local = i === null ? 0 : i - pageStart;
+
+            const row = Math.floor(local / COLS);
+            const col = local % COLS;
+
+            const nextCol = Math.min(col + 1, COLS - 1);
+
+            const next = row * COLS + nextCol;
+            return pageStart + next;
+          });
+        },
+      },
+
+      H: {
+        action: (_,ctx) => {
+          ctx.setCurrentPage((i: number) =>
+            Math.max(i-1, 1)
+          )
+        },
+      },
+
+      L: {
+        action: (_,ctx) => {
+          ctx.setCurrentPage((i: number) =>
+            Math.min(i+1, ctx.totalPages)
+          )
+        },
+      },
+
+      Enter: {
+        action: (_, ctx) => {
+          const i = ctx.selectedScheduleIndex;
+
+          if (i === null) return;
+
+          const schedule = ctx.schedules[i];
+          if (!schedule) return;
+
+          ctx.setSelectedSchedule(schedule);
+          ctx.setSelectedScheduleIndex(i);
         },
       },
     }
@@ -687,6 +803,14 @@ export default function App() {
       onMoveBlockUp: moveBlockUp,
       onMoveBlockDown: moveBlockDown,
       removeBlock,
+      setCurrentPage,
+      currentPage,
+      totalPages,
+      schedules,
+      setSelectedSchedule,
+      selectedSchedule,
+      setSelectedScheduleIndex,
+      selectedScheduleIndex,
     }),
 
     fsm,
@@ -1245,7 +1369,7 @@ export default function App() {
               {/* GRID */}
               <div className="grid grid-cols-4 grid-rows-3 gap-2 flex-1">
                 {paginatedSchedules.map((schedule, index) => {
-                  const globalIndex = (currentPage - 1) * SCHEDULES_PER_PAGE + index;
+                  const globalIndex = (currentPage - 1) * PAGE_SIZE + index;
 
                   return (
                     <button
