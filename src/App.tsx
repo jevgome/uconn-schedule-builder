@@ -276,6 +276,13 @@ export default function App() {
     name: string;
   }
 
+  const vimFocusLabelMap: Record<string, string> = {
+    global: "NORMAL",
+    search: "INSERT",
+    suggestions: "SELECT",
+    blocks: "BLOCKS",
+  };
+
   const [semesters, setSemesters] = useState<Semester[]>([]);
   const [selectedSemester, setSelectedSemester] = useState<Semester | null>(null);
 
@@ -826,7 +833,12 @@ export default function App() {
           UConn Schedule Builder
         </div>
         <div className="relative">
-          <div className="relative" ref={settingsRef}>
+          <div className="flex items-center" ref={settingsRef}>
+            {vimMode && (
+              <div className="mr-3 text-xs px-2 py-1 rounded-md bg-gray-100 text-gray-600 font-mono border border-gray-700 tracking-widest">
+                -- {vimFocusLabelMap[focusContext] ?? focusContext} --
+              </div>
+            )}
             <button
               onClick={() => setSettingsOpen(v => !v)}
               className="px-3 py-1 rounded-md hover:bg-gray-100"
