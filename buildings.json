@@ -1,0 +1,371 @@
+[
+  {
+    "area": "1",
+    "area_name": "Campus Core South",
+    "building_name": "Arjona Building",
+    "building_code": "ARJ",
+    "lat": 41.806248,
+    "lon": -72.2485912,
+    "address": "Jaime Homero Arjona Building, 337, Mansfield Road, South Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "1",
+    "area_name": "Campus Core South",
+    "building_name": "Bousfield Psychology Building",
+    "building_code": "BOUS",
+    "lat": 41.8065721,
+    "lon": -72.2502944,
+    "address": "Weston A. Bousfield Psychology Building, 406, Babbidge Road, West Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "1",
+    "area_name": "Campus Core South",
+    "building_name": "School of Business",
+    "building_code": "BUSN",
+    "lat": 41.805876,
+    "lon": -72.2536795,
+    "address": "School of Business, 2100, Hillside Road, West Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "1",
+    "area_name": "Campus Core South",
+    "building_name": "Family Studies Building",
+    "building_code": "FSB",
+    "lat": 41.8086277,
+    "lon": -72.2489052,
+    "address": "Family Studies Building, Mansfield Road, South Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "1",
+    "area_name": "Campus Core South",
+    "building_name": "Hawley Armory",
+    "building_code": "HAWL",
+    "lat": 41.8076847,
+    "lon": -72.2507025,
+    "address": "Willis Nichols Hawley Armory, Fairfield Way, West Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "1",
+    "area_name": "Campus Core South",
+    "building_name": "Information Technologies Engineering Building",
+    "building_code": "ITE",
+    "lat": null,
+    "lon": null,
+    "address": null
+  },
+  {
+    "area": "1",
+    "area_name": "Campus Core South",
+    "building_name": "Monteith Building",
+    "building_code": "MONT",
+    "lat": null,
+    "lon": null,
+    "address": null
+  },
+  {
+    "area": "1",
+    "area_name": "Campus Core South",
+    "building_name": "Oak Hall",
+    "building_code": "OAK",
+    "lat": null,
+    "lon": null,
+    "address": null
+  },
+  {
+    "area": "1",
+    "area_name": "Campus Core South",
+    "building_name": "Schenker Lecture Hall",
+    "building_code": "SCHN",
+    "lat": 41.8072582,
+    "lon": -72.2497895,
+    "address": "Andre Schenker Lecture Hall, Babbidge Road, West Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "2",
+    "area_name": "Campus Core North",
+    "building_name": "Austin Building",
+    "building_code": "AUST",
+    "lat": 41.810438,
+    "lon": -72.2511058,
+    "address": "Philip E. Austin Building, Glenbrook Road, East Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "2",
+    "area_name": "Campus Core North",
+    "building_name": "Beach Hall",
+    "building_code": "BCH",
+    "lat": 41.8093991,
+    "lon": -72.2503334,
+    "address": "Charles Lewis Beach Hall, Mansfield Way, East Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "2",
+    "area_name": "Campus Core North",
+    "building_name": "Gentry Building",
+    "building_code": "GENT",
+    "lat": 41.8085925,
+    "lon": -72.2539153,
+    "address": "Charles B. Gentry Building, 249, Glenbrook Road, East Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "2",
+    "area_name": "Campus Core North",
+    "building_name": "Hall Building",
+    "building_code": "HALL",
+    "lat": 41.8081621,
+    "lon": -72.2519284,
+    "address": "William H. Hall Building, Fairfield Way, West Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "2",
+    "area_name": "Campus Core North",
+    "building_name": "Koons Hall",
+    "building_code": "KNS",
+    "lat": 41.8085262,
+    "lon": -72.251071,
+    "address": "Benjamin Franklin Koons Hall, Fairfield Way, West Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "2",
+    "area_name": "Campus Core North",
+    "building_name": "McHugh Hall",
+    "building_code": "MCHU",
+    "lat": 41.8071237,
+    "lon": -72.2534225,
+    "address": "Lawrence D. McHugh Hall, Fairfield Way, West Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "2",
+    "area_name": "Campus Core North",
+    "building_name": "Rowe Center for Undergraduate Education",
+    "building_code": "ROWE",
+    "lat": null,
+    "lon": null,
+    "address": null
+  },
+  {
+    "area": "2",
+    "area_name": "Campus Core North",
+    "building_name": "Storrs Hall",
+    "building_code": "STRS",
+    "lat": 41.809853,
+    "lon": -72.2525135,
+    "address": "Augustus Storrs Hall, Glenbrook Road, East Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "2",
+    "area_name": "Campus Core North",
+    "building_name": "Wood Hall",
+    "building_code": "WOOD",
+    "lat": 41.8092252,
+    "lon": -72.2531264,
+    "address": "Walter Childs Wood Hall, Glenbrook Road, East Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "3",
+    "area_name": "Science Buildings",
+    "building_name": "Atwater Laboratory",
+    "building_code": "ATWR",
+    "lat": 41.8109334,
+    "lon": -72.2550228,
+    "address": "Wilbur O. Atwater Laboratory, North Eagleville Road, North Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "3",
+    "area_name": "Science Buildings",
+    "building_name": "Biology/Physics Building",
+    "building_code": "BPB",
+    "lat": 41.80995,
+    "lon": -72.2565979,
+    "address": "Biology/Physics Building, 91, North Eagleville Road, North Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "3",
+    "area_name": "Science Buildings",
+    "building_name": "Bronwell Building",
+    "building_code": "BRON",
+    "lat": 41.8087661,
+    "lon": -72.2549697,
+    "address": "Arthur B. Bronwell Building, 260, Glenbrook Road, East Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "3",
+    "area_name": "Science Buildings",
+    "building_name": "Castleman Building",
+    "building_code": "CAST",
+    "lat": 41.8081522,
+    "lon": -72.2547443,
+    "address": "Francis L. Castleman Building, 261, Glenbrook Road, East Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "3",
+    "area_name": "Science Buildings",
+    "building_name": "Chemistry Building",
+    "building_code": "CHM",
+    "lat": 41.8108202,
+    "lon": -72.2539877,
+    "address": "Chemistry Building, North Eagleville Road, North Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "3",
+    "area_name": "Science Buildings",
+    "building_name": "Engineering II",
+    "building_code": "E2",
+    "lat": 41.8091036,
+    "lon": -72.255511,
+    "address": "Engineering II, 191, Auditorium Road, North Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "3",
+    "area_name": "Science Buildings",
+    "building_name": "Engineering and Science Building",
+    "building_code": "ESB",
+    "lat": null,
+    "lon": null,
+    "address": null
+  },
+  {
+    "area": "3",
+    "area_name": "Science Buildings",
+    "building_name": "Gant North Building",
+    "building_code": "GN",
+    "lat": 41.8098972,
+    "lon": -72.2575203,
+    "address": "Gant North Building, 97, North Eagleville Road, North Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "3",
+    "area_name": "Science Buildings",
+    "building_name": "Gant West Building",
+    "building_code": "GW",
+    "lat": 41.8094142,
+    "lon": -72.257525,
+    "address": "Gant West Building, 2152, Hillside Road, Hilltop Residence Halls, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "3",
+    "area_name": "Science Buildings",
+    "building_name": "Pharmacy/Biology Building",
+    "building_code": "PBB",
+    "lat": 41.8100815,
+    "lon": -72.2551581,
+    "address": "Pharmacy/Biology Building, Auditorium Road, North Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "3",
+    "area_name": "Science Buildings",
+    "building_name": "Torrey Life Sciences Building",
+    "building_code": "TLS",
+    "lat": null,
+    "lon": null,
+    "address": null
+  },
+  {
+    "area": "3",
+    "area_name": "Science Buildings",
+    "building_name": "United Technologies Engineering Building",
+    "building_code": "UTEB",
+    "lat": null,
+    "lon": null,
+    "address": null
+  },
+  {
+    "area": "4",
+    "area_name": "CAHNR",
+    "building_name": "Floriculture Greenhouse",
+    "building_code": "FG",
+    "lat": 41.8128941,
+    "lon": -72.2520473,
+    "address": "Floriculture Greenhouse, 1395, Storrs Road, Towers, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "4",
+    "area_name": "CAHNR",
+    "building_name": "Jones Building",
+    "building_code": "JONS",
+    "lat": 41.8137367,
+    "lon": -72.2484762,
+    "address": "Roy E. Jones Building, Old Farm Lane, East Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "4",
+    "area_name": "CAHNR",
+    "building_name": "Lafayette Hall",
+    "building_code": "LAFA",
+    "lat": 41.8141161,
+    "lon": -72.2541331,
+    "address": "Lafayette Hall, Tower Loop Road, Towers, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "4",
+    "area_name": "CAHNR",
+    "building_name": "Ratcliffe Hicks Building and Arena",
+    "building_code": "RHBA",
+    "lat": 41.8122681,
+    "lon": -72.2494224,
+    "address": "Ratcliffe Hicks Building and Arena, 1380, Storrs Road, East Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "4",
+    "area_name": "CAHNR",
+    "building_name": "White Building",
+    "building_code": "WITE",
+    "lat": 41.8071159,
+    "lon": -72.3014822,
+    "address": "White Building, 179, Middle Turnpike, Mansfield Depot, Mansfield, Capitol Planning Region, Connecticut, 06268, United States"
+  },
+  {
+    "area": "4",
+    "area_name": "CAHNR",
+    "building_name": "Young Building",
+    "building_code": "YNG",
+    "lat": 41.8115375,
+    "lon": -72.2470403,
+    "address": "Young Building Outbound, Horsebarn Hill Road, East Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06268, United States"
+  },
+  {
+    "area": "5",
+    "area_name": "South Campus",
+    "building_name": "Art Building",
+    "building_code": "ARTB",
+    "lat": 41.8038119,
+    "lon": -72.2456639,
+    "address": "Art Building, 830, Bolton Road, Downtown Storrs, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "5",
+    "area_name": "South Campus",
+    "building_name": "Bishop Center",
+    "building_code": "BISH",
+    "lat": 41.8068918,
+    "lon": -72.2437335,
+    "address": "Merlin D. Bishop Center, 1, Bishop Circle, Downtown Storrs, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "5",
+    "area_name": "South Campus",
+    "building_name": "Drama-Music Building",
+    "building_code": "DRMU",
+    "lat": 41.804347,
+    "lon": -72.2449139,
+    "address": "Drama-Music Building, 802, Bolton Road, Downtown Storrs, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  },
+  {
+    "area": "5",
+    "area_name": "South Campus",
+    "building_name": "Wilson Hall",
+    "building_code": "WSRH",
+    "lat": 41.8047973,
+    "lon": -72.2472016,
+    "address": "Nellie Louise Wilson Residence Hall, Maple Lane, South Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06268, United States"
+  },
+  {
+    "area": "6",
+    "area_name": "Horsebarn Hill",
+    "building_name": "Kinesiology Building",
+    "building_code": "KB",
+    "lat": 41.8148532,
+    "lon": -72.2409459,
+    "address": "Kinesiology Building, 3107, Horsebarn Hill Road, East Campus, Storrs, Mansfield, Capitol Planning Region, Connecticut, 06269, United States"
+  }
+]
