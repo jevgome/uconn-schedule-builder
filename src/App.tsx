@@ -172,7 +172,7 @@ const DraggableBlock = memo(function DraggableBlock({ id, name, onDelete, select
   );
 });
 
-function WeeklyCalendar({ schedule, professorMap, roomMap }: { schedule: any[]; professorMap: Map<string, Professor>; }) {
+function WeeklyCalendar({ schedule, professorMap, roomMap }: { schedule: any[]; professorMap: Map<string, Professor>; roomMap: Map<string, string>;}) {
   const days = ["Mo", "Tu", "We", "Th", "Fr"];
 
   const startHour = 8;
@@ -200,7 +200,6 @@ function WeeklyCalendar({ schedule, professorMap, roomMap }: { schedule: any[]; 
   function formatTime(min: number) {
     const hours = Math.floor(min / 60);
     const minutes = min % 60;
-    const ampm = hours >= 12 ? "P" : "A";
     const h = hours % 12 === 0 ? 12 : hours % 12;
 
     return `${h}:${minutes.toString().padStart(2, "0")}`;
@@ -294,7 +293,7 @@ function WeeklyCalendar({ schedule, professorMap, roomMap }: { schedule: any[]; 
 
                       {/* time below */}
                       <div className="text-[10px] mt-1 opacity-80">
-                        {formatTime(block.start_min)} - {formatTime(block.end_min)}{room ? ", " : ""} {room.trim() === "Pending Dept Room Assignment" ? "Room TBA" : room}
+                        {formatTime(block.start_min)} - {formatTime(block.end_min)}{room ? ", " : ""} {room === "Pending Dept Room Assignment" ? "Room TBA" : room}
                       </div>
 
                       {/*Professor data*/}
