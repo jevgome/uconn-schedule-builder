@@ -270,8 +270,14 @@ export default function App() {
   const campusRef = useRef<HTMLDivElement>(null);
 
   const [semesterOpen, setSemesterOpen] = useState(false);
-  const [selectedSemester, setSelectedSemester] = useState("");
   const semesterRef = useRef<HTMLDivElement>(null);
+  interface Semester {
+    value: string;
+    name: string;
+  }
+
+  const [semesters, setSemesters] = useState<Semester[]>([]);
+  const [selectedSemester, setSelectedSemester] = useState<Semester | null>(null);
 
   const addBlock = async (course: Course) => {
     const courseName = course.code;
@@ -564,38 +570,34 @@ export default function App() {
   });
 
   useEffect(() => {
-    Promise.all([
-      fetch("/uconn-schedule-builder/semesters/1268/classes.json").then((res) => res.json()),
-      fetch("/uconn-schedule-builder/courses.json").then((res) => res.json()),
-    ])
-      .then(([classesData, coursesData]) => {
-        const titleMap = new Map<string, string>();
+    const loadData = async () => {
+      try {
+        const semestersData = await fetch("/uconn-schedule-builder/semesters.json")
+          .then(res => res.json());
 
-        for (const c of coursesData) {
-          const key = `${c.course} ${c.catalog_number}`;
-          titleMap.set(key, c.name);
-        }
+        setSemesters(semestersData);
 
-        const courseMap = new Map<string, Course>();
+        // ✅ set default to FIRST semester
+        const defaultSemester = semestersData[0];
+        setSelectedSemester(defaultSemester);
 
-        for (const c of classesData) {
-          const code = `${c.subject} ${c.catalog_number}`;
+        const [classesData, coursesData] = await Promise.all([
+          fetch(`/uconn-schedule-builder/semesters/${defaultSemester.value}/classes.json`)
+            .then(res => res.json()),
+          fetch("/uconn-schedule-builder/courses.json")
+            .then(res => res.json()),
+        ]);
 
-          if (!courseMap.has(code)) {
-            courseMap.set(code, {
-              code,
-              title: titleMap.get(code) ?? "Unknown Course",
-            });
-          }
-        }
-
-        const uiCourses = Array.from(courseMap.values());
-
-        setCourses(uiCourses);
+        buildCourses(classesData, coursesData);
         setClassesDataRaw(classesData);
-      })
-      .catch((err) => console.error("Error loading courses:", err));
-  }, []);
+
+      } catch (err) {
+        console.error("Error loading data:", err);
+      }
+    };
+
+    loadData();
+  }, [])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -679,6 +681,38 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!selectedSemester) return;
+
+    setSchedules([]);
+    setSelectedSchedule(null);
+    setSelectedScheduleIndex(null);
+    setCurrentPage(1);
+
+    setSections([]);
+    setBlocks([]); // 👈 clears all selected courses
+
+
+    const loadClasses = async () => {
+      try {
+        const [classesData, coursesData] = await Promise.all([
+          fetch(`/uconn-schedule-builder/semesters/${selectedSemester.value}/classes.json`)
+            .then(res => res.json()),
+          fetch("/uconn-schedule-builder/courses.json")
+            .then(res => res.json()),
+        ]);
+
+        buildCourses(classesData, coursesData);
+        setClassesDataRaw(classesData);
+
+      } catch (err) {
+        console.error("Error loading semester data:", err);
+      }
+    };
+
+    loadClasses();
+  }, [selectedSemester]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -758,6 +792,30 @@ export default function App() {
     setFocusContext("global");
     setSelectedSuggestion(0);
     searchInputRef.current?.blur();
+  };
+
+  const buildCourses = (classesData: any[], coursesData: any[]) => {
+    const titleMap = new Map<string, string>();
+
+    for (const c of coursesData) {
+      const key = `${c.course} ${c.catalog_number}`;
+      titleMap.set(key, c.name);
+    }
+
+    const courseMap = new Map<string, Course>();
+
+    for (const c of classesData) {
+      const code = `${c.subject} ${c.catalog_number}`;
+
+      if (!courseMap.has(code)) {
+        courseMap.set(code, {
+          code,
+          title: titleMap.get(code) ?? "Unknown Course",
+        });
+      }
+    }
+
+    setCourses(Array.from(courseMap.values()));
   };
 
   return (
@@ -948,22 +1006,22 @@ export default function App() {
                     onClick={() => setSemesterOpen((v) => !v)}
                     className="w-full px-3 py-2 bg-white border rounded-lg text-sm flex justify-between items-center shadow-sm"
                   >
-                    {selectedSemester ? selectedSemester : "Semester"}
+                    {selectedSemester ? selectedSemester.name : "Semester"}
                     <span className="text-gray-400">▾</span>
                   </button>
 
                   {semesterOpen && (
                     <div className="absolute z-50 mt-1 w-full bg-white border rounded-lg shadow-lg p-2">
-                      {["Fall 2026", "Spring 2026", "Summer 2026"].map((sem) => (
+                      {semesters.map((sem) => (
                         <button
-                          key={sem}
+                          key={sem.value}
                           onClick={() => {
                             setSelectedSemester(sem);
                             setSemesterOpen(false);
                           }}
                           className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 text-sm"
                         >
-                          {sem}
+                          {sem.name}
                         </button>
                       ))}
                     </div>
@@ -989,7 +1047,7 @@ export default function App() {
         <div className="flex-1 bg-white p-4 overflow-hidden">
           {!selectedSchedule ? (
             <div className="h-full flex items-center justify-center text-gray-500">
-              Select a schedule to view it
+              No schedules yet
             </div>
           ) : (
             <WeeklyCalendar schedule={selectedSchedule.sections} />
