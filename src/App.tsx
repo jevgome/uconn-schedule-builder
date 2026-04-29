@@ -1690,7 +1690,7 @@ export default function App() {
                   />
 
                   <div className="text-sm">
-                    {section.registration_number} • {section.blocks[0].instructor ?? "TBA"}
+                    {section.registration_number} • {section.blocks[0]?.instructor ?? "TBA"}
                   </div>
                 </div>
               );
