@@ -287,7 +287,7 @@ function WeeklyCalendar({ schedule, professorMap, roomMap }: { schedule: any[]; 
 
                         {/* right: class section */}
                         <div className="text-[10px] opacity-90 whitespace-nowrap text-right">
-                          {block.class_section}
+                          {section.registration_number}, {block.class_section}
                         </div>
                       </div>
 
