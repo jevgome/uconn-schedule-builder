@@ -860,8 +860,6 @@ export default function App() {
     console.log("Found schedules:", schedules.length);
     console.log("Schedules:", schedules);
 
-    // later you will:
-    // setSchedules(schedules);
   };
 
 
