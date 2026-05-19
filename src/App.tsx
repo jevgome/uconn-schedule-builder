@@ -1254,7 +1254,7 @@ export default function App() {
           )}
           <button
             onClick={() => setSettingsOpen(v => !v)}
-            className="px-3 py-1 rounded-md hover:bg-gray-100"
+            className="px-3 py-1 rounded-md hover:bg-gray-100 cursor-pointer"
           >
             Settings ⚙️
           </button>
@@ -1375,7 +1375,7 @@ export default function App() {
                   {/* Button */}
                   <button
                     onClick={() => setCampusOpen((v) => !v)}
-                    className="w-full px-3 py-2 bg-white rounded-lg text-sm flex justify-between items-center shadow-sm"
+                    className="w-full px-3 py-2 bg-white rounded-lg text-sm flex justify-between items-center shadow-sm cursor-pointer"
                   >
                     <span>
                       {selectedCampuses.length === 0
@@ -1426,7 +1426,7 @@ export default function App() {
                 <div className="w-1/2 relative" ref={semesterRef}>
                   <button
                     onClick={() => setSemesterOpen((v) => !v)}
-                    className="w-full px-3 py-2 bg-white rounded-lg text-sm flex justify-between items-center shadow-sm"
+                    className="w-full px-3 py-2 bg-white rounded-lg text-sm flex justify-between items-center shadow-sm cursor-pointer"
                   >
                     {selectedSemester ? selectedSemester.name : "Semester"}
                     <span className="text-gray-400">▾</span>
@@ -1458,7 +1458,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => runScheduler()}
-              className="w-full bg-blue-950 hover:bg-blue-900 text-white font-semibold py-3 rounded-xl shadow-lg"
+              className="w-full bg-blue-950 hover:bg-blue-900 text-white font-semibold py-3 rounded-xl shadow-lg cursor-pointer"
             >
               Generate Schedules
             </button>
@@ -1508,7 +1508,7 @@ export default function App() {
 
               <button
                 onClick={clearBlocks}
-                className="p-2 rounded-md hover:bg-red-100 text-red-600 transition"
+                className="p-2 rounded-md hover:bg-red-100 text-red-600 transition cursor-pointer"
                 title="Clear all courses"
               >
                 🗑️
@@ -1570,7 +1570,7 @@ export default function App() {
                         setSelectedScheduleIndex(globalIndex);
                       }
                       }
-                      className={`aspect-square rounded-md border text-sm font-semibold flex items-center justify-center transition
+                      className={`aspect-square rounded-md border text-sm font-semibold flex items-center justify-center transition cursor-pointer
                         ${
                           selectedScheduleIndex === globalIndex
                             ? "bg-blue-950 text-white border-indigo-700 shadow-md"
@@ -1591,7 +1591,7 @@ export default function App() {
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                   disabled={currentPage === 1}
-                  className="px-2 py-1 rounded hover:bg-gray-200 disabled:opacity-30"
+                  className="px-2 py-1 rounded hover:bg-gray-200 disabled:opacity-30 cursor-pointer"
                 >
                   ←
                 </button>
@@ -1610,7 +1610,7 @@ export default function App() {
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`px-2 py-1 rounded ${
+                        className={`px-2 py-1 rounded cursor-pointer ${
                           currentPage === page
                             ? "bg-blue-950 text-white"
                             : "hover:bg-gray-200"
@@ -1638,7 +1638,7 @@ export default function App() {
                     setCurrentPage((p) => Math.min(p + 1, totalPages))
                   }
                   disabled={currentPage === totalPages}
-                  className="px-2 py-1 rounded hover:bg-gray-200 disabled:opacity-30"
+                  className="px-2 py-1 rounded hover:bg-gray-200 disabled:opacity-30 cursor-pointer"
                 >
                   →
                 </button>

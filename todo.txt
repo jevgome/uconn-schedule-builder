@@ -2,6 +2,8 @@
 - Filter classes
 - Room distances
 - Dark Mode (?)
+- Mobile View
+- Persist data
 
 # Future Stuff:
 - Gen ed finder
