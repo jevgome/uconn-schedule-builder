@@ -1652,7 +1652,7 @@ export default function App() {
 
           <div className="flex justify-between mb-4">
             <h2 className="font-semibold text-lg">{getBlockCode(editingBlockId)}</h2>
-            <button onClick={closeBlockEditor}>✕</button>
+            <button class="cursor-pointer" onClick={closeBlockEditor}>✕</button>
           </div>
 
           {sections
@@ -1669,6 +1669,7 @@ export default function App() {
                 >
                   <input
                     type="checkbox"
+                    class="cursor-pointer"
                     checked={isChecked}
                     onChange={() => {
                       setSectionSelections(prev => {
