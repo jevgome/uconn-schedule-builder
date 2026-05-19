@@ -176,7 +176,7 @@ function WeeklyCalendar({ schedule, professorMap, roomMap }: { schedule: any[]; 
   const days = ["Mo", "Tu", "We", "Th", "Fr"];
 
   const startHour = 8;
-  const endHour = 20;
+  const endHour = 22;
   const hours = endHour-startHour
   const totalMinutes = hours* 60;
 
@@ -253,7 +253,7 @@ function WeeklyCalendar({ schedule, professorMap, roomMap }: { schedule: any[]; 
                   const duration = block.end_min - block.start_min;
 
                   const top = (startOffset / totalMinutes) * 100;
-                  const height = ((duration+15) / totalMinutes) * 100;
+                  const height = ((duration+10) / totalMinutes) * 100;
                   const normalizeProfessorNameKey = (name: string) => {
                     return name
                       .trim()
@@ -273,7 +273,7 @@ function WeeklyCalendar({ schedule, professorMap, roomMap }: { schedule: any[]; 
                       key={`${section.subject}-${section.catalog_number}-${section.class_section}-${block.day}-${block.start_min}`}
                       className={`absolute left-1 right-1 ${getColor(
                         code
-                      )} text-white rounded-xl p-2 shadow-lg`}
+                      )} text-white rounded-xl pt-1 px-2 shadow-lg`}
                       style={{
                         top: `${top}%`,
                         height: `${height}%`,
@@ -292,7 +292,7 @@ function WeeklyCalendar({ schedule, professorMap, roomMap }: { schedule: any[]; 
                       </div>
 
                       {/* time below */}
-                      <div className="text-[10px] mt-1 opacity-80">
+                      <div className="text-[10px] opacity-80">
                         {formatTime(block.start_min)} - {formatTime(block.end_min)}{room ? ", " : ""} {room === "Pending Dept Room Assignment" ? "Room TBA" : room}
                       </div>
 
@@ -1239,53 +1239,15 @@ export default function App() {
 
   return (
     <div className="h-screen flex flex-col bg-gray-100 relative z-0">
-      {/* HEADER */}
-      <div className="relative h-14 w-full bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm">
-        <div className="font-bold text-lg text-gray-800">
-          UConn Schedule Builder
-        </div>
-        <div className="relative flex items-center" ref={settingsRef}>
-          {vimMode && (
-            <div className="mr-3 text-xs px-2 py-1 rounded-md bg-gray-100 text-gray-600 font-mono border border-gray-700 tracking-widest">
-              -- {vimFocusLabelMap[state] ?? state} --
-            </div>
-          )}
-          <button
-            onClick={() => setSettingsOpen(v => !v)}
-            className="px-3 py-1 rounded-md hover:bg-gray-100 cursor-pointer"
-          >
-            Settings ⚙️
-          </button>
-
-          {settingsOpen && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-white border rounded-lg shadow-lg p-3 z-[9999]">
-              
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Vim mode</span>
-
-                <button
-                  onClick={() => setVimMode(v => !v)}
-                  className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors duration-200 ${
-                    vimMode ? "bg-blue-950" : "bg-gray-300"
-                  }`}
-                >
-                  <div
-                    className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-200 ${
-                      vimMode ? "translate-x-4" : "translate-x-0"
-                    }`}
-                  />
-                </button>
-              </div>
-
-            </div>
-          )}
-        </div>
-      </div> {/* end header */}
-
       <div className="flex flex-1 overflow-hidden">
 
         {/* LEFT SIDEBAR */}
         <div className="w-[300px] h-full bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-hidden border-r border-gray-200">
+          <div className="relative h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm">
+            <div className="font-bold text-lg text-gray-800">
+              UConn Schedule Builder
+            </div>
+          </div>
           {/* TOP CONTENT */}
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* Search */}
@@ -1494,11 +1456,47 @@ export default function App() {
         </div>
 
         {/* RIGHT SIDEBAR */}
-        <div 
-          className="w-[300px] bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-0 flex flex-col overflow-y-auto overflow-x-clip p-6 border-l border-gray-200"
-        >
+        <div className="w-[300px] h-full bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-hidden border-l border-gray-200">
+          <div className="relative h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm">
+            <div className="relative flex items-center" ref={settingsRef}>
+              {vimMode && (
+                <div className="mr-3 text-xs px-2 py-1 rounded-md bg-gray-100 text-gray-600 font-mono border border-gray-700 tracking-widest">
+                  -- {vimFocusLabelMap[state] ?? state} --
+                </div>
+              )}
+              <button
+                onClick={() => setSettingsOpen(v => !v)}
+                className="px-3 py-1 rounded-md hover:bg-gray-100 cursor-pointer"
+              >
+                Settings ⚙️
+              </button>
 
-          <div className="flex flex-col h-full">
+              {settingsOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white border rounded-lg shadow-lg p-3 z-[9999]">
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Vim mode</span>
+
+                    <button
+                      onClick={() => setVimMode(v => !v)}
+                      className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors duration-200 ${
+                        vimMode ? "bg-blue-950" : "bg-gray-300"
+                      }`}
+                    >
+                      <div
+                        className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-200 ${
+                          vimMode ? "translate-x-4" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-col h-full p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">
                 Your Classes ({blocks.length})
