@@ -17,7 +17,6 @@ pub struct Block {
     pub end_min: u16,
 
     pub class_section: String,
-    pub room: Option<String>,
     pub instructor: Option<String>,
 }
 
@@ -90,28 +89,7 @@ pub struct RawCourseEntry {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Schedule {
-    pub sections: Vec<SectionJson>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct SectionJson {
-    pub registration_number: String,
-    pub subject: String,
-    pub catalog_number: String,
-
-    pub campus: String,
-    pub instruction_mode: String,
-
-    pub blocks: Vec<BlockJson>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct BlockJson {
-    pub day: String,
-    pub start_min: u16,
-    pub end_min: u16,
-    pub instructor: Option<String>,
-    pub class_section: String,
+    pub sections: Vec<Section>,
 }
 
 //
@@ -436,34 +414,11 @@ fn schedules_to_json(schedules: Vec<Vec<Section>>) -> String {
     let output: Vec<Schedule> = schedules
         .into_iter()
         .map(|sched| Schedule {
-            sections: sched.iter().map(section_to_json).collect(),
+            sections: sched,
         })
         .collect();
 
     serde_json::to_string(&output).unwrap()
-}
-
-fn section_to_json(section: &Section) -> SectionJson {
-    SectionJson {
-        registration_number: section.registration_number.clone(),
-        subject: section.subject.clone(),
-        catalog_number: section.catalog_number.clone(),
-
-        campus: section.campus.clone(),
-        instruction_mode: section.instruction_mode.clone(),
-
-        blocks: section
-            .blocks
-            .iter()
-            .map(|b| BlockJson {
-                day: b.day.clone(),
-                start_min: b.start_min,
-                end_min: b.end_min,
-                instructor: b.instructor.clone(),
-                class_section: b.class_section.clone(),
-            })
-            .collect(),
-    }
 }
 
 //
@@ -533,7 +488,6 @@ fn parse_single_meeting(
             end_min: end,
 
             class_section: class_section.to_string(),
-            room: None,
             instructor: instructor.map(|s| s.to_string()),
         });
     }
