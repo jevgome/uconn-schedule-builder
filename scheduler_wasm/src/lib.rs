@@ -46,6 +46,13 @@ pub struct MeetingPattern {
     pub blocks: Vec<Block>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LectureKey {
+    pub subject: String,
+    pub catalog_number: String,
+    pub class_section: String,
+}
+
 //
 // =========================
 // RAW INPUT (FIXED FOR WASM)
@@ -166,7 +173,7 @@ fn build_sections(
     // =========================
     // STEP 1: build lecture map
     // =========================
-    let mut lecture_map: HashMap<String, RawCourseEntry> = HashMap::new();
+    let mut lecture_map: HashMap<LectureKey, RawCourseEntry> = HashMap::new();
 
     for entry in &raw_data {
         if !allowed_campuses.contains(&entry.campus) {
@@ -176,7 +183,12 @@ fn build_sections(
         let course_code = format!("{} {}", entry.subject, entry.catalog_number);
 
         if course_list.contains(&course_code) && entry.registration_number.is_empty() {
-            lecture_map.insert(entry.class_section.clone(), entry.clone());
+            let key = LectureKey {
+                subject: entry.subject.clone(),
+                catalog_number: entry.catalog_number.clone(),
+                class_section: entry.class_section.clone(),
+            };
+            lecture_map.insert(key, entry.clone());
         }
     }
 
@@ -204,7 +216,7 @@ fn build_sections(
 
         // Check if this lab links to a lecture
         for (lecture_section, lecture) in &lecture_map {
-            if entry.additional_sections.contains(lecture_section) {
+            if entry.additional_sections.contains(&lecture_section.class_section) && entry.subject == lecture_section.subject && entry.catalog_number == lecture_section.catalog_number {
                 lecture_opt = Some(lecture);
                 break;
             }
