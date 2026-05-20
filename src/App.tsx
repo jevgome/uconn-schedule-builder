@@ -1675,6 +1675,7 @@ export default function App() {
                   className="cursor-pointer accent-black"
                   checked={(() => {
                     const code = getBlockCode(editingBlockId);
+                    if (!code) return false;
 
                     const matchingSections = sections.filter(
                       s =>
@@ -1691,6 +1692,7 @@ export default function App() {
                   })()}
                   onChange={() => {
                     const code = getBlockCode(editingBlockId);
+                    if (!code) return null;
 
                     const matchingSections = sections.filter(
                       s =>
@@ -1744,6 +1746,7 @@ export default function App() {
                 )
                 .map((section, i) => {
                   const code = `${section.subject} ${section.catalog_number}`;
+                  if (!code) return null;
 
                   const isChecked =
                     sectionSelections[code]?.has(
