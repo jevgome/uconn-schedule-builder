@@ -197,6 +197,8 @@ function WeeklyCalendar({ schedule, professorMap, roomMap }: { schedule: any[]; 
     return colors[hash % colors.length];
   };
 
+  const [hoveredSection, setHoveredSection] = useState<string | null>(null);
+
   function formatTime(min: number) {
     const hours = Math.floor(min / 60);
     const minutes = min % 60;
@@ -267,18 +269,25 @@ function WeeklyCalendar({ schedule, professorMap, roomMap }: { schedule: any[]; 
                     normalizeProfessorNameKey(block.instructor ?? "")
                   );
                   const room = roomMap.get(section.registration_number);
-
+                  const isHovered =
+                    hoveredSection === section.registration_number;
                   return (
-                    <div
-                      key={`${section.subject}-${section.catalog_number}-${section.class_section}-${block.day}-${block.start_min}`}
-                      className={`absolute left-1 right-1 ${getColor(
-                        code
-                      )} text-white rounded-xl pt-1 px-2 shadow-lg`}
-                      style={{
-                        top: `${top}%`,
-                        height: `${height}%`,
-                      }}
-                    >
+
+                      <div
+                        key={`${section.subject}-${section.catalog_number}-${section.class_section}-${block.day}-${block.start_min}`}
+                        onMouseEnter={() => setHoveredSection(section.registration_number)}
+                        onMouseLeave={() => setHoveredSection(null)}
+                        className={`absolute left-1 right-1 rounded-xl pt-1 px-2 shadow-lg transition-all duration-150
+                          ${getColor(code)}
+                          text-white
+                          ${hoveredSection && !isHovered ? "opacity-30" : "opacity-100"}
+                          ${isHovered ? "ring-2 ring-white scale-[1.02] z-20" : ""}
+                        `}
+                        style={{
+                          top: `${top}%`,
+                          height: `${height}%`,
+                        }}
+                      >
                       <div className="flex items-start justify-between text-xs font-semibold leading-tight">
                         {/* left: course code */}
                         <div className="truncate pr-2">
@@ -336,7 +345,7 @@ export default function App() {
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [selectedSuggestion, setSelectedSuggestion] = useState(0);
-  type State = "global" | "search" | "suggestions" | "blocks" | "schedules";
+  type State = "global" | "search" | "suggestions" | "blocks" | "schedules" | "edit";
   const [state, setState] = useState<State>("global");
   const [hasMovedSelection, setHasMovedSelection] = useState(false);
   const [vimMode, setVimMode] = useState(() => {
@@ -377,7 +386,8 @@ export default function App() {
     search: "INSERT",
     suggestions: "SELECT",
     blocks: "BLOCKS",
-    schedules: "SCHEDULES"
+    schedules: "SCHEDULES",
+    edit: "EDIT",
   };
 
   const [semesters, setSemesters] = useState<Semester[]>([]);
@@ -422,10 +432,12 @@ export default function App() {
 
   const openBlockEditor = (id: string) => {
     setEditingBlockId(id);
+    setState("edit");
   };
 
   const closeBlockEditor = () => {
     setEditingBlockId(null);
+    setState("blocks");
   };
 
   const [sectionSelections, setSectionSelections] = useState<Record<string, Set<string>>>({});
@@ -697,6 +709,16 @@ export default function App() {
         },
       },
 
+      e: {
+        action: (_, ctx) => {
+          const idx = ctx.selectedBlockIndex;
+          const block = ctx.blocks[idx];
+          if (!block) return;
+
+          ctx.openBlockEditor?.(block.id);
+        },
+      },
+
       J: {
         action: (_: any, ctx: any) => {
           ctx.onMoveBlockDown?.();
@@ -713,6 +735,10 @@ export default function App() {
         action: (_: any, ctx: any) => {
           ctx.runScheduler();
         },
+      },
+
+      s: {
+        next: "schedules",
       },
     },
 
@@ -821,7 +847,23 @@ export default function App() {
           ctx.setSelectedScheduleIndex(i);
         },
       },
-    }
+
+      b: {
+        next: "blocks",
+      },
+    },
+
+    edit: {
+      q: {
+        action: (_, ctx) => {
+          const idx = ctx.selectedBlockIndex;
+          const block = ctx.blocks[idx];
+          if (!block) return;
+
+          ctx.closeBlockEditor?.(block.id);
+        },
+      },
+    },
   } as const satisfies FSM;
 
   // Scheduler call
@@ -977,6 +1019,8 @@ export default function App() {
       selectedSchedule,
       setSelectedScheduleIndex,
       selectedScheduleIndex,
+      openBlockEditor,
+      closeBlockEditor,
     }),
 
     fsm: fsm as FSM,
@@ -1237,6 +1281,25 @@ export default function App() {
     setCourses(Array.from(courseMap.values()));
   };
 
+  const hasValidSections = useMemo(() => {
+    if (sections.length === 0) return false;
+
+    const filtered = sections.filter((s) => {
+      const code = `${s.subject} ${s.catalog_number}`;
+      return sectionSelections[code]?.has(s.registration_number);
+    });
+
+    return filtered.length > 0;
+  }, [sections, sectionSelections]);
+
+  const getRatingColor = (rating: number) => {
+    if (rating >= 4.5) return "text-green-400";
+    if (rating >= 4.0) return "text-green-300";
+    if (rating >= 3.5) return "text-yellow-300";
+    if (rating >= 3.0) return "text-orange-300";
+    return "text-red-300";
+  };
+
   return (
     <div className="h-screen flex flex-col bg-gray-100 relative z-0">
       <div className="flex flex-1 overflow-hidden">
@@ -1417,8 +1480,19 @@ export default function App() {
           <div className="p-6 border-t border-gray-200 bg-gradient-to-br from-slate-50 to-blue-50">
             <button
               type="button"
-              onClick={() => runScheduler()}
-              className="w-full bg-blue-950 hover:bg-blue-900 text-white font-semibold py-3 rounded-xl shadow-lg cursor-pointer"
+              onClick={() => {
+                if (!hasValidSections) return;
+                runScheduler();
+              }}
+              disabled={!hasValidSections}
+              className={`
+                w-full font-semibold py-3 rounded-xl shadow-lg transition-all duration-150
+                ${
+                  hasValidSections
+                    ? "bg-blue-950 hover:bg-blue-900 text-white cursor-pointer"
+                    : "bg-blue-950/60 text-white cursor-not-allowed shadow-none opacity-70"
+                }
+              `}
             >
               Generate Schedules
             </button>
@@ -1649,7 +1723,7 @@ export default function App() {
           <div className="w-full max-w-7xl h-full max-h-[90vh] overflow-hidden rounded-2xl border border-black bg-white">
             
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-black px-6 py-4">
+            <div className="flex items-center justify-between px-6 py-4">
               <div>
                 <h2 className="text-xl font-semibold tracking-tight">
                   {getBlockCode(editingBlockId)}
@@ -1668,7 +1742,7 @@ export default function App() {
             </div>
 
             {/* Table Header */}
-            <div className="grid grid-cols-[40px_120px_1fr_110px_110px_110px_110px_110px] border-b border-black bg-blue-950 text-white text-sm font-medium px-4 py-3">
+            <div className="grid grid-cols-[40px_120px_1fr_110px_110px_110px_110px_110px] text-gray-800 text-sm font-medium px-4 py-3 border-b-4 border-gray-200">
               <div>
                 <input
                   type="checkbox"
@@ -1728,7 +1802,7 @@ export default function App() {
               </div>
 
               <div>Section</div>
-              <div>Instructor</div>
+              <div>Instructor(s)</div>
               <div>Capacity</div>
               <div>Enrolled</div>
               <div>Seats Left</div>
@@ -1756,7 +1830,7 @@ export default function App() {
                   return (
                     <div
                       key={i}
-                      className="grid grid-cols-[40px_120px_1fr_110px_110px_110px_110px_110px] items-center border-b border-black/10 px-4 py-3 text-sm hover:bg-blue-950/5"
+                      className="grid grid-cols-[40px_120px_1fr_110px_110px_110px_110px_110px] items-center border-b border-black/10 px-4 py-3 text-sm bg-slate-50 hover:bg-blue-950/5"
                     >
                       <div>
                         <input
@@ -1790,11 +1864,76 @@ export default function App() {
                       <div className="font-medium">
                         {section.registration_number}
                       </div>
+                      <div className="text-blue-950 flex flex-col gap-1 min-w-0">
+                        {(() => {
+                          const instructors = section.blocks
+                            ?.map((b: any) => b.instructor)
+                            .filter(Boolean) as string[] || [];
 
-                      <div className="truncate text-blue-950">
-                        {section.blocks[0]?.instructor ?? "TBA"}
+                          // normalize + dedupe
+                          const uniqueInstructors = Array.from(
+                            new Set(
+                              instructors.map((name) =>
+                                name.replace(/\s\([^)]*\)/g, "").trim()
+                              )
+                            )
+                          );
+
+                          if (uniqueInstructors.length === 0) {
+                            return <span className="text-gray-500">TBA</span>;
+                          }
+
+                          return uniqueInstructors.map((rawName, idx) => {
+                            const normalized = normalizeProfessorNameKey(rawName);
+                            const prof = professorMap.get(normalized);
+
+                            return (
+                              <div
+                                key={`${rawName}-${idx}`}
+                                className="flex items-center gap-2 min-w-0"
+                              >
+                                {/* Name */}
+                                <span className="truncate">
+                                  {rawName}
+                                </span>
+
+                                {/* Link icon */}
+                                {prof?.link && (
+                                  <a
+                                    href={prof.link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="shrink-0 text-gray-400 hover:text-blue-900 transition"
+                                    title="View on RateMyProfessor"
+                                  >
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      viewBox="0 0 24 24"
+                                      fill="currentColor"
+                                      className="w-4 h-4"
+                                    >
+                                      <path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3z" />
+                                      <path d="M5 5h6v2H7v10h10v-4h2v6H5V5z" />
+                                    </svg>
+                                  </a>
+                                )}
+
+                                {/* Rating */}
+                                {prof?.rating != null && (
+                                  <span
+                                    className={`flex items-center gap-[2px] shrink-0 ${getRatingColor(
+                                      prof.rating
+                                    )}`}
+                                  >
+                                    <span>★</span>
+                                    <span>{prof.rating.toFixed(1)}</span>
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          });
+                        })()}
                       </div>
-
                       <div>{section.enrollment_capacity}</div>
                       <div>{section.enrollment_total}</div>
                       <div>{section.seats_available}</div>

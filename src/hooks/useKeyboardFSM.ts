@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-export type State = "global" | "search" | "suggestions" | "blocks" | "schedules";
+export type State = "global" | "search" | "suggestions" | "blocks" | "schedules" | "edit";
 
 export type FSMRule = {
   next?: State;
