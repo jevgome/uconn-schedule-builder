@@ -332,6 +332,25 @@ function WeeklyCalendar({ schedule, professorMap, roomMap }: { schedule: any[]; 
   );
 }
 
+function SortIcon({
+  active,
+  direction,
+}: {
+  active: boolean;
+  direction: "asc" | "desc";
+}) {
+  if (!active) {
+    return <span className="text-gray-400 text-[10px]">⬍</span>;
+  }
+
+  return (
+    <span className="text-[10px]">
+      {direction === "asc" ? "▲" : "▼"}
+    </span>
+  );
+}
+
+
 export default function App() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [coursesDataRaw, setCoursesDataRaw] = useState<any[]>([]);
@@ -1300,6 +1319,138 @@ export default function App() {
     return "text-red-300";
   };
 
+  type ClassType = "Lecture" | "Discussion" | "Lab" | "Other";
+
+  function getClassType(sectionClassSection: string): ClassType {
+    if (!sectionClassSection) return "Other";
+
+    const last = sectionClassSection.trim().slice(-1);
+
+    if (/\d/.test(last)) return "Lecture";
+    if (last === "D") return "Discussion";
+    if (last === "L") return "Lab";
+
+    return "Other";
+  }
+
+  function formatTime(min: number) {
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    const hour12 = h % 12 === 0 ? 12 : h % 12;
+    return `${hour12}:${m.toString().padStart(2, "0")}`;
+  }
+
+  function getDayLabel(day: string) {
+    return day; // already Mo/Tu/We/etc
+  }
+
+  type SortKey =
+    | "section"
+    | "instructor"
+    | "seatsLeft"
+    | "reservedSeatsLeft";
+
+  type SortState = {
+    primary: SortKey | null;
+    secondary: SortKey | null;
+    direction: "asc" | "desc";
+  };
+
+  const [sortState, setSortState] = useState<SortState>({
+    primary: null,
+    secondary: null,
+    direction: "asc",
+  });
+
+  const toggleSort = (key: SortKey) => {
+    setSortState(prev => {
+      // first click → primary
+      if (prev.primary !== key) {
+        return {
+          primary: key,
+          secondary: prev.primary,
+          direction: "asc",
+        };
+      }
+
+      // second click → flip direction
+      if (prev.primary === key) {
+        return {
+          ...prev,
+          direction: prev.direction === "asc" ? "desc" : "asc",
+        };
+      }
+
+      return prev;
+    });
+  };
+
+  const sortedSections = useMemo(() => {
+    const code = getBlockCode(editingBlockId);
+    if (!code) return [];
+
+    const base = sections.filter(
+      s => `${s.subject} ${s.catalog_number}` === code
+    );
+
+    const getInstructorRating = (section: any) => {
+      const instructors =
+        section.blocks?.map((b: any) => b.instructor).filter(Boolean) ?? [];
+
+      const ratings = instructors.map((name: string) => {
+        const prof = professorMap.get(normalizeProfessorNameKey(name));
+        return prof?.rating ?? 0;
+      });
+
+      return ratings.length ? Math.max(...ratings) : 0;
+    };
+
+    const getValue = (section: any, key: SortKey) => {
+      switch (key) {
+        case "section":
+          return Number(section.registration_number);
+
+        case "instructor":
+          return getInstructorRating(section);
+
+        case "seatsLeft":
+          return Number(section.seats_available ?? 0);
+
+        case "reservedSeatsLeft": {
+          const capacity = Number(section.enrollment_capacity ?? 0);
+          const enrolled = Number(section.enrollment_total ?? 0);
+          const nonReserved = Number(section.seats_available ?? 0);
+
+          return capacity - enrolled - nonReserved;
+        }
+
+        default:
+          return 0;
+      }
+    };
+
+    const compare = (a: any, b: any) => {
+      const keys = [
+        sortState.primary,
+        sortState.secondary,
+      ].filter(Boolean) as SortKey[];
+
+      for (const key of keys) {
+        const av = getValue(a, key);
+        const bv = getValue(b, key);
+
+        if (av !== bv) {
+          return sortState.direction === "asc" ? av - bv : bv - av;
+        }
+      }
+
+      return 0;
+    };
+
+    return [...base].sort(compare);
+  }, [sections, editingBlockId, sortState, professorMap]);
+
+
   return (
     <div className="h-screen flex flex-col bg-gray-100 relative z-0">
       <div className="flex flex-1 overflow-hidden">
@@ -1720,8 +1871,7 @@ export default function App() {
       </div>
       {editingBlockId && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-7xl h-full max-h-[90vh] overflow-hidden rounded-2xl border border-black bg-white">
-            
+          <div className="w-full max-w-7xl h-full max-h-[90vh] flex flex-col overflow-hidden rounded-2xl border border-black bg-white">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4">
               <div>
@@ -1734,7 +1884,7 @@ export default function App() {
               </div>
 
               <button
-                className="cursor-pointer rounded-md border border-black px-3 py-1 text-sm hover:bg-black hover:text-white"
+                className="cursor-pointer rounded-md px-3 py-1 text-sm hover:bg-black hover:text-white"
                 onClick={closeBlockEditor}
               >
                 ✕
@@ -1742,7 +1892,7 @@ export default function App() {
             </div>
 
             {/* Table Header */}
-            <div className="grid grid-cols-[40px_120px_1fr_110px_110px_110px_110px_110px] text-gray-800 text-sm font-medium px-4 py-3 border-b-4 border-gray-200">
+            <div className="grid grid-cols-[40px_120px_190px_190px_110px_110px_150px_220px_50px] text-gray-800 text-sm font-medium px-4 py-3 border-b-4 border-gray-200">
               <div>
                 <input
                   type="checkbox"
@@ -1782,9 +1932,6 @@ export default function App() {
                     setSectionSelections(prev => {
                       const next = { ...prev };
 
-                      // Gmail-style behavior:
-                      // if ANY are selected -> clear all
-                      // if NONE selected -> select all
                       if (hasAnySelected) {
                         next[code] = new Set();
                       } else {
@@ -1801,24 +1948,53 @@ export default function App() {
                 />
               </div>
 
-              <div>Section</div>
-              <div>Instructor(s)</div>
+              <div className="flex items-center gap-1">
+                Section
+                <button className="hover:cursor-pointer" onClick={() => toggleSort("section")}>
+                  <SortIcon
+                    active={sortState.primary === "section"}
+                    direction={sortState.direction}
+                  />
+                </button>
+              </div>
+              <div className="flex items-center gap-1">
+                Instructor(s)
+                <button className="hover:cursor-pointer" onClick={() => toggleSort("instructor")}>
+                  <SortIcon
+                    active={sortState.primary === "instructor"}
+                    direction={sortState.direction}
+                  />
+                </button>
+              </div>
+              <div>Times</div>
               <div>Capacity</div>
               <div>Enrolled</div>
-              <div>Seats Left</div>
-              <div>Open Cap</div>
+              <div className="flex flex-col leading-tight">
+                <div className="flex items-center gap-1">
+                  Open Seats Left
+                  <button className="hover:cursor-pointer" onClick={() => toggleSort("seatsLeft")}>
+                    <SortIcon
+                      active={sortState.primary === "seatsLeft"}
+                      direction={sortState.direction}
+                    />
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                Reserved Seats Left
+                <button className="hover:cursor-pointer" onClick={() => toggleSort("reservedSeatsLeft")}>
+                  <SortIcon
+                    active={sortState.primary === "reservedSeatsLeft"}
+                    direction={sortState.direction}
+                  />
+                </button>
+              </div>
               <div>Waitlist</div>
             </div>
 
             {/* Sections */}
-            <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
-              {sections
-                .filter(
-                  s =>
-                    `${s.subject} ${s.catalog_number}` ===
-                    getBlockCode(editingBlockId)
-                )
-                .map((section, i) => {
+            <div className="overflow-y-auto flex-1 min-h-0 pb-6">
+              {sortedSections.map((section, i) => {
                   const code = `${section.subject} ${section.catalog_number}`;
                   if (!code) return null;
 
@@ -1826,11 +2002,44 @@ export default function App() {
                     sectionSelections[code]?.has(
                       section.registration_number
                     );
+                  const groupedTimes = (() => {
+                    type Entry = {
+                      days: Set<string>;
+                    };
+
+                    const map: Record<
+                      string,
+                      Record<string, Entry>
+                    > = {};
+
+                    for (const b of section.blocks ?? []) {
+                      const type = getClassType(b.class_section);
+
+                      const time = `${formatTime(b.start_min)}-${formatTime(b.end_min)}`;
+                      const day = getDayLabel(b.day);
+
+                      if (!map[type]) map[type] = {};
+                      if (!map[type][time]) {
+                        map[type][time] = { days: new Set() };
+                      }
+
+                      map[type][time].days.add(day);
+                    }
+
+                    return map;
+                  })();
+
+                  const TYPE_ORDER: Record<string, number> = {
+                    Lecture: 0,
+                    Discussion: 1,
+                    Lab: 2,
+                    Other: 3,
+                  };
 
                   return (
                     <div
                       key={i}
-                      className="grid grid-cols-[40px_120px_1fr_110px_110px_110px_110px_110px] items-center border-b border-black/10 px-4 py-3 text-sm bg-slate-50 hover:bg-blue-950/5"
+                      className="grid grid-cols-[40px_120px_190px_190px_110px_110px_150px_220px_50px] items-center border-b border-black/10 px-4 py-3 text-sm bg-slate-50 hover:bg-blue-950/5"
                     >
                       <div>
                         <input
@@ -1892,25 +2101,24 @@ export default function App() {
                                 key={`${rawName}-${idx}`}
                                 className="flex items-center gap-2 min-w-0"
                               >
-                                {/* Name */}
-                                <span className="truncate">
-                                  {rawName}
-                                </span>
-
-                                {/* Link icon */}
+                                {/* Link (name + icon inline) */}
                                 {prof?.link && (
                                   <a
                                     href={prof.link}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="shrink-0 text-gray-400 hover:text-blue-900 transition"
+                                    className="flex items-center gap-1 text-blue-900 hover:underline transition"
                                     title="View on RateMyProfessor"
                                   >
+                                    {/* Name */}
+                                    <span className="truncate">{rawName}</span>
+
+                                    {/* Icon */}
                                     <svg
                                       xmlns="http://www.w3.org/2000/svg"
                                       viewBox="0 0 24 24"
                                       fill="currentColor"
-                                      className="w-4 h-4"
+                                      className="w-4 h-4 shrink-0"
                                     >
                                       <path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3z" />
                                       <path d="M5 5h6v2H7v10h10v-4h2v6H5V5z" />
@@ -1933,6 +2141,34 @@ export default function App() {
                             );
                           });
                         })()}
+                      </div>
+                      <div className="text-gray-700 flex flex-col gap-1 min-w-0">
+                        {Object.keys(groupedTimes).length === 0 ? (
+                          <span className="text-gray-400">TBA</span>
+                        ) : (
+                          Object.entries(groupedTimes).sort(
+                            ([typeA], [typeB]) => {
+                              return (TYPE_ORDER[typeA] ?? 99) - (TYPE_ORDER[typeB] ?? 99);
+                            }
+                          )
+                          .map(([type, timeMap]) => (
+                            <div key={type} className="text-xs text-gray-700">
+                              {Object.entries(timeMap).map(([time, data], idx) => {
+                                const days = [...data.days].join("/");
+
+                                return (
+                                  <div key={`${type}-${time}-${idx}`} className="leading-tight">
+                                    <span className="font-semibold text-blue-950">
+                                      {type}:
+                                    </span>{" "}
+                                    <span className="text-gray-500">{days}</span>{" "}
+                                    <span className="text-gray-500">{time}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ))
+                        )}
                       </div>
                       <div>{section.enrollment_capacity}</div>
                       <div>{section.enrollment_total}</div>
