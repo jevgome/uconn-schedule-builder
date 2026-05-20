@@ -838,7 +838,7 @@ export default function App() {
     // =========================
     const filtered = sections.filter((s) => {
       const code = `${s.subject} ${s.catalog_number}`;
-      return sectionSelections[code]?.has(s.class_section);
+      return sectionSelections[code]?.has(s.registration_number);
     });
 
     const schedulesJson = generate_schedules_from_sections(filtered);
@@ -1149,7 +1149,7 @@ export default function App() {
     sections.forEach((s) => {
       const key = `${s.subject} ${s.catalog_number}`;
       if (!map[key]) map[key] = new Set();
-      map[key].add(s.class_section);
+      map[key].add(s.registration_number);
     });
 
     setSectionSelections(map);
@@ -1645,56 +1645,165 @@ export default function App() {
         </div>
       </div>
       {editingBlockId && (
-      <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999]">
-        <div className="bg-white w-[1000px] max-h-[90vh] overflow-y-auto rounded-xl shadow-xl p-4">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-7xl h-full max-h-[90vh] overflow-hidden rounded-2xl border border-black bg-white">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-black px-6 py-4">
+              <div>
+                <h2 className="text-xl font-semibold tracking-tight">
+                  {getBlockCode(editingBlockId)}
+                </h2>
+                <p className="text-sm text-blue-950">
+                  Available class sections
+                </p>
+              </div>
 
-          <div className="flex justify-between mb-4">
-            <h2 className="font-semibold text-lg">{getBlockCode(editingBlockId)}</h2>
-            <button class="cursor-pointer" onClick={closeBlockEditor}>✕</button>
+              <button
+                className="cursor-pointer rounded-md border border-black px-3 py-1 text-sm hover:bg-black hover:text-white"
+                onClick={closeBlockEditor}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Table Header */}
+            <div className="grid grid-cols-[40px_120px_1fr_110px_110px_110px_110px_110px] border-b border-black bg-blue-950 text-white text-sm font-medium px-4 py-3">
+              <div>
+                <input
+                  type="checkbox"
+                  className="cursor-pointer accent-black"
+                  checked={(() => {
+                    const code = getBlockCode(editingBlockId);
+
+                    const matchingSections = sections.filter(
+                      s =>
+                        `${s.subject} ${s.catalog_number}` === code
+                    );
+
+                    const selectedCount =
+                      sectionSelections[code]?.size ?? 0;
+
+                    return (
+                      matchingSections.length > 0 &&
+                      selectedCount === matchingSections.length
+                    );
+                  })()}
+                  onChange={() => {
+                    const code = getBlockCode(editingBlockId);
+
+                    const matchingSections = sections.filter(
+                      s =>
+                        `${s.subject} ${s.catalog_number}` === code
+                    );
+
+                    const currentSelections =
+                      sectionSelections[code] ?? new Set();
+
+                    const hasAnySelected =
+                      currentSelections.size > 0;
+
+                    setSectionSelections(prev => {
+                      const next = { ...prev };
+
+                      // Gmail-style behavior:
+                      // if ANY are selected -> clear all
+                      // if NONE selected -> select all
+                      if (hasAnySelected) {
+                        next[code] = new Set();
+                      } else {
+                        next[code] = new Set(
+                          matchingSections.map(
+                            s => s.registration_number
+                          )
+                        );
+                      }
+
+                      return next;
+                    });
+                  }}
+                />
+              </div>
+
+              <div>Section</div>
+              <div>Instructor</div>
+              <div>Capacity</div>
+              <div>Enrolled</div>
+              <div>Seats Left</div>
+              <div>Open Cap</div>
+              <div>Waitlist</div>
+            </div>
+
+            {/* Sections */}
+            <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
+              {sections
+                .filter(
+                  s =>
+                    `${s.subject} ${s.catalog_number}` ===
+                    getBlockCode(editingBlockId)
+                )
+                .map((section, i) => {
+                  const code = `${section.subject} ${section.catalog_number}`;
+
+                  const isChecked =
+                    sectionSelections[code]?.has(
+                      section.registration_number
+                    );
+
+                  return (
+                    <div
+                      key={i}
+                      className="grid grid-cols-[40px_120px_1fr_110px_110px_110px_110px_110px] items-center border-b border-black/10 px-4 py-3 text-sm hover:bg-blue-950/5"
+                    >
+                      <div>
+                        <input
+                          type="checkbox"
+                          className="cursor-pointer accent-black"
+                          checked={isChecked}
+                          onChange={() => {
+                            setSectionSelections(prev => {
+                              const next = { ...prev };
+                              const set = new Set(next[code]);
+
+                              if (
+                                set.has(section.registration_number)
+                              ) {
+                                set.delete(
+                                  section.registration_number
+                                );
+                              } else {
+                                set.add(
+                                  section.registration_number
+                                );
+                              }
+
+                              next[code] = set;
+                              return next;
+                            });
+                          }}
+                        />
+                      </div>
+
+                      <div className="font-medium">
+                        {section.registration_number}
+                      </div>
+
+                      <div className="truncate text-blue-950">
+                        {section.blocks[0]?.instructor ?? "TBA"}
+                      </div>
+
+                      <div>{section.enrollment_capacity}</div>
+                      <div>{section.enrollment_total}</div>
+                      <div>{section.seats_available}</div>
+                      <div>{section.capacity_available}</div>
+                      <div>{section.waitlist_available}</div>
+                    </div>
+                  );
+                })}
+            </div>
           </div>
-
-          {sections
-            .filter(s => `${s.subject} ${s.catalog_number}` === getBlockCode(editingBlockId))
-            .map((section, i) => {
-              const code = `${section.subject} ${section.catalog_number}`;
-              const isChecked =
-                sectionSelections[code]?.has(section.class_section);
-
-              return (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 p-2 border-b"
-                >
-                  <input
-                    type="checkbox"
-                    class="cursor-pointer"
-                    checked={isChecked}
-                    onChange={() => {
-                      setSectionSelections(prev => {
-                        const next = { ...prev };
-                        const set = new Set(next[code]);
-
-                        if (set.has(section.registration_number)) {
-                          set.delete(section.registration_number);
-                        } else {
-                          set.add(section.registration_number);
-                        }
-
-                        next[code] = set;
-                        return next;
-                      });
-                    }}
-                  />
-
-                  <div className="text-sm">
-                    {section.registration_number} • {section.blocks[0]?.instructor ?? "TBA"}
-                  </div>
-                </div>
-              );
-            })}
         </div>
-      </div>
-    )}
+      )}
     </div>
   );
 }

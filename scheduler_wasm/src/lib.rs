@@ -34,7 +34,7 @@ pub struct Section {
     pub enrollment_capacity: u32,
     pub enrollment_total: u32,
     pub seats_available: u32,
-    pub capacity_available: Option<u32>,
+    pub capacity_available: String,
     pub waitlist_available: u32,
 
     pub blocks: Vec<Block>,
@@ -265,7 +265,7 @@ fn build_standalone_section(entry: &RawCourseEntry) -> Section {
         enrollment_capacity: capacity,
         enrollment_total: total,
         seats_available: seats,
-        capacity_available: None,
+        capacity_available: entry.capacity_available.clone(),
         waitlist_available: waitlist,
 
         blocks,
@@ -315,7 +315,7 @@ fn build_section_from_lab(
         enrollment_capacity: capacity,
         enrollment_total: total,
         seats_available: seats,
-        capacity_available: None,
+        capacity_available: lab.capacity_available.clone(),
         waitlist_available: waitlist,
 
         blocks,
