@@ -81,7 +81,7 @@ def scrape_subject(semester, subject):
         print(f'Scraped {subject} in {campus} for {semester["name"]}')
         return [
             {
-                "class": m.group("class_nbr"),
+                "registration_number": m.group("class_nbr"),
                 "course": m.group("course").strip(),
                 "section": m.group("section"),
                 "room": m.group("room").strip()
