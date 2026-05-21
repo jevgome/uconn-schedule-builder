@@ -3,7 +3,12 @@
 use wasm_bindgen::prelude::*;
 use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
+use web_sys::console;
 
+#[wasm_bindgen(start)]
+pub fn start() {
+    console_error_panic_hook::set_once();
+}
 //
 // =========================
 // CORE STRUCTS
@@ -17,7 +22,9 @@ pub struct Block {
     pub end_min: u16,
 
     pub class_section: String,
-    pub instructor: Option<String>,
+    pub instructor: String,
+    pub room: String,
+    pub registration_number: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -40,47 +47,6 @@ pub struct Section {
     pub blocks: Vec<Block>,
 }
 
-#[derive(Debug, Clone)]
-pub struct MeetingPattern {
-    pub blocks: Vec<Block>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct LectureKey {
-    pub subject: String,
-    pub catalog_number: String,
-    pub class_section: String,
-}
-
-//
-// =========================
-// RAW INPUT (FIXED FOR WASM)
-// =========================
-//
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RawCourseEntry {
-    pub registration_number: String,
-    pub subject: String,
-    pub catalog_number: String,
-    pub class_section: String,
-
-    pub academic_career: String,
-    pub campus: String,
-    pub session: String,
-    pub instruction_mode: String,
-
-    pub meeting_times: String,
-    pub additional_sections: String,
-    pub instructor: String,
-
-    pub enrollment_capacity: String,
-    pub enrollment_total: String,
-    pub seats_available: String,
-    pub capacity_available: String,
-    pub waitlist_available: String,
-}
-
 //
 // =========================
 // JSON OUTPUT STRUCTS
@@ -97,27 +63,6 @@ pub struct Schedule {
 // WASM ENTRY POINT
 // =========================
 //
-
-#[wasm_bindgen]
-pub fn get_sections_for_courses(
-    course_list: JsValue,
-    raw_data: JsValue,
-    allowed_campuses: JsValue,
-) -> String {
-    let course_list: Vec<String> =
-        serde_wasm_bindgen::from_value(course_list).unwrap();
-
-    let raw_data: Vec<RawCourseEntry> =
-        serde_wasm_bindgen::from_value(raw_data).unwrap();
-
-    let allowed_campuses: Vec<String> =
-        serde_wasm_bindgen::from_value(allowed_campuses).unwrap();
-
-    let sections = build_sections(course_list, raw_data, allowed_campuses);
-
-    serde_json::to_string(&sections).unwrap()
-}
-
 #[wasm_bindgen]
 pub fn generate_schedules_from_sections(sections: JsValue) -> String {
     let sections: Vec<Section> =
@@ -144,6 +89,7 @@ pub fn generate_schedules_from_sections(sections: JsValue) -> String {
 fn build_sections(
     course_list: Vec<String>,
     raw_data: Vec<RawCourseEntry>,
+    room_data: Vec<RoomEntry>,
     allowed_campuses: Vec<String>,
 ) -> Vec<Section> {
     let mut sections = Vec::new();
@@ -173,7 +119,8 @@ fn build_sections(
     // =========================
     // STEP 2: build sections
     // =========================
-    for entry in &raw_data {
+    let mut lecture = RoomEntry::new();
+    for (index, entry) in raw_data.iter().enumerate() {
         if !allowed_campuses.contains(&entry.campus) {
             continue;
         }
@@ -186,6 +133,18 @@ fn build_sections(
 
         // Skip lecture rows as schedulable items
         if entry.registration_number.is_empty() {
+            let mut min_number = 9999999;
+            let mut i = index + 1;
+            while i < raw_data.len()
+                && raw_data[i].subject == entry.subject 
+                && raw_data[i].catalog_number == entry.catalog_number 
+                && !raw_data[i].registration_number.is_empty() 
+            {
+                let current_number = raw_data[i].registration_number.parse().unwrap();
+                if current_number < min_number {min_number = current_number;}
+                i += 1;
+            }
+            lecture_number = min_number-1;
             continue;
         }
 
@@ -201,10 +160,35 @@ fn build_sections(
         }
 
         let section = match lecture_opt {
-            Some(lecture) => build_section_from_lab(entry, lecture),
-            None => build_standalone_section(entry),
+            Some(lecture) => {
+                // let room = room_data.iter()
+                //     .find(|s| s.class == lecture_number);
+                //
+                // if room.is_none() {
+                //     console::log_1(
+                //         &format!(
+                //             "Missing room entry.\nlecture_number={}",
+                //             lecture_number,
+                //         ).into()
+                //     );
+                // }
+
+                // let room = room.unwrap();
+                let lab_room = room_data.iter().find(|&s| s.class == entry.registration_number).unwrap();
+                while room_data.iter().find(|&s| s.class == lecture_number.to_string()).is_none() {
+                    lecture_number -= 1;
+                }
+                let lecture_room = room_data.iter().find(|&s| s.class == lecture_number.to_string()).unwrap();
+
+                build_section_from_lab(entry, lecture, lab_room, lecture_room)
+            },
+            None => {
+                let room_entry = room_data.iter().find(|&s| s.class == entry.registration_number).unwrap();
+                build_standalone_section(entry, room_entry)
+            },
         };
 
+        //Check to make sure a section isn't in conflict with itself
         if section.blocks.len() < 2 {
             sections.push(section);
             continue;
@@ -238,7 +222,7 @@ fn build_sections(
     sections
 }
 
-fn build_standalone_section(entry: &RawCourseEntry) -> Section {
+fn build_standalone_section(entry: &RawCourseEntry, room_entry: &RoomEntry) -> Section {
     let capacity = entry.enrollment_capacity.parse().unwrap_or(0);
     let total = entry.enrollment_total.parse().unwrap_or(0);
     let seats = entry.seats_available.parse().unwrap_or(0);
@@ -247,7 +231,8 @@ fn build_standalone_section(entry: &RawCourseEntry) -> Section {
     let blocks = parse_meeting_times(
         &entry.meeting_times,
         &entry.class_section,
-        Some(&entry.instructor),
+        &entry.instructor,
+        &room_entry,
     )
     .map(|m| m.blocks)
     .unwrap_or(vec![]);
@@ -275,6 +260,8 @@ fn build_standalone_section(entry: &RawCourseEntry) -> Section {
 fn build_section_from_lab(
     lab: &RawCourseEntry,
     lecture: &RawCourseEntry,
+    lab_room: &RoomEntry,
+    lecture_room: &RoomEntry,
 ) -> Section {
     let capacity = lab.enrollment_capacity.parse().unwrap_or(0);
     let total = lab.enrollment_total.parse().unwrap_or(0);
@@ -287,16 +274,17 @@ fn build_section_from_lab(
     let mut blocks = parse_meeting_times(
         &lab.meeting_times,
         &lab.class_section,
-        Some(&lab.instructor),
+        &lab.instructor,
+        &lab_room,
     )
     .map(|m| m.blocks)
     .unwrap_or(vec![]);
 
-    // Add lecture blocks
     if let Some(mut lecture_blocks) = parse_meeting_times(
         &lecture.meeting_times,
         &lecture.class_section,
-        Some(&lecture.instructor),
+        &lecture.instructor,
+        &lecture_room,
     ) {
         blocks.append(&mut lecture_blocks.blocks);
     }
@@ -430,7 +418,8 @@ fn schedules_to_json(schedules: Vec<Vec<Section>>) -> String {
 pub fn parse_meeting_times(
     input: &str,
     class_section: &str,
-    instructor: Option<&str>,
+    instructor: &str,
+    room_entry: &RoomEntry,
 ) -> Option<MeetingPattern> {
     let input = input.trim();
 
@@ -444,7 +433,7 @@ pub fn parse_meeting_times(
 
     for chunk in chunks {
         if let Some(mut parsed) =
-            parse_single_meeting(chunk, class_section, instructor)
+            parse_single_meeting(chunk, class_section, instructor, room_entry)
         {
             blocks.append(&mut parsed);
         }
@@ -460,7 +449,8 @@ pub fn parse_meeting_times(
 fn parse_single_meeting(
     input: &str,
     class_section: &str,
-    instructor: Option<&str>,
+    instructor: &str,
+    room_entry: &RoomEntry,
 ) -> Option<Vec<Block>> {
     let parts: Vec<&str> = input.split('/').map(|s| s.trim()).collect();
 
@@ -488,7 +478,9 @@ fn parse_single_meeting(
             end_min: end,
 
             class_section: class_section.to_string(),
-            instructor: instructor.map(|s| s.to_string()),
+            instructor: instructor.to_string(),
+            room: room_entry.room.to_string(),
+            registration_number: room_entry.class.to_string(),
         });
     }
 

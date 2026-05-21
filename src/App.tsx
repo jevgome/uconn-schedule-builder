@@ -1,6 +1,6 @@
 import { useKeyboardFSM } from "./hooks/useKeyboardFSM";
 import type { FSM } from "./hooks/useKeyboardFSM";
-import init, { generate_schedules_from_sections, get_sections_for_courses } from "./wasm_pkg/scheduler_wasm";
+import init, { generate_schedules_from_sections } from "./wasm_pkg/scheduler_wasm";
 import { useEffect, useState, useRef, useCallback, memo, useMemo } from "react";
 import {
   DndContext,
@@ -43,11 +43,6 @@ interface Professor {
   link: string;
 }
 
-interface Room {
-  class: string;
-  room: string;
-}
-
 interface Schedule {
   sections: any[];
 }
@@ -78,21 +73,6 @@ function isKeyboardDevice() {
 const DraggableBlock = memo(function DraggableBlock({ id, name, onDelete, selected, onEdit }: BlockProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
-  // const clampedTransform = transform
-  //   ? { ...transform, x: Math.min(transform.x, 0) } // allow only left drag
-  //   : null;
-  //
-  // const style: React.CSSProperties = {
-  //   backgroundColor: transform?.x < -80 ? "#7f1d1d" : undefined,
-  //   transform: CSS.Transform.toString(clampedTransform),
-  //   transition,
-  //   opacity: isDragging ? 0.9 : 1,
-  //   zIndex: isDragging ? 999999 : 1,
-  //   position: isDragging ? "relative" : "relative",
-  //   willChange: "transform",
-  //   transition: isDragging ? undefined : transition,
-  // };
-  //
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -172,7 +152,7 @@ const DraggableBlock = memo(function DraggableBlock({ id, name, onDelete, select
   );
 });
 
-function WeeklyCalendar({ schedule, professorMap, roomMap }: { schedule: any[]; professorMap: Map<string, Professor>; roomMap: Map<string, string>;}) {
+function WeeklyCalendar({ schedule, professorMap }: { schedule: any[]; professorMap: Map<string, Professor>;}) {
   const days = ["Mo", "Tu", "We", "Th", "Fr"];
 
   const startHour = 8;
@@ -268,7 +248,6 @@ function WeeklyCalendar({ schedule, professorMap, roomMap }: { schedule: any[]; 
                   const prof = professorMap.get(
                     normalizeProfessorNameKey(block.instructor ?? "")
                   );
-                  const room = roomMap.get(section.registration_number);
                   const isHovered =
                     hoveredSection === section.registration_number;
                   return (
@@ -302,7 +281,7 @@ function WeeklyCalendar({ schedule, professorMap, roomMap }: { schedule: any[]; 
 
                       {/* time below */}
                       <div className="text-[10px] opacity-80">
-                        {formatTime(block.start_min)} - {formatTime(block.end_min)}{room ? ", " : ""} {room === "Pending Dept Room Assignment" ? "Room TBA" : room}
+                        {formatTime(block.start_min)} - {formatTime(block.end_min)}{block.room ? ", " : ""} {block.room === "Pending Dept Room Assignment" ? "Room TBA" : block.room}
                       </div>
 
                       {/*Professor data*/}
@@ -415,39 +394,7 @@ export default function App() {
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
 
   const [professors, setProfessors] = useState<Professor[]>([]);
-  const [rooms, setRooms] = useState<Room[]>([]);
   const norm = (x: any) => String(x).trim();
-  const baseRoomMap = new Map<string, string>();
-
-  for (const r of rooms) {
-    baseRoomMap.set(norm(r.class), r.room);
-  }
-  const buildRoomMap = (rooms: Room[]) => {
-    const map = new Map<string, string>();
-
-    const normalized = rooms.map(r => ({
-      reg: Number(r.class),
-      room: r.room,
-    }));
-
-    // 1. real mappings
-    for (const r of normalized) {
-      map.set(String(r.reg), r.room);
-    }
-
-    // 2. infer lecture ONLY when pattern is valid
-    for (const r of normalized) {
-      const lectureReg = r.reg - 1;
-
-      if (!map.has(String(lectureReg))) {
-        map.set(String(lectureReg), r.room);
-      }
-    }
-
-    return map;
-  };
-
-  const roomMap = useMemo(() => buildRoomMap(rooms), [rooms]);
 
   const openBlockEditor = (id: string) => {
     setEditingBlockId(id);
@@ -486,13 +433,7 @@ export default function App() {
 
     const selectedCodes = newBlocks.map(b => b.code);
 
-    const sectionsJson = get_sections_for_courses(
-      selectedCodes,
-      classesDataRaw,
-      selectedCampuses
-    );
-
-    const sections = JSON.parse(sectionsJson);
+    const sections = classesDataRaw.filter((s) => selectedCodes.includes(s.subject + " " + s.catalog_number) && selectedCampuses.includes(s.campus));
     initializeSelections(sections);
 
     console.log("Updated Sections:", sections);
@@ -1057,19 +998,16 @@ export default function App() {
         const defaultSemester = semestersData[0];
         setSelectedSemester(defaultSemester);
 
-        const [classesData, coursesData, roomsData] = await Promise.all([
+        const [classesData, coursesData] = await Promise.all([
           fetch(`/uconn-schedule-builder/semesters/${defaultSemester.value}/classes.json`)
             .then(res => res.json()),
           fetch("/uconn-schedule-builder/courses.json")
-            .then(res => res.json()),
-          fetch(`/uconn-schedule-builder/semesters/${defaultSemester.value}/rooms.json`)
             .then(res => res.json()),
         ]);
 
         setCoursesDataRaw(coursesData);
         buildCourses(classesData, coursesData);
         setClassesDataRaw(classesData);
-        setRooms(roomsData);
 
         const professorsData = await fetch(
           "/uconn-schedule-builder/professors.json"
@@ -1181,18 +1119,15 @@ export default function App() {
 
     const loadClasses = async () => {
       try {
-        const [classesData, coursesData, roomsData] = await Promise.all([
+        const [classesData, coursesData] = await Promise.all([
           fetch(`/uconn-schedule-builder/semesters/${selectedSemester.value}/classes.json`)
             .then(res => res.json()),
           fetch("/uconn-schedule-builder/courses.json")
-            .then(res => res.json()),
-          fetch(`/uconn-schedule-builder/semesters/${selectedSemester.value}/rooms.json`)
             .then(res => res.json()),
         ]);
 
         buildCourses(classesData, coursesData);
         setClassesDataRaw(classesData);
-        setRooms(roomsData);
 
       } catch (err) {
         console.error("Error loading semester data:", err);
@@ -1253,15 +1188,9 @@ export default function App() {
     if(!classesDataRaw.length) return;
     const selectedCodes = blockList.map(b => b.code);
 
-    const sectionsJson = get_sections_for_courses(
-      selectedCodes,
-      classesDataRaw,
-      selectedCampuses
-    );
-
-    const sections = JSON.parse(sectionsJson);
-    initializeSelections(sections);
-    setSections(sections);
+    const updated = classesDataRaw.filter((s) => selectedCodes.includes(s.subject + " " + s.catalog_number) && selectedCampuses.includes(s.campus));
+    initializeSelections(updated);
+    setSections(updated);
   };
 
   const removeBlock = (id: string) => {
@@ -1675,7 +1604,7 @@ export default function App() {
             </div>
           ) : (
             <div className="flex-1 min-h-0 overflow-hidden">
-              <WeeklyCalendar schedule={selectedSchedule.sections}  professorMap={professorMap} roomMap={roomMap} />
+              <WeeklyCalendar schedule={selectedSchedule.sections}  professorMap={professorMap} />
             </div>
           )}
         </div>
@@ -1967,7 +1896,7 @@ export default function App() {
                 </button>
               </div>
               <div>Times</div>
-              <div>Capacity</div>
+              <div>Max Capacity</div>
               <div>Enrolled</div>
               <div className="flex flex-col leading-tight">
                 <div className="flex items-center gap-1">

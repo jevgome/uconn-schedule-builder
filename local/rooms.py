@@ -57,10 +57,24 @@ def scrape_subject(semester, subject):
             print(f'{subject} not in {semester["name"]} for {campus}')
             return []
 
+        # pattern = re.compile(
+        #     r"id='win0divMTG_CLASS_NBR\$(?P<id>\d+)'.*?>"
+        #     r".*?>(?P<class_nbr>\d+)<"
+        #     r".*?id='MTG_ROOM\$(?P=id)' >(?P<room>.*?)</span>",
+        #     re.DOTALL
+        # )
         pattern = re.compile(
-            r"id='win0divMTG_CLASS_NBR\$(?P<id>\d+)'.*?>"
-            r".*?>(?P<class_nbr>\d+)<"
-            r".*?id='MTG_ROOM\$(?P=id)' >(?P<room>.*?)</span>",
+            r"Collapse section\s+"
+            r"(?P<course>[A-Z]+\s+\d+).*?"
+
+            r"id='MTG_CLASS_NBR\$(?P<id>\d+)'.*?>"
+            r"(?P<class_nbr>\d+)</a>.*?"
+
+            r"id='MTG_CLASSNAME\$(?P=id)'.*?>"
+            r"(?P<section>\d+)-.*?<br\s*/?>.*?"
+
+            r"id='MTG_ROOM\$(?P=id)'\s*>"
+            r"(?P<room>[^<]+)</span>",
             re.DOTALL
         )
 
@@ -68,6 +82,8 @@ def scrape_subject(semester, subject):
         return [
             {
                 "class": m.group("class_nbr"),
+                "course": m.group("course").strip(),
+                "section": m.group("section"),
                 "room": m.group("room").strip()
             }
             for m in pattern.finditer(resp.text)

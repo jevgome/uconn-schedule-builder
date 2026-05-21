@@ -75,10 +75,11 @@ if __name__ == '__main__':
         if args.semester == '0':
             for sem in sem_list:
                 results = rooms.scrape_semester_rooms(sem)
-                save_results(results, f"../public/semesters/{sem['value']}/rooms.json")
+                save_results(results, f"./semesters/{sem['value']}/rooms.json")
         else:
-            results = rooms.scrape_semester_rooms(args.semester)
-            save_results(results, f"../public/semesters/{args.semester}/rooms.json")
+            sem = next((s for s in sem_list if s["value"] == args.semester), None)
+            results = rooms.scrape_semester_rooms(sem)
+            save_results(results, f"./semesters/{args.semester}/rooms.json")
 
     # Run constantly
     if args.constant or args.all:
@@ -87,7 +88,8 @@ if __name__ == '__main__':
                 results = courses.scrape_semester_courses(sem)
                 save_results(results, f"../public/semesters/{sem['value']}/classes.json")
         else:
-            results = courses.scrape_semester_courses(args.semester)
+            sem = next((s for s in sem_list if s["value"] == args.semester), None)
+            results = courses.scrape_semester_courses(sem)
             save_results(results, f"../public/semesters/{args.semester}/classes.json")
 
 

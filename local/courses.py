@@ -124,6 +124,108 @@ def scrape_courses(semester, subject, session=None):
         raise ValueError("somtin wrong")
         return None
     
+def build_sections_from_entries(entries):
+    """Converts data entries into final block-based sections."""
+    result = []
+    lecture_dict = {}
+    with open(f"./semesters/{sem['value']}/rooms.json") as f:
+        room_data = json.load(f)
+
+    for index, entry in enumerate(entries):
+        if not entry.registration_number:
+            lecture_dict[(entry.subject, entry.catalog_number, entry.class_section)] = entry
+            continue
+
+        a_s = entry.additional_sections
+        modules = [entry]
+        if a_s:
+            extra_sections = a_s[a_s.find("s) ")+1:].split(", ")
+            modules.extend([lecture_dict[(entry.subject, entry.catalog_number, s)] for s in extra_sections])
+
+        blocks = []
+        additional_blocks = []
+        for module in modules:
+            room_entry = next((r_e for r_e in room_data if r_e["course"] == entry.subject + " " + entry.catalog_number and r_e["section"] == module.section), None)
+            if not room_entry:
+                print(f"Room not found: {entry.subject} {entry.catalog_number} - {module.section}")
+                return None
+
+            mt = module.meeting_times
+
+            # Edge Cases
+            if "Arrange" in mt or "Async" in mt or ("&" in mt and "(" in mt):
+                day = ""
+                if "Arrange" in mt:
+                    day = "By Arrangement"
+                elif "Async" in mt:
+                    day = "Online Asynchronous"
+                elif "&" in mt:
+                    day = mt
+                new_block = {
+                    "class_section": module.class_section,
+                    "day": day,
+                    "instructor": module.instructor,
+                    "registration_number": room_entry.class,
+                    "room": room_entry.room,
+                    "start_time": 0,
+                    "end_time": 0,
+                }
+                additional_blocks.append(new_block)
+            else:
+                chunks = mt.split(" & ")
+                for chunk in chunks:
+                    parts = [c.strip() for c in chunk.split("/")]
+                    if len(parts) != 2:
+                        print("Could not parse time")
+                        return None
+
+                    days = [parts[1][i:i+2] for i in range(0, len(parts[1]), 2)]
+                    times = parts[0].split(" - ")
+                    time_mins = []
+                    for time in times:
+                        time_split = time.split(":")
+                        time_min = 0
+                        if "PM" in time:
+                            start_time_min += 720
+                        time_min += int(time_split[0]) * 60 + int(time_split[1][:2])
+                        time_mins.append(time_min)
+
+                    for day in days:
+
+                        new_block = {
+
+                            "class_section": module.class_section,
+                            "day": day,
+                            "instructor": module.instructor,
+                            "registration_number": room_entry.class,
+                            "room": room_entry.room,
+                            "start_time": time_mins[0],
+                            "end_time": time_mins[1],
+                            "instruction_mode": module.instruction_mode,
+
+                        }
+                        blocks.append(new_block)
+
+        new_section = {
+            "registration_number": entry.registration_number,
+            "subject": entry.subject,
+            "catalog_number": entry.catalog_number,
+            "class_section": entry.class_section,
+            "academic_career": entry.academic_career,
+            "campus": entry.campus,
+            "session": entry.session,
+            "enrollment_capacity": entry.enrollment_capacity,
+            "enrollment_total": entry.enrollment_total,
+            "seats_available": entry.seats_available,
+            "capacity_available": entry.capacity_available,
+            "waitlist_available": entry.waitlist_available,
+            "blocks": blocks,
+            "additional_blocks": additional_blocks,
+        }
+
+        result.append(new_section)
+        return result
+
 def scrape_semester_courses(semester):
     """Scrape all course data for a given semester."""
     path = Path("./subject.txt")
@@ -135,4 +237,5 @@ def scrape_semester_courses(semester):
         data = list(executor.map(lambda u: scrape_courses(semester['value'], u),subjects))
     for i in data:
         if i: results.extend(i)
-    return results
+    return build_sections_from_entries(results)
+
