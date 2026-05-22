@@ -1944,7 +1944,7 @@ export default function App() {
                     for (const b of section.blocks ?? []) {
                       const type = getClassType(b.class_section);
 
-                      const time = `${formatTime(b.start_min)}-${formatTime(b.end_min)}`;
+                      const time = `${formatTime(b.start_time)}-${formatTime(b.end_time)}`;
                       const day = getDayLabel(b.day);
 
                       if (!map[type]) map[type] = {};

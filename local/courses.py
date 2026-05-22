@@ -158,7 +158,7 @@ def build_sections_from_entries(semester, entries):
                 room = room_entry["room"]
                 registration_number = room_entry["registration_number"]
             else:
-                print(f"Room not found: {entry["subject"]} {entry["catalog_number"]} - {module["class_section"]}")
+                print(f"Room not found: {entry['subject']} {entry['catalog_number']} - {module['class_section']}")
 
             mt = module["meeting_times"]
 
@@ -216,6 +216,12 @@ def build_sections_from_entries(semester, entries):
                         }
                         blocks.append(new_block)
 
+        def to_int(num):
+            try:
+                return int(num)
+            except ValueError:
+                return 0
+
         new_section = {
             "registration_number": entry["registration_number"],
             "subject": entry["subject"],
@@ -224,11 +230,11 @@ def build_sections_from_entries(semester, entries):
             "academic_career": entry["academic_career"],
             "campus": entry["campus"],
             "session": entry["session"],
-            "enrollment_capacity": entry["enrollment_capacity"],
-            "enrollment_total": entry["enrollment_total"],
-            "seats_available": entry["seats_available"],
+            "enrollment_capacity": to_int(entry["enrollment_capacity"]),
+            "enrollment_total": to_int(entry["enrollment_total"]),
+            "seats_available": to_int(entry["seats_available"]),
             "capacity_available": entry["capacity_available"],
-            "waitlist_available": entry["waitlist_available"],
+            "waitlist_available": to_int(entry["waitlist_available"]),
             "blocks": blocks,
             "additional_blocks": additional_blocks,
         }
