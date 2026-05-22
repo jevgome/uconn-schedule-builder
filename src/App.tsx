@@ -407,6 +407,7 @@ export default function App() {
   };
 
   const [sectionSelections, setSectionSelections] = useState<Record<string, Set<string>>>({});
+  const [lastUpdatedText, setLastUpdatedText] = useState<string | null>(null);
 
   const addBlock = async (course: Course) => {
     const courseName = course.code;
@@ -1137,6 +1138,28 @@ export default function App() {
     loadClasses();
   }, [selectedSemester]);
 
+  useEffect(() => {
+    fetch("/uconn-schedule-builder/time.txt")
+      .then(res => res.text())
+      .then(text => {
+        const seconds = Number(text.trim());
+
+        if (!Number.isFinite(seconds)) return;
+
+        const updatedDate = new Date(seconds * 1000);
+
+        setLastUpdatedText(
+          updatedDate.toLocaleString(undefined, {
+            dateStyle: "medium",
+            timeStyle: "short",
+          })
+        );
+      })
+      .catch(() => {
+        setLastUpdatedText(null);
+      });
+  }, []);
+
   const getBlockCode = (id: string) => {
     return blocks.find(b => b.id === id)?.code;
   };
@@ -1802,7 +1825,7 @@ export default function App() {
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-7xl h-full max-h-[90vh] flex flex-col overflow-hidden rounded-2xl border border-black bg-white">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4">
+            <div className="relative flex items-center justify-between px-6 py-4">
               <div>
                 <h2 className="text-xl font-semibold tracking-tight">
                   {getBlockCode(editingBlockId)}
@@ -1811,6 +1834,18 @@ export default function App() {
                   Available class sections
                 </p>
               </div>
+
+              {/* Center warning */}
+              {lastUpdatedText && (
+                <div className="absolute left-1/2 -translate-x-1/2 text-center">
+                  <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-900 shadow-sm">
+                    Enrollment data last updated:{" "}
+                    <span className="font-semibold">
+                      {lastUpdatedText}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               <button
                 className="cursor-pointer rounded-md px-3 py-1 text-sm hover:bg-black hover:text-white"
@@ -1821,7 +1856,7 @@ export default function App() {
             </div>
 
             {/* Table Header */}
-            <div className="grid grid-cols-[40px_120px_190px_190px_110px_110px_150px_220px_50px] text-gray-800 text-sm font-medium px-4 py-3 border-b-4 border-gray-200">
+            <div className="grid grid-cols-[40px_90px_220px_190px_110px_110px_150px_220px_50px] text-gray-800 text-sm font-medium px-4 py-3 border-b-4 border-gray-200">
               <div>
                 <input
                   type="checkbox"
@@ -1968,7 +2003,7 @@ export default function App() {
                   return (
                     <div
                       key={i}
-                      className="grid grid-cols-[40px_120px_190px_190px_110px_110px_150px_220px_50px] items-center border-b border-black/10 px-4 py-3 text-sm bg-slate-50 hover:bg-blue-950/5"
+                      className="grid grid-cols-[40px_90px_220px_220px_110px_110px_150px_220px_50px] items-center border-b border-black/10 px-4 py-3 text-sm bg-slate-50 hover:bg-blue-950/5"
                     >
                       <div>
                         <input
@@ -2002,11 +2037,12 @@ export default function App() {
                       <div className="font-medium">
                         {section.registration_number}
                       </div>
-                      <div className="text-blue-950 flex flex-col gap-1 min-w-0">
+                      <div className="text-blue-950 flex flex-col gap-1 min-w-0 pr-8">
                         {(() => {
-                          const instructors = section.blocks
-                            ?.map((b: any) => b.instructor)
-                            .filter(Boolean) as string[] || [];
+                          const instructors =
+                            (section.blocks
+                              ?.map((b: any) => b.instructor)
+                              .filter(Boolean) as string[]) || [];
 
                           // normalize + dedupe
                           const uniqueInstructors = Array.from(
@@ -2030,17 +2066,17 @@ export default function App() {
                                 key={`${rawName}-${idx}`}
                                 className="flex items-center gap-2 min-w-0"
                               >
-                                {/* Link (name + icon inline) */}
-                                {prof?.link && (
+                                {/* Name + icon */}
+                                {prof?.link ? (
                                   <a
                                     href={prof.link}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex items-center gap-1 text-blue-900 hover:underline transition"
+                                    className="flex items-center gap-1 text-blue-900 hover:underline transition min-w-0"
                                     title="View on RateMyProfessor"
                                   >
-                                    {/* Name */}
-                                    <span className="truncate">{rawName}</span>
+                                    {/* Truncated name */}
+                                    <span className="truncate min-w-0">{rawName}</span>
 
                                     {/* Icon */}
                                     <svg
@@ -2053,12 +2089,14 @@ export default function App() {
                                       <path d="M5 5h6v2H7v10h10v-4h2v6H5V5z" />
                                     </svg>
                                   </a>
+                                ) : (
+                                  <span className="truncate min-w-0 flex-1">{rawName}</span>
                                 )}
 
                                 {/* Rating */}
                                 {prof?.rating != null && (
                                   <span
-                                    className={`flex items-center gap-[2px] shrink-0 ${getRatingColor(
+                                    className={`flex items-center gap-[2px] shrink-0 whitespace-nowrap ${getRatingColor(
                                       prof.rating
                                     )}`}
                                   >
