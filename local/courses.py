@@ -124,49 +124,59 @@ def scrape_courses(semester, subject, session=None):
         raise ValueError("somtin wrong")
         return None
     
-def build_sections_from_entries(entries):
+def build_sections_from_entries(semester, entries):
     """Converts data entries into final block-based sections."""
     result = []
     lecture_dict = {}
-    with open(f"./semesters/{sem['value']}/rooms.json") as f:
+    for entry in entries:
+        if not entry["registration_number"]:
+            lecture_dict[(entry["subject"], entry["catalog_number"], entry["class_section"])] = entry
+
+    with open(f"./semesters/{semester['value']}/rooms.json") as f:
         room_data = json.load(f)
 
-    for index, entry in enumerate(entries):
-        if not entry.registration_number:
-            lecture_dict[(entry.subject, entry.catalog_number, entry.class_section)] = entry
+    for entry in entries:
+        if not entry["registration_number"]:
             continue
 
-        a_s = entry.additional_sections
+        a_s = entry["additional_sections"]
         modules = [entry]
         if a_s:
-            extra_sections = a_s[a_s.find("s) ")+1:].split(", ")
-            modules.extend([lecture_dict[(entry.subject, entry.catalog_number, s)] for s in extra_sections])
+            extra_sections = a_s[a_s.find("s) ")+3:].split(", ")
+            try:
+                modules.extend([lecture_dict[(entry["subject"], entry["catalog_number"], s)] for s in extra_sections])
+            except KeyError:
+                continue
 
         blocks = []
         additional_blocks = []
         for module in modules:
-            room_entry = next((r_e for r_e in room_data if r_e["course"] == entry.subject + " " + entry.catalog_number and r_e["section"] == module.section), None)
-            if not room_entry:
-                print(f"Room not found: {entry.subject} {entry.catalog_number} - {module.section}")
-                return None
+            room = ""
+            registration_number = module["registration_number"]
+            room_entry = next((r_e for r_e in room_data if r_e["course"] == entry["subject"] + " " + entry["catalog_number"] and r_e["section"] == module["class_section"]), None)
+            if room_entry:
+                room = room_entry["room"]
+                registration_number = room_entry["registration_number"]
+            else:
+                print(f"Room not found: {entry["subject"]} {entry["catalog_number"]} - {module["class_section"]}")
 
-            mt = module.meeting_times
+            mt = module["meeting_times"]
 
             # Edge Cases
-            if "Arrange" in mt or "Async" in mt or ("&" in mt and "(" in mt):
+            if "Arrange" in mt or "Async" in module["instruction_mode"] or ("&" in mt and "(" in mt):
                 day = ""
                 if "Arrange" in mt:
                     day = "By Arrangement"
-                elif "Async" in mt:
+                elif "Async" in module["instruction_mode"]:
                     day = "Online Asynchronous"
                 elif "&" in mt:
                     day = mt
                 new_block = {
-                    "class_section": module.class_section,
+                    "class_section": module["class_section"],
                     "day": day,
-                    "instructor": module.instructor,
-                    "registration_number": room_entry.registration_number,
-                    "room": room_entry.room,
+                    "instructor": module["instructor"],
+                    "registration_number": registration_number,
+                    "room": room,
                     "start_time": 0,
                     "end_time": 0,
                 }
@@ -186,7 +196,7 @@ def build_sections_from_entries(entries):
                         time_split = time.split(":")
                         time_min = 0
                         if "PM" in time:
-                            start_time_min += 720
+                            time_min += 720
                         time_min += int(time_split[0]) * 60 + int(time_split[1][:2])
                         time_mins.append(time_min)
 
@@ -194,37 +204,37 @@ def build_sections_from_entries(entries):
 
                         new_block = {
 
-                            "class_section": module.class_section,
+                            "class_section": module["class_section"],
                             "day": day,
-                            "instructor": module.instructor,
-                            "registration_number": room_entry.registration_number,
-                            "room": room_entry.room,
+                            "instructor": module["instructor"],
+                            "registration_number": registration_number,
+                            "room": room,
                             "start_time": time_mins[0],
                             "end_time": time_mins[1],
-                            "instruction_mode": module.instruction_mode,
+                            "instruction_mode": module["instruction_mode"],
 
                         }
                         blocks.append(new_block)
 
         new_section = {
-            "registration_number": entry.registration_number,
-            "subject": entry.subject,
-            "catalog_number": entry.catalog_number,
-            "class_section": entry.class_section,
-            "academic_career": entry.academic_career,
-            "campus": entry.campus,
-            "session": entry.session,
-            "enrollment_capacity": entry.enrollment_capacity,
-            "enrollment_total": entry.enrollment_total,
-            "seats_available": entry.seats_available,
-            "capacity_available": entry.capacity_available,
-            "waitlist_available": entry.waitlist_available,
+            "registration_number": entry["registration_number"],
+            "subject": entry["subject"],
+            "catalog_number": entry["catalog_number"],
+            "class_section": entry["class_section"],
+            "academic_career": entry["academic_career"],
+            "campus": entry["campus"],
+            "session": entry["session"],
+            "enrollment_capacity": entry["enrollment_capacity"],
+            "enrollment_total": entry["enrollment_total"],
+            "seats_available": entry["seats_available"],
+            "capacity_available": entry["capacity_available"],
+            "waitlist_available": entry["waitlist_available"],
             "blocks": blocks,
             "additional_blocks": additional_blocks,
         }
 
         result.append(new_section)
-        return result
+    return result
 
 def scrape_semester_courses(semester):
     """Scrape all course data for a given semester."""
@@ -237,5 +247,5 @@ def scrape_semester_courses(semester):
         data = list(executor.map(lambda u: scrape_courses(semester['value'], u),subjects))
     for i in data:
         if i: results.extend(i)
-    return build_sections_from_entries(results)
+    return build_sections_from_entries(semester, results)
 

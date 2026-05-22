@@ -58,37 +58,46 @@ def scrape_subject(semester, subject):
             print(f'{subject} not in {semester["name"]} for {campus}')
             return []
 
-        # pattern = re.compile(
-        #     r"id='win0divMTG_CLASS_NBR\$(?P<id>\d+)'.*?>"
-        #     r".*?>(?P<class_nbr>\d+)<"
-        #     r".*?id='MTG_ROOM\$(?P=id)' >(?P<room>.*?)</span>",
-        #     re.DOTALL
-        # )
-        pattern = re.compile(
-            r"Collapse section\s+"
-            r"(?P<course>[A-Z]+\s+\d+).*?"
+        soup = BeautifulSoup(resp.text, "lxml")
 
-            r"id='MTG_CLASS_NBR\$(?P<id>\d+)'.*?>"
-            r"(?P<class_nbr>\d+)</a>.*?"
+        results = []
 
-            r"id='MTG_CLASSNAME\$(?P=id)'.*?>"
-            r"(?P<section>\d+)-.*?<br\s*/?>.*?"
+        # each course container
+        for course_block in soup.select("div[id^='win0divSSR_CLSRSLT_WRK_GROUPBOX2']"):
 
-            r"id='MTG_ROOM\$(?P=id)'\s*>"
-            r"(?P<room>[^<]+)</span>",
-            re.DOTALL
-        )
+            # find course name from nearby text
+            course_name = None
+
+            text = course_block.get_text(" ", strip=True)
+
+            m = re.search(r'([A-Z]{2,}\s+\d+\w*)', text)
+            if m:
+                course_name = m.group(1)
+
+            # all meeting rows for this course
+            rows = course_block.select("tr[id^='trSSR_CLSRCH_MTG1']")
+
+            for row in rows:
+                class_nbr_el = row.select_one("a[id^='MTG_CLASS_NBR']")
+                section_el = row.select_one("a[id^='MTG_CLASSNAME']")
+                room_el = row.select_one("span[id^='MTG_ROOM']")
+
+                if not (class_nbr_el and section_el and room_el):
+                    continue
+                
+                sec = section_el.contents[0].strip()
+                sec = sec[:sec.find("-")]
+
+                results.append({
+                    "registration_number": class_nbr_el.text.strip(),
+                    "course": course_name,
+                    "section": sec,
+                    "room": room_el.text.strip()
+                })
 
         print(f'Scraped {subject} in {campus} for {semester["name"]}')
-        return [
-            {
-                "registration_number": m.group("class_nbr"),
-                "course": m.group("course").strip(),
-                "section": m.group("section"),
-                "room": m.group("room").strip()
-            }
-            for m in pattern.finditer(resp.text)
-        ]
+
+        return results
 
     results = []
 
@@ -202,3 +211,14 @@ def buildings(campus='STORR'):
     print(f"Found {len(buildings)} buildings")
 
     return buildings
+
+if __name__ == "__main__":
+    sem = {
+        "name": "Fall 2026",
+        "value": "1268",
+    }
+    result = scrape_subject(sem, "MUSI")
+
+    for i in result:
+        if i:
+            print(i)

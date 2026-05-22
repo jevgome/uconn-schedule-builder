@@ -91,5 +91,9 @@ if __name__ == '__main__':
             sem = next((s for s in sem_list if s["value"] == args.semester), None)
             results = courses.scrape_semester_courses(sem)
             save_results(results, f"../public/semesters/{args.semester}/classes.json")
+    
+        path = Path(f"../public/time.txt")
+        path.parent.mkdir(parents=True, exist_ok=True)
 
-
+        with path.open("w", encoding="utf-8") as f:
+            f.write(str(time.time()))
