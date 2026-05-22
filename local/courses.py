@@ -195,7 +195,7 @@ def build_sections_from_entries(semester, entries):
                     for time in times:
                         time_split = time.split(":")
                         time_min = 0
-                        if "PM" in time:
+                        if "PM" in time and "12" not in time:
                             time_min += 720
                         time_min += int(time_split[0]) * 60 + int(time_split[1][:2])
                         time_mins.append(time_min)
