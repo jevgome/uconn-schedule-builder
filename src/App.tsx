@@ -231,8 +231,8 @@ function WeeklyCalendar({ schedule, professorMap }: { schedule: any[]; professor
                 section.blocks.map((block: any) => {
                   if (block.day !== day) return null;
 
-                  const startOffset = block.start_min - startHour * 60;
-                  const duration = block.end_min - block.start_min;
+                  const startOffset = block.start_time - startHour * 60;
+                  const duration = block.end_time - block.start_time;
 
                   const top = (startOffset / totalMinutes) * 100;
                   const height = ((duration+10) / totalMinutes) * 100;
@@ -253,7 +253,7 @@ function WeeklyCalendar({ schedule, professorMap }: { schedule: any[]; professor
                   return (
 
                       <div
-                        key={`${section.subject}-${section.catalog_number}-${section.class_section}-${block.day}-${block.start_min}`}
+                        key={`${section.subject}-${section.catalog_number}-${section.class_section}-${block.day}-${block.start_time}`}
                         onMouseEnter={() => setHoveredSection(section.registration_number)}
                         onMouseLeave={() => setHoveredSection(null)}
                         className={`absolute left-1 right-1 rounded-xl pt-1 px-2 shadow-lg transition-all duration-150
@@ -281,7 +281,7 @@ function WeeklyCalendar({ schedule, professorMap }: { schedule: any[]; professor
 
                       {/* time below */}
                       <div className="text-[10px] opacity-80">
-                        {formatTime(block.start_min)} - {formatTime(block.end_min)}{block.room ? ", " : ""} {block.room === "Pending Dept Room Assignment" ? "Room TBA" : block.room}
+                        {formatTime(block.start_time)} - {formatTime(block.end_time)}{block.room ? ", " : ""} {block.room === "Pending Dept Room Assignment" ? "Room TBA" : block.room}
                       </div>
 
                       {/*Professor data*/}

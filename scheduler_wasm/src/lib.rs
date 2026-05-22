@@ -18,8 +18,8 @@ pub fn start() {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Block {
     pub day: String,
-    pub start_min: u16,
-    pub end_min: u16,
+    pub start_time: u16,
+    pub end_time: u16,
 
     pub class_section: String,
     pub instructor: String,
@@ -36,7 +36,6 @@ pub struct Section {
     pub academic_career: String,
     pub campus: String,
     pub session: String,
-    pub instruction_mode: String,
 
     pub enrollment_capacity: u32,
     pub enrollment_total: u32,
@@ -145,17 +144,17 @@ fn can_add_section(current: &Vec<Section>, candidate: &Section) -> bool {
 
 pub fn sections_conflict(a: &Section, b: &Section) -> bool {
     for ba in &a.blocks {
-        if ba.start_min == ba.end_min && ba.start_min == 0 {
+        if ba.start_time == ba.end_time && ba.start_time == 0 {
             continue;
         }
 
         for bb in &b.blocks {
-            if bb.start_min == bb.end_min && bb.start_min == 0 {
+            if bb.start_time == bb.end_time && bb.start_time == 0 {
                 continue;
             }
             if ba.day == bb.day
-                && ba.start_min < bb.end_min + 15
-                && bb.start_min < ba.end_min + 15
+                && ba.start_time < bb.end_time + 15
+                && bb.start_time < ba.end_time + 15
             {
                 return true;
             }
