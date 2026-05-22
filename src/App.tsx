@@ -1836,7 +1836,7 @@ export default function App() {
                   {getBlockCode(editingBlockId)}
                 </h2>
                 <p className="text-sm text-blue-950">
-                  Available class sections
+                  {sortedSections.length} Available class sections
                 </p>
               </div>
 

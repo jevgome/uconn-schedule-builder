@@ -1,6 +1,4 @@
-- Make the schedule grid more clear
 - Put general course info in section edit
-- Add number of sections to header of section edit
 - Filter classes
 - Report bug / feedback
 - Donations
