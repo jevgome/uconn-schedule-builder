@@ -1823,7 +1823,7 @@ export default function App() {
       </div>
       {editingBlockId && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-7xl h-full max-h-[90vh] flex flex-col overflow-hidden rounded-2xl border border-black bg-white">
+          <div className="w-full max-w-9xl h-full max-h-[95vh] flex flex-col overflow-hidden rounded-2xl border border-black bg-white">
             {/* Header */}
             <div className="relative flex items-center justify-between px-6 py-4">
               <div>
@@ -1856,7 +1856,7 @@ export default function App() {
             </div>
 
             {/* Table Header */}
-            <div className="grid grid-cols-[40px_90px_220px_190px_110px_110px_150px_220px_50px] text-gray-800 text-sm font-medium px-4 py-3 border-b-4 border-gray-200">
+            <div className="grid grid-cols-[40px_90px_220px_190px_190px_110px_110px_150px_220px_50px] text-gray-800 text-sm font-medium px-4 py-3 border-b-4 border-gray-200">
               <div>
                 <input
                   type="checkbox"
@@ -1931,6 +1931,7 @@ export default function App() {
                 </button>
               </div>
               <div>Times</div>
+              <div>Location</div>
               <div>Max Capacity</div>
               <div>Enrolled</div>
               <div className="flex flex-col leading-tight">
@@ -1993,6 +1994,31 @@ export default function App() {
                     return map;
                   })();
 
+                  const groupedLocations = (() => {
+                    type Entry = {
+                      rooms: Set<string>;
+                    };
+
+                    const map: Record<
+                      string,
+                      Record<string, Entry>
+                    > = {};
+
+                    for (const b of section.blocks ?? []) {
+                      const type = getClassType(b.class_section);
+                      const room = b.room || "TBA";
+
+                      if (!map[type]) map[type] = {};
+                      if (!map[type][room]) {
+                        map[type][room] = { rooms: new Set() };
+                      }
+
+                      map[type][room].rooms.add(room);
+                    }
+
+                    return map;
+                  })();
+
                   const TYPE_ORDER: Record<string, number> = {
                     Lecture: 0,
                     Discussion: 1,
@@ -2003,7 +2029,7 @@ export default function App() {
                   return (
                     <div
                       key={i}
-                      className="grid grid-cols-[40px_90px_220px_220px_110px_110px_150px_220px_50px] items-center border-b border-black/10 px-4 py-3 text-sm bg-slate-50 hover:bg-blue-950/5"
+                      className="grid grid-cols-[40px_90px_220px_190px_190px_110px_110px_150px_220px_50px] items-center border-b border-black/10 px-4 py-3 text-sm bg-slate-50 hover:bg-blue-950/5"
                     >
                       <div>
                         <input
@@ -2135,6 +2161,34 @@ export default function App() {
                               })}
                             </div>
                           ))
+                        )}
+                      </div>
+                      <div className="text-gray-700 flex flex-col gap-1 min-w-0">
+                        {Object.keys(groupedLocations).length === 0 ? (
+                          <span className="text-gray-400">TBA</span>
+                        ) : (
+                          Object.entries(groupedLocations)
+                            .sort(([typeA], [typeB]) => {
+                              return (
+                                (TYPE_ORDER[typeA] ?? 99) -
+                                (TYPE_ORDER[typeB] ?? 99)
+                              );
+                            })
+                            .map(([type, roomMap]) => (
+                              <div key={type} className="text-xs text-gray-700">
+                                {Object.entries(roomMap).map(([room], idx) => (
+                                  <div
+                                    key={`${type}-${room}-${idx}`}
+                                    className="leading-tight"
+                                  >
+                                    <span className="font-semibold text-blue-950">
+                                      {type}:
+                                    </span>{" "}
+                                    <span className="text-gray-500">{room}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            ))
                         )}
                       </div>
                       <div>{section.enrollment_capacity}</div>
