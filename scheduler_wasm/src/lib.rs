@@ -143,6 +143,34 @@ fn can_add_section(current: &Vec<Section>, candidate: &Section) -> bool {
 //
 
 pub fn sections_conflict(a: &Section, b: &Section) -> bool {
+    for i in 0..a.blocks.len()-1 {
+        for j in i+1..a.blocks.len() {
+            let ba = &a.blocks[i];
+            let bb = &a.blocks[j];
+
+            if ba.day == bb.day
+                && ba.start_time < bb.end_time + 15
+                && bb.start_time < ba.end_time + 15
+            {
+                return true;
+            }
+        }
+    }
+
+    for i in 0..b.blocks.len()-1 {
+        for j in i+1..b.blocks.len() {
+            let ba = &b.blocks[i];
+            let bb = &b.blocks[j];
+
+            if ba.day == bb.day
+                && ba.start_time < bb.end_time + 15
+                && bb.start_time < ba.end_time + 15
+            {
+                return true;
+            }
+        }
+    }
+
     for ba in &a.blocks {
         if ba.start_time == ba.end_time && ba.start_time == 0 {
             continue;
