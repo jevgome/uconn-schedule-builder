@@ -1350,7 +1350,12 @@ export default function App() {
         section.blocks?.map((b: any) => b.instructor).filter(Boolean) ?? [];
 
       const ratings = instructors.map((name: string) => {
-        const prof = professorMap.get(normalizeProfessorNameKey(name));
+        const cleaned = name.replace(/\s\([^)]*\)/g, "").trim();
+
+        const prof = professorMap.get(
+          normalizeProfessorNameKey(cleaned)
+        );
+
         return prof?.rating ?? 0;
       });
 
@@ -2194,7 +2199,13 @@ export default function App() {
                       <div>{section.enrollment_capacity}</div>
                       <div>{section.enrollment_total}</div>
                       <div>{section.seats_available}</div>
-                      <div>{section.capacity_available}</div>
+                      <div className="whitespace-pre-line leading-tight">
+                          {typeof section.capacity_available === "string"
+                          ? section.capacity_available
+                              // insert newline before a number that follows text
+                              .replace(/([A-Za-z\)])(\d+)/g, "$1\n$2")
+                          : section.capacity_available}
+                      </div>
                       <div>{section.waitlist_available}</div>
                     </div>
                   );
