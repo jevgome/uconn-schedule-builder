@@ -495,7 +495,7 @@
         "registration_number": "3367",
         "room": "TBA\rTBA",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "Hybrid"
       },
       {
@@ -505,7 +505,7 @@
         "registration_number": "3367",
         "room": "TBA\rTBA",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "Hybrid"
       },
       {
@@ -515,7 +515,7 @@
         "registration_number": "3367",
         "room": "TBA\rTBA",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "Hybrid"
       },
       {
@@ -525,7 +525,7 @@
         "registration_number": "3367",
         "room": "TBA\rTBA",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "Hybrid"
       },
       {
@@ -535,7 +535,7 @@
         "registration_number": "3367",
         "room": "TBA\rTBA",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "Hybrid"
       },
       {
@@ -2504,7 +2504,7 @@
         "instructor": "Anitha Elango (TA),Lauren Jones (PI)",
         "registration_number": "1097",
         "room": "HTB 325",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 930,
         "instruction_mode": "In Person"
       },
@@ -2514,7 +2514,7 @@
         "instructor": "Anitha Elango (TA),Lauren Jones (PI)",
         "registration_number": "1097",
         "room": "HTB 325",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 930,
         "instruction_mode": "In Person"
       },
@@ -2525,7 +2525,7 @@
         "registration_number": "1098",
         "room": "HTB 138",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -2535,7 +2535,7 @@
         "registration_number": "1098",
         "room": "HTB 138",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -2545,7 +2545,7 @@
         "registration_number": "1098",
         "room": "HTB 138",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -2619,7 +2619,7 @@
         "registration_number": "1385",
         "room": "DWTN 215",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -2629,7 +2629,7 @@
         "registration_number": "1385",
         "room": "DWTN 215",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -2639,7 +2639,7 @@
         "registration_number": "1385",
         "room": "DWTN 215",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       }
     ],
@@ -2723,7 +2723,7 @@
         "registration_number": "1572",
         "room": "PWE 175",
         "start_time": 570,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -2733,7 +2733,7 @@
         "registration_number": "1572",
         "room": "PWE 175",
         "start_time": 570,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -2743,7 +2743,7 @@
         "registration_number": "1572",
         "room": "PWE 175",
         "start_time": 570,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -2769,7 +2769,7 @@
         "instructor": "Derek Laux (PI),Khalia Cain (TA),Rebecca Newcomer (TC)",
         "registration_number": "1573",
         "room": "BRON 118\rBRON 119",
-        "start_time": 1455,
+        "start_time": 735,
         "end_time": 905,
         "instruction_mode": "In Person"
       },
@@ -2779,7 +2779,7 @@
         "instructor": "Derek Laux (PI),Khalia Cain (TA),Rebecca Newcomer (TC)",
         "registration_number": "1573",
         "room": "BRON 118\rBRON 119",
-        "start_time": 1455,
+        "start_time": 735,
         "end_time": 905,
         "instruction_mode": "In Person"
       },
@@ -2790,7 +2790,7 @@
         "registration_number": "1572",
         "room": "PWE 175",
         "start_time": 570,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -2800,7 +2800,7 @@
         "registration_number": "1572",
         "room": "PWE 175",
         "start_time": 570,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -2810,7 +2810,7 @@
         "registration_number": "1572",
         "room": "PWE 175",
         "start_time": 570,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -3515,7 +3515,7 @@
         "instructor": "Mary Sol Keesey (PI),Priya Shah (PI)",
         "registration_number": "1387",
         "room": "HTB 321",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 900,
         "instruction_mode": "In Person"
       },
@@ -3525,7 +3525,7 @@
         "instructor": "Mary Sol Keesey (PI),Priya Shah (PI)",
         "registration_number": "1387",
         "room": "HTB 321",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 900,
         "instruction_mode": "In Person"
       },
@@ -3572,7 +3572,7 @@
         "instructor": "Mary Sol Keesey (PI),Scott Pierce (PI)",
         "registration_number": "1391",
         "room": "HTB 321",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 900,
         "instruction_mode": "In Person"
       },
@@ -3582,7 +3582,7 @@
         "instructor": "Mary Sol Keesey (PI),Scott Pierce (PI)",
         "registration_number": "1391",
         "room": "HTB 321",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 900,
         "instruction_mode": "In Person"
       },
@@ -3660,7 +3660,7 @@
         "registration_number": "1430",
         "room": "DWTN 225",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -3670,7 +3670,7 @@
         "registration_number": "1430",
         "room": "DWTN 225",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -3680,7 +3680,7 @@
         "registration_number": "1430",
         "room": "DWTN 225",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -3727,7 +3727,7 @@
         "registration_number": "1405",
         "room": "DWTN 225",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -3737,7 +3737,7 @@
         "registration_number": "1405",
         "room": "DWTN 225",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -3747,7 +3747,7 @@
         "registration_number": "1405",
         "room": "DWTN 225",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -3821,7 +3821,7 @@
         "registration_number": "1596",
         "room": "CHM T108\rCHM T108",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -3878,7 +3878,7 @@
         "registration_number": "1389",
         "room": "CHM T108\rCHM T108",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -3934,7 +3934,7 @@
         "instructor": "Kimberly Carpenter (LABC),Louis Riel (PI),S M Rafiul Islam (TA)",
         "registration_number": "1428",
         "room": "CHM T109",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 900,
         "instruction_mode": "In Person"
       },
@@ -3944,7 +3944,7 @@
         "instructor": "Kimberly Carpenter (LABC),Louis Riel (PI),S M Rafiul Islam (TA)",
         "registration_number": "1428",
         "room": "CHM T109",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 900,
         "instruction_mode": "In Person"
       },
@@ -4001,7 +4001,7 @@
         "instructor": "Kenneth Stephen (TA),Kimberly Carpenter (LABC),Louis Riel (PI)",
         "registration_number": "1593",
         "room": "CHM T111",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 900,
         "instruction_mode": "In Person"
       },
@@ -4011,7 +4011,7 @@
         "instructor": "Kenneth Stephen (TA),Kimberly Carpenter (LABC),Louis Riel (PI)",
         "registration_number": "1593",
         "room": "CHM T111",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 900,
         "instruction_mode": "In Person"
       },
@@ -4069,7 +4069,7 @@
         "registration_number": "1426",
         "room": "CHM T109\rCHM T109",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -4146,7 +4146,7 @@
         "registration_number": "1603",
         "room": "CHM T111\rCHM T111",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -4223,7 +4223,7 @@
         "registration_number": "3368",
         "room": "CHM T212\rCHM T212",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -4233,7 +4233,7 @@
         "registration_number": "3368",
         "room": "CHM T212\rCHM T212",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -4243,7 +4243,7 @@
         "registration_number": "3368",
         "room": "CHM T212\rCHM T212",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -4253,7 +4253,7 @@
         "registration_number": "3368",
         "room": "CHM T212\rCHM T212",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -4263,7 +4263,7 @@
         "registration_number": "3368",
         "room": "CHM T212\rCHM T212",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -4502,7 +4502,7 @@
         "instructor": "Alex Castillo (PI),Kiet Tran (PI),Kimberly Carpenter (LABC)",
         "registration_number": "1386",
         "room": "CHM T308\rCHM T308",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 930,
         "instruction_mode": "In Person"
       },
@@ -4512,7 +4512,7 @@
         "instructor": "Alex Castillo (PI),Kiet Tran (PI),Kimberly Carpenter (LABC)",
         "registration_number": "1386",
         "room": "CHM T308\rCHM T308",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 930,
         "instruction_mode": "In Person"
       },
@@ -4523,7 +4523,7 @@
         "registration_number": "1386",
         "room": "CHM T308\rCHM T308",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -4533,7 +4533,7 @@
         "registration_number": "1386",
         "room": "CHM T308\rCHM T308",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -4580,7 +4580,7 @@
         "registration_number": "1604",
         "room": "CHM T312\rCHM T312",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -4590,7 +4590,7 @@
         "registration_number": "1604",
         "room": "CHM T312\rCHM T312",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -4599,7 +4599,7 @@
         "instructor": "Kiet Tran (PI),Kimberly Carpenter (LABC),Mothana Al-Omari (TA)",
         "registration_number": "1604",
         "room": "CHM T312\rCHM T312",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 930,
         "instruction_mode": "In Person"
       },
@@ -4609,7 +4609,7 @@
         "instructor": "Kiet Tran (PI),Kimberly Carpenter (LABC),Mothana Al-Omari (TA)",
         "registration_number": "1604",
         "room": "CHM T312\rCHM T312",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 930,
         "instruction_mode": "In Person"
       },
@@ -4656,7 +4656,7 @@
         "instructor": "Andrey Plodukhin (PI),Kiet Tran (PI),Kimberly Carpenter (LABC)",
         "registration_number": "3495",
         "room": "CHM T314\rCHM T314",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 930,
         "instruction_mode": "In Person"
       },
@@ -4666,7 +4666,7 @@
         "instructor": "Andrey Plodukhin (PI),Kiet Tran (PI),Kimberly Carpenter (LABC)",
         "registration_number": "3495",
         "room": "CHM T314\rCHM T314",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 930,
         "instruction_mode": "In Person"
       },
@@ -4677,7 +4677,7 @@
         "registration_number": "3495",
         "room": "CHM T314\rCHM T314",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -4687,7 +4687,7 @@
         "registration_number": "3495",
         "room": "CHM T314\rCHM T314",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -4739,7 +4739,7 @@
         "instructor": "Douglas Mooney (TA),Sandra Hill (PI)",
         "registration_number": "1628",
         "room": "WTBY 309",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 930,
         "instruction_mode": "In Person"
       },
@@ -4749,7 +4749,7 @@
         "instructor": "Douglas Mooney (TA),Sandra Hill (PI)",
         "registration_number": "1628",
         "room": "WTBY 309",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 930,
         "instruction_mode": "In Person"
       },
@@ -4826,7 +4826,7 @@
         "instructor": "Sandra Hill (PI)",
         "registration_number": "1630",
         "room": "WTBY 323",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 870,
         "instruction_mode": "In Person"
       },
@@ -4836,7 +4836,7 @@
         "instructor": "Sandra Hill (PI)",
         "registration_number": "1630",
         "room": "WTBY 323",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 870,
         "instruction_mode": "In Person"
       },
@@ -4846,7 +4846,7 @@
         "instructor": "Sandra Hill (PI)",
         "registration_number": "1630",
         "room": "WTBY 323",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 870,
         "instruction_mode": "In Person"
       }
@@ -5082,8 +5082,8 @@
     "campus": "STORR",
     "session": "Summer 2",
     "enrollment_capacity": 25,
-    "enrollment_total": 23,
-    "seats_available": 2,
+    "enrollment_total": 24,
+    "seats_available": 1,
     "capacity_available": "",
     "waitlist_available": 0,
     "blocks": [],
@@ -5666,7 +5666,7 @@
         "registration_number": "2119",
         "room": "DWTN 305A",
         "start_time": 630,
-        "end_time": 1445,
+        "end_time": 725,
         "instruction_mode": "In Person"
       },
       {
@@ -5676,7 +5676,7 @@
         "registration_number": "2119",
         "room": "DWTN 305A",
         "start_time": 630,
-        "end_time": 1445,
+        "end_time": 725,
         "instruction_mode": "In Person"
       },
       {
@@ -5686,7 +5686,7 @@
         "registration_number": "2119",
         "room": "DWTN 305A",
         "start_time": 630,
-        "end_time": 1445,
+        "end_time": 725,
         "instruction_mode": "In Person"
       },
       {
@@ -6148,7 +6148,7 @@
     "campus": "STORR",
     "session": "Summer 2",
     "enrollment_capacity": 20,
-    "enrollment_total": 25,
+    "enrollment_total": 26,
     "seats_available": 0,
     "capacity_available": "",
     "waitlist_available": 0,
@@ -6930,7 +6930,7 @@
         "registration_number": "1407",
         "room": "BUSN 203",
         "start_time": 600,
-        "end_time": 1490,
+        "end_time": 770,
         "instruction_mode": "In Person"
       },
       {
@@ -6940,7 +6940,7 @@
         "registration_number": "1407",
         "room": "BUSN 203",
         "start_time": 600,
-        "end_time": 1490,
+        "end_time": 770,
         "instruction_mode": "In Person"
       },
       {
@@ -6950,7 +6950,7 @@
         "registration_number": "1407",
         "room": "BUSN 203",
         "start_time": 600,
-        "end_time": 1490,
+        "end_time": 770,
         "instruction_mode": "In Person"
       },
       {
@@ -6960,7 +6960,7 @@
         "registration_number": "1407",
         "room": "BUSN 203",
         "start_time": 600,
-        "end_time": 1490,
+        "end_time": 770,
         "instruction_mode": "In Person"
       },
       {
@@ -6970,7 +6970,7 @@
         "registration_number": "1407",
         "room": "BUSN 203",
         "start_time": 600,
-        "end_time": 1490,
+        "end_time": 770,
         "instruction_mode": "In Person"
       }
     ],
@@ -6997,7 +6997,7 @@
         "registration_number": "1425",
         "room": "No Room Required - Online",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "Online Synchronous"
       }
     ],
@@ -7351,8 +7351,8 @@
     "campus": "STORR",
     "session": "Summer 2",
     "enrollment_capacity": 25,
-    "enrollment_total": 24,
-    "seats_available": 1,
+    "enrollment_total": 25,
+    "seats_available": 0,
     "capacity_available": "",
     "waitlist_available": 0,
     "blocks": [],
@@ -8333,7 +8333,7 @@
         "registration_number": "3401",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -8387,7 +8387,7 @@
         "registration_number": "3386",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -8441,7 +8441,7 @@
         "registration_number": "3388",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -8468,7 +8468,7 @@
         "registration_number": "3389",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -8495,7 +8495,7 @@
         "registration_number": "3390",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -8549,7 +8549,7 @@
         "registration_number": "3415",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -8603,7 +8603,7 @@
         "registration_number": "3417",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -8657,7 +8657,7 @@
         "registration_number": "3419",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -8684,7 +8684,7 @@
         "registration_number": "3420",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -8711,7 +8711,7 @@
         "registration_number": "3421",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -8738,7 +8738,7 @@
         "registration_number": "3422",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -8765,7 +8765,7 @@
         "registration_number": "3423",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -8792,7 +8792,7 @@
         "registration_number": "3424",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -8981,7 +8981,7 @@
         "registration_number": "3433",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -9103,7 +9103,7 @@
         "registration_number": "3450",
         "room": "DWTN 132",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -9157,7 +9157,7 @@
         "registration_number": "3452",
         "room": "DWTN 131",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -9346,7 +9346,7 @@
         "registration_number": "3455",
         "room": "DWTN 134",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -9447,7 +9447,7 @@
         "registration_number": "3466",
         "room": "WTBY 201",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -9501,7 +9501,7 @@
         "registration_number": "3468",
         "room": "WTBY 203",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -9528,7 +9528,7 @@
         "registration_number": "3469",
         "room": "WTBY 203",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -9555,7 +9555,7 @@
         "registration_number": "3470",
         "room": "WTBY 203",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -9582,7 +9582,7 @@
         "registration_number": "3471",
         "room": "WTBY 203",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -9609,7 +9609,7 @@
         "registration_number": "3472",
         "room": "WTBY 203",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -10145,8 +10145,8 @@
     "campus": "STORR",
     "session": "SumDivEarl",
     "enrollment_capacity": 24,
-    "enrollment_total": 14,
-    "seats_available": 10,
+    "enrollment_total": 13,
+    "seats_available": 11,
     "capacity_available": "",
     "waitlist_available": 0,
     "blocks": [],
@@ -10183,7 +10183,7 @@
         "registration_number": "1547",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1485,
+        "end_time": 765,
         "instruction_mode": "In Person"
       },
       {
@@ -10193,7 +10193,7 @@
         "registration_number": "1547",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1485,
+        "end_time": 765,
         "instruction_mode": "In Person"
       },
       {
@@ -10203,7 +10203,7 @@
         "registration_number": "1547",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1485,
+        "end_time": 765,
         "instruction_mode": "In Person"
       },
       {
@@ -10213,7 +10213,7 @@
         "registration_number": "1547",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1485,
+        "end_time": 765,
         "instruction_mode": "In Person"
       }
     ],
@@ -10407,7 +10407,7 @@
         "registration_number": "3438",
         "room": "AUST 245",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -10417,7 +10417,7 @@
         "registration_number": "3438",
         "room": "AUST 245",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -10427,7 +10427,7 @@
         "registration_number": "3438",
         "room": "AUST 245",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -10437,7 +10437,7 @@
         "registration_number": "3438",
         "room": "AUST 245",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -10447,7 +10447,7 @@
         "registration_number": "3438",
         "room": "AUST 245",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       }
     ],
@@ -10474,7 +10474,7 @@
         "registration_number": "3439",
         "room": "Pending Dept Room Assignment",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -10484,7 +10484,7 @@
         "registration_number": "3439",
         "room": "Pending Dept Room Assignment",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -10494,7 +10494,7 @@
         "registration_number": "3439",
         "room": "Pending Dept Room Assignment",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -10504,7 +10504,7 @@
         "registration_number": "3439",
         "room": "Pending Dept Room Assignment",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -10514,7 +10514,7 @@
         "registration_number": "3439",
         "room": "Pending Dept Room Assignment",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       }
     ],
@@ -10541,7 +10541,7 @@
         "registration_number": "3441",
         "room": "Pending Dept Room Assignment",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -10551,7 +10551,7 @@
         "registration_number": "3441",
         "room": "Pending Dept Room Assignment",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -10561,7 +10561,7 @@
         "registration_number": "3441",
         "room": "Pending Dept Room Assignment",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -10571,7 +10571,7 @@
         "registration_number": "3441",
         "room": "Pending Dept Room Assignment",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -10581,7 +10581,7 @@
         "registration_number": "3441",
         "room": "Pending Dept Room Assignment",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       }
     ],
@@ -10608,7 +10608,7 @@
         "registration_number": "3442",
         "room": "Pending Dept Room Assignment",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -10618,7 +10618,7 @@
         "registration_number": "3442",
         "room": "Pending Dept Room Assignment",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -10628,7 +10628,7 @@
         "registration_number": "3442",
         "room": "Pending Dept Room Assignment",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -10638,7 +10638,7 @@
         "registration_number": "3442",
         "room": "Pending Dept Room Assignment",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -10648,7 +10648,7 @@
         "registration_number": "3442",
         "room": "Pending Dept Room Assignment",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       }
     ],
@@ -10675,7 +10675,7 @@
         "registration_number": "3443",
         "room": "Pending Dept Room Assignment",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -10685,7 +10685,7 @@
         "registration_number": "3443",
         "room": "Pending Dept Room Assignment",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -10695,7 +10695,7 @@
         "registration_number": "3443",
         "room": "Pending Dept Room Assignment",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -10705,7 +10705,7 @@
         "registration_number": "3443",
         "room": "Pending Dept Room Assignment",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -10715,7 +10715,7 @@
         "registration_number": "3443",
         "room": "Pending Dept Room Assignment",
         "start_time": 600,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       }
     ],
@@ -11897,7 +11897,7 @@
         "registration_number": "3392",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -11924,7 +11924,7 @@
         "registration_number": "3398",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -11951,7 +11951,7 @@
         "registration_number": "3400",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -12005,7 +12005,7 @@
         "registration_number": "3445",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -12032,7 +12032,7 @@
         "registration_number": "3446",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -12059,7 +12059,7 @@
         "registration_number": "3447",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -12086,7 +12086,7 @@
         "registration_number": "3449",
         "room": "TBA",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -12140,7 +12140,7 @@
         "registration_number": "3462",
         "room": "DWTN 132",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -12167,7 +12167,7 @@
         "registration_number": "3463",
         "room": "DWTN 133",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -12194,7 +12194,7 @@
         "registration_number": "3465",
         "room": "DWTN 131",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -12810,7 +12810,7 @@
         "registration_number": "3406",
         "room": "TSK 012",
         "start_time": 495,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -12820,7 +12820,7 @@
         "registration_number": "3406",
         "room": "TSK 012",
         "start_time": 495,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -12830,7 +12830,7 @@
         "registration_number": "3406",
         "room": "TSK 012",
         "start_time": 495,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -12840,7 +12840,7 @@
         "registration_number": "3406",
         "room": "TSK 012",
         "start_time": 495,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -12850,7 +12850,7 @@
         "registration_number": "3406",
         "room": "TSK 012",
         "start_time": 495,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       }
     ],
@@ -13236,7 +13236,7 @@
         "registration_number": "3474",
         "room": "WTBY 210",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -13263,7 +13263,7 @@
         "registration_number": "3475",
         "room": "WTBY 323",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -13290,7 +13290,7 @@
         "registration_number": "3476",
         "room": "WTBY 210",
         "start_time": 540,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -16023,8 +16023,8 @@
     "campus": "STORR",
     "session": "SumDivEarl",
     "enrollment_capacity": 25,
-    "enrollment_total": 10,
-    "seats_available": 15,
+    "enrollment_total": 11,
+    "seats_available": 14,
     "capacity_available": "",
     "waitlist_available": 0,
     "blocks": [],
@@ -16097,6 +16097,22 @@
         "end_time": 0
       }
     ]
+  },
+  {
+    "registration_number": "3618",
+    "subject": "JAPN",
+    "catalog_number": "3299",
+    "class_section": "060",
+    "academic_career": "Undergrad",
+    "campus": "STORR",
+    "session": "SummerSpan",
+    "enrollment_capacity": 1,
+    "enrollment_total": 0,
+    "seats_available": 1,
+    "capacity_available": "",
+    "waitlist_available": 0,
+    "blocks": [],
+    "additional_blocks": []
   },
   {
     "registration_number": "3532",
@@ -17123,7 +17139,7 @@
         "registration_number": "2007",
         "room": "No Room Required - Online",
         "start_time": 540,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "Online Synchronous"
       },
       {
@@ -17133,7 +17149,7 @@
         "registration_number": "2007",
         "room": "No Room Required - Online",
         "start_time": 540,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "Online Synchronous"
       }
     ],
@@ -17921,8 +17937,8 @@
     "campus": "STORR",
     "session": "Summer 1",
     "enrollment_capacity": 50,
-    "enrollment_total": 44,
-    "seats_available": 6,
+    "enrollment_total": 45,
+    "seats_available": 5,
     "capacity_available": "",
     "waitlist_available": 0,
     "blocks": [],
@@ -18701,8 +18717,8 @@
     "campus": "STORR",
     "session": "Summer 2",
     "enrollment_capacity": 50,
-    "enrollment_total": 37,
-    "seats_available": 13,
+    "enrollment_total": 38,
+    "seats_available": 12,
     "capacity_available": "",
     "waitlist_available": 0,
     "blocks": [],
@@ -18784,7 +18800,7 @@
         "instructor": "Christopher Malinoski (PI)",
         "registration_number": "1566",
         "room": "PWE 175",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 810,
         "instruction_mode": "Hybrid Limited"
       }
@@ -18841,7 +18857,7 @@
         "instructor": "Christopher Malinoski (PI)",
         "registration_number": "1566",
         "room": "PWE 175",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 810,
         "instruction_mode": "Hybrid Limited"
       }
@@ -18919,7 +18935,7 @@
         "registration_number": "1071",
         "room": "No Room Required - Online\rNo Room Required - Online",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "Online Blended"
       },
       {
@@ -18929,7 +18945,7 @@
         "registration_number": "1071",
         "room": "No Room Required - Online\rNo Room Required - Online",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "Online Blended"
       },
       {
@@ -18939,7 +18955,7 @@
         "registration_number": "1071",
         "room": "No Room Required - Online\rNo Room Required - Online",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "Online Blended"
       },
       {
@@ -18949,7 +18965,7 @@
         "registration_number": "1071",
         "room": "No Room Required - Online\rNo Room Required - Online",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "Online Blended"
       },
       {
@@ -18959,7 +18975,7 @@
         "registration_number": "1071",
         "room": "No Room Required - Online\rNo Room Required - Online",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "Online Blended"
       }
     ],
@@ -18986,7 +19002,7 @@
         "registration_number": "1215",
         "room": "No Room Required - Online",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "Online Blended"
       },
       {
@@ -18996,7 +19012,7 @@
         "registration_number": "1215",
         "room": "No Room Required - Online",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "Online Blended"
       },
       {
@@ -19006,7 +19022,7 @@
         "registration_number": "1215",
         "room": "No Room Required - Online",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "Online Blended"
       },
       {
@@ -19016,7 +19032,7 @@
         "registration_number": "1215",
         "room": "No Room Required - Online",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "Online Blended"
       },
       {
@@ -19026,7 +19042,7 @@
         "registration_number": "1215",
         "room": "No Room Required - Online",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "Online Blended"
       }
     ],
@@ -19130,7 +19146,7 @@
         "instructor": "Daniel Phillips (TA),Elizabeth Dubois (TA),Gino Intrieri (TC),Michele Maltz-Matyschsyk (PI)",
         "registration_number": "1398",
         "room": "GW 012",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 870,
         "instruction_mode": "In Person"
       },
@@ -19140,7 +19156,7 @@
         "instructor": "Daniel Phillips (TA),Elizabeth Dubois (TA),Gino Intrieri (TC),Michele Maltz-Matyschsyk (PI)",
         "registration_number": "1398",
         "room": "GW 012",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 870,
         "instruction_mode": "In Person"
       },
@@ -19150,7 +19166,7 @@
         "instructor": "Daniel Phillips (TA),Elizabeth Dubois (TA),Gino Intrieri (TC),Michele Maltz-Matyschsyk (PI)",
         "registration_number": "1398",
         "room": "GW 012",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 870,
         "instruction_mode": "In Person"
       },
@@ -19160,7 +19176,7 @@
         "instructor": "Daniel Phillips (TA),Elizabeth Dubois (TA),Gino Intrieri (TC),Michele Maltz-Matyschsyk (PI)",
         "registration_number": "1398",
         "room": "GW 012",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 870,
         "instruction_mode": "In Person"
       },
@@ -19237,7 +19253,7 @@
         "instructor": "Brenden Griffith (TA),Gino Intrieri (TC),Michele Maltz-Matyschsyk (PI)",
         "registration_number": "1567",
         "room": "GW 010",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 870,
         "instruction_mode": "In Person"
       },
@@ -19247,7 +19263,7 @@
         "instructor": "Brenden Griffith (TA),Gino Intrieri (TC),Michele Maltz-Matyschsyk (PI)",
         "registration_number": "1567",
         "room": "GW 010",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 870,
         "instruction_mode": "In Person"
       },
@@ -19257,7 +19273,7 @@
         "instructor": "Brenden Griffith (TA),Gino Intrieri (TC),Michele Maltz-Matyschsyk (PI)",
         "registration_number": "1567",
         "room": "GW 010",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 870,
         "instruction_mode": "In Person"
       },
@@ -19267,7 +19283,7 @@
         "instructor": "Brenden Griffith (TA),Gino Intrieri (TC),Michele Maltz-Matyschsyk (PI)",
         "registration_number": "1567",
         "room": "GW 010",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 870,
         "instruction_mode": "In Person"
       },
@@ -20598,7 +20614,7 @@
         "registration_number": "2010",
         "room": "MONT 111\rKNS 001",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -20608,7 +20624,7 @@
         "registration_number": "2010",
         "room": "MONT 111\rKNS 001",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -20618,7 +20634,7 @@
         "registration_number": "2010",
         "room": "MONT 111\rKNS 001",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -20628,7 +20644,7 @@
         "registration_number": "2010",
         "room": "MONT 111\rKNS 001",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -20638,7 +20654,7 @@
         "registration_number": "2010",
         "room": "MONT 111\rKNS 001",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -20715,7 +20731,7 @@
         "registration_number": "2270",
         "room": "MONT 111\rKNS 001",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -20725,7 +20741,7 @@
         "registration_number": "2270",
         "room": "MONT 111\rKNS 001",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -20735,7 +20751,7 @@
         "registration_number": "2270",
         "room": "MONT 111\rKNS 001",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -20745,7 +20761,7 @@
         "registration_number": "2270",
         "room": "MONT 111\rKNS 001",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -20755,7 +20771,7 @@
         "registration_number": "2270",
         "room": "MONT 111\rKNS 001",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -20848,7 +20864,7 @@
         "registration_number": "2011",
         "room": "MONT 111\rKNS 001",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -20858,7 +20874,7 @@
         "registration_number": "2011",
         "room": "MONT 111\rKNS 001",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -20868,7 +20884,7 @@
         "registration_number": "2011",
         "room": "MONT 111\rKNS 001",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -20878,7 +20894,7 @@
         "registration_number": "2011",
         "room": "MONT 111\rKNS 001",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -20888,7 +20904,7 @@
         "registration_number": "2011",
         "room": "MONT 111\rKNS 001",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -20965,7 +20981,7 @@
         "registration_number": "2271",
         "room": "MONT 111\rKNS 001",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -20975,7 +20991,7 @@
         "registration_number": "2271",
         "room": "MONT 111\rKNS 001",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -20985,7 +21001,7 @@
         "registration_number": "2271",
         "room": "MONT 111\rKNS 001",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -20995,7 +21011,7 @@
         "registration_number": "2271",
         "room": "MONT 111\rKNS 001",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -21005,7 +21021,7 @@
         "registration_number": "2271",
         "room": "MONT 111\rKNS 001",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -21146,7 +21162,7 @@
         "registration_number": "1338",
         "room": "No Room Required - Online",
         "start_time": 540,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "Online Synchronous"
       },
       {
@@ -21156,7 +21172,7 @@
         "registration_number": "1338",
         "room": "No Room Required - Online",
         "start_time": 540,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "Online Synchronous"
       }
     ],
@@ -23932,7 +23948,7 @@
         "registration_number": "1340",
         "room": "No Room Required - Online",
         "start_time": 540,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "Online Synchronous"
       },
       {
@@ -23942,7 +23958,7 @@
         "registration_number": "1340",
         "room": "No Room Required - Online",
         "start_time": 540,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "Online Synchronous"
       }
     ],
@@ -24317,7 +24333,7 @@
         "registration_number": "1412",
         "room": "DWTN 216",
         "start_time": 600,
-        "end_time": 1480,
+        "end_time": 760,
         "instruction_mode": "In Person"
       },
       {
@@ -24327,7 +24343,7 @@
         "registration_number": "1412",
         "room": "DWTN 216",
         "start_time": 600,
-        "end_time": 1480,
+        "end_time": 760,
         "instruction_mode": "In Person"
       },
       {
@@ -24337,7 +24353,7 @@
         "registration_number": "1412",
         "room": "DWTN 216",
         "start_time": 600,
-        "end_time": 1480,
+        "end_time": 760,
         "instruction_mode": "In Person"
       }
     ],
@@ -24384,7 +24400,7 @@
         "registration_number": "1434",
         "room": "DWTN 216",
         "start_time": 600,
-        "end_time": 1480,
+        "end_time": 760,
         "instruction_mode": "In Person"
       },
       {
@@ -24394,7 +24410,7 @@
         "registration_number": "1434",
         "room": "DWTN 216",
         "start_time": 600,
-        "end_time": 1480,
+        "end_time": 760,
         "instruction_mode": "In Person"
       },
       {
@@ -24404,7 +24420,7 @@
         "registration_number": "1434",
         "room": "DWTN 216",
         "start_time": 600,
-        "end_time": 1480,
+        "end_time": 760,
         "instruction_mode": "In Person"
       }
     ],
@@ -24793,7 +24809,7 @@
         "instructor": "Howard Winston (PI)",
         "registration_number": "1633",
         "room": "WTBY 316",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 930,
         "instruction_mode": "In Person"
       },
@@ -24803,7 +24819,7 @@
         "instructor": "Howard Winston (PI)",
         "registration_number": "1633",
         "room": "WTBY 316",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 930,
         "instruction_mode": "In Person"
       },
@@ -24860,7 +24876,7 @@
         "instructor": "Howard Winston (PI)",
         "registration_number": "1437",
         "room": "WTBY 316",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 930,
         "instruction_mode": "In Person"
       },
@@ -24870,7 +24886,7 @@
         "instructor": "Howard Winston (PI)",
         "registration_number": "1437",
         "room": "WTBY 316",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 930,
         "instruction_mode": "In Person"
       },
@@ -24927,7 +24943,7 @@
         "instructor": "Howard Winston (PI)",
         "registration_number": "1687",
         "room": "WTBY 316",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 930,
         "instruction_mode": "In Person"
       },
@@ -24937,7 +24953,7 @@
         "instructor": "Howard Winston (PI)",
         "registration_number": "1687",
         "room": "WTBY 316",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 930,
         "instruction_mode": "In Person"
       },
@@ -24994,7 +25010,7 @@
         "instructor": "Howard Winston (PI)",
         "registration_number": "1688",
         "room": "WTBY 316",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 930,
         "instruction_mode": "In Person"
       },
@@ -25004,7 +25020,7 @@
         "instructor": "Howard Winston (PI)",
         "registration_number": "1688",
         "room": "WTBY 316",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 930,
         "instruction_mode": "In Person"
       },
@@ -25226,7 +25242,7 @@
         "registration_number": "1664",
         "room": "No Room Required - Online",
         "start_time": 660,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "Online Blended"
       },
       {
@@ -25236,7 +25252,7 @@
         "registration_number": "1664",
         "room": "No Room Required - Online",
         "start_time": 660,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "Online Blended"
       }
     ],
@@ -25263,7 +25279,7 @@
         "registration_number": "2234",
         "room": "No Room Required - Online",
         "start_time": 660,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "Online Blended"
       },
       {
@@ -25273,7 +25289,7 @@
         "registration_number": "2234",
         "room": "No Room Required - Online",
         "start_time": 660,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "Online Blended"
       },
       {
@@ -25283,7 +25299,7 @@
         "registration_number": "2234",
         "room": "No Room Required - Online",
         "start_time": 660,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "Online Blended"
       }
     ],
@@ -25310,7 +25326,7 @@
         "registration_number": "1671",
         "room": "GW 004",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -25320,7 +25336,7 @@
         "registration_number": "1671",
         "room": "GW 004",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -25397,7 +25413,7 @@
         "registration_number": "1672",
         "room": "GW 004",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -25407,7 +25423,7 @@
         "registration_number": "1672",
         "room": "GW 004",
         "start_time": 600,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -25503,7 +25519,7 @@
         "instructor": "Joseph Crivello (PI)",
         "registration_number": "2207",
         "room": "TLS 154",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 795,
         "instruction_mode": "In Person"
       },
@@ -25513,7 +25529,7 @@
         "instructor": "Joseph Crivello (PI)",
         "registration_number": "2207",
         "room": "TLS 154",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 795,
         "instruction_mode": "In Person"
       },
@@ -25523,7 +25539,7 @@
         "instructor": "Joseph Crivello (PI)",
         "registration_number": "2207",
         "room": "TLS 154",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 795,
         "instruction_mode": "In Person"
       },
@@ -25533,7 +25549,7 @@
         "instructor": "Joseph Crivello (PI)",
         "registration_number": "2207",
         "room": "TLS 154",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 795,
         "instruction_mode": "In Person"
       },
@@ -25543,7 +25559,7 @@
         "instructor": "Joseph Crivello (PI)",
         "registration_number": "2207",
         "room": "TLS 154",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 795,
         "instruction_mode": "In Person"
       }
@@ -25804,7 +25820,7 @@
         "instructor": "Payam Andalib (PI)",
         "registration_number": "2240",
         "room": "BCH 317",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 1050,
         "instruction_mode": "In Person"
       },
@@ -25814,7 +25830,7 @@
         "instructor": "Payam Andalib (PI)",
         "registration_number": "2240",
         "room": "BCH 317",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 1050,
         "instruction_mode": "In Person"
       },
@@ -25824,7 +25840,7 @@
         "instructor": "Payam Andalib (PI)",
         "registration_number": "2240",
         "room": "BCH 317",
-        "start_time": 1440,
+        "start_time": 720,
         "end_time": 1050,
         "instruction_mode": "In Person"
       }
@@ -26554,7 +26570,7 @@
         "instructor": "Andrew Wrobel (PI)",
         "registration_number": "3565",
         "room": "TBA",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 870,
         "instruction_mode": "In Person"
       },
@@ -26564,7 +26580,7 @@
         "instructor": "Andrew Wrobel (PI)",
         "registration_number": "3565",
         "room": "TBA",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 870,
         "instruction_mode": "In Person"
       },
@@ -26574,7 +26590,7 @@
         "instructor": "Andrew Wrobel (PI)",
         "registration_number": "3565",
         "room": "TBA",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 870,
         "instruction_mode": "In Person"
       },
@@ -26584,7 +26600,7 @@
         "instructor": "Andrew Wrobel (PI)",
         "registration_number": "3565",
         "room": "TBA",
-        "start_time": 1470,
+        "start_time": 750,
         "end_time": 870,
         "instruction_mode": "In Person"
       }
@@ -27541,7 +27557,7 @@
         "registration_number": "1105",
         "room": "KB DPT",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -27551,7 +27567,7 @@
         "registration_number": "1105",
         "room": "KB DPT",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -27578,7 +27594,7 @@
         "registration_number": "1092",
         "room": "KB DPT",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -27588,7 +27604,7 @@
         "registration_number": "1092",
         "room": "KB DPT",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -27944,7 +27960,7 @@
         "registration_number": "1100",
         "room": "KB DPT",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       },
       {
@@ -27954,7 +27970,7 @@
         "registration_number": "1100",
         "room": "KB DPT",
         "start_time": 480,
-        "end_time": 1440,
+        "end_time": 720,
         "instruction_mode": "In Person"
       }
     ],
@@ -30917,7 +30933,7 @@
         "registration_number": "1252",
         "room": "No Room Required - Online",
         "start_time": 540,
-        "end_time": 1485,
+        "end_time": 765,
         "instruction_mode": "Online Synchronous"
       },
       {
@@ -30927,7 +30943,7 @@
         "registration_number": "1252",
         "room": "No Room Required - Online",
         "start_time": 540,
-        "end_time": 1485,
+        "end_time": 765,
         "instruction_mode": "Online Synchronous"
       },
       {
@@ -30937,7 +30953,7 @@
         "registration_number": "1252",
         "room": "No Room Required - Online",
         "start_time": 540,
-        "end_time": 1485,
+        "end_time": 765,
         "instruction_mode": "Online Synchronous"
       }
     ],
@@ -31335,7 +31351,7 @@
         "registration_number": "2219",
         "room": "ACD 106",
         "start_time": 660,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -31345,7 +31361,7 @@
         "registration_number": "2219",
         "room": "ACD 106",
         "start_time": 660,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       }
     ],
@@ -31372,7 +31388,7 @@
         "registration_number": "2078",
         "room": "HTB 145",
         "start_time": 680,
-        "end_time": 1460,
+        "end_time": 740,
         "instruction_mode": "In Person"
       },
       {
@@ -31382,7 +31398,7 @@
         "registration_number": "2078",
         "room": "HTB 145",
         "start_time": 680,
-        "end_time": 1460,
+        "end_time": 740,
         "instruction_mode": "In Person"
       },
       {
@@ -31392,7 +31408,7 @@
         "registration_number": "2078",
         "room": "HTB 145",
         "start_time": 680,
-        "end_time": 1460,
+        "end_time": 740,
         "instruction_mode": "In Person"
       },
       {
@@ -31402,7 +31418,7 @@
         "registration_number": "2078",
         "room": "HTB 145",
         "start_time": 680,
-        "end_time": 1460,
+        "end_time": 740,
         "instruction_mode": "In Person"
       }
     ],
@@ -31566,8 +31582,8 @@
     "campus": "STORR",
     "session": "SummerSpan",
     "enrollment_capacity": 15,
-    "enrollment_total": 10,
-    "seats_available": 5,
+    "enrollment_total": 11,
+    "seats_available": 4,
     "capacity_available": "",
     "waitlist_available": 0,
     "blocks": [],
@@ -31626,7 +31642,7 @@
         "registration_number": "3546",
         "room": "WTBY 102",
         "start_time": 705,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       },
       {
@@ -31636,7 +31652,7 @@
         "registration_number": "3546",
         "room": "WTBY 102",
         "start_time": 705,
-        "end_time": 1470,
+        "end_time": 750,
         "instruction_mode": "In Person"
       }
     ],
