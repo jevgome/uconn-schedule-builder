@@ -1730,11 +1730,11 @@ export default function App() {
 
             </div>
 
-            {/* DIVIDER */}
-            <div className="border-t border-gray-300" />
-
             {/* BOTTOM HALF */}
-            <div className="h-[30%] flex flex-col p-2">
+            <div className="h-[30%] flex flex-col">
+              <h2 className="text-m font-semibold pb-1">
+                Generated Schedules
+              </h2>
               {/* GRID */}
               <div className="grid grid-cols-4 grid-rows-3 gap-2 flex-1">
                 {paginatedSchedules.map((schedule, index) => {
