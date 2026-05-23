@@ -1694,14 +1694,14 @@ export default function App() {
                     setShowKofi(true);
                     setSettingsOpen(false);
                   }}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 text-sm transition"
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 text-sm transition mb-1"
                 >
                   <span>Donate</span>
                 </button>
 
                 <button 
                   data-tally-open="ZjZJz0" data-tally-layout="modal" data-tally-width="700" data-tally-hide-title="1" data-tally-auto-close="1000"
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 text-sm transition"
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 text-sm transition mb-1"
                   onClick={() => {
                     setSettingsOpen(false);
                   }}
