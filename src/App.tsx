@@ -1,4 +1,5 @@
 import { useKeyboardFSM } from "./hooks/useKeyboardFSM";
+import { Settings } from "lucide-react";
 import type { FSM } from "./hooks/useKeyboardFSM";
 import init, { generate_schedules_from_sections } from "./wasm_pkg/scheduler_wasm";
 import { useEffect, useState, useRef, useCallback, memo, useMemo } from "react";
@@ -368,6 +369,7 @@ export default function App() {
     currentPage * PAGE_SIZE
   );
 
+  const [showKofi, setShowKofi] = useState(false);
   const [selectedCampuses, setSelectedCampuses] = useState<string[]>(["STORR"]);
   const [campusOpen, setCampusOpen] = useState(false);
   const campusRef = useRef<HTMLDivElement>(null);
@@ -394,7 +396,6 @@ export default function App() {
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
 
   const [professors, setProfessors] = useState<Professor[]>([]);
-  const norm = (x: any) => String(x).trim();
 
   const openBlockEditor = (id: string) => {
     setEditingBlockId(id);
@@ -1338,6 +1339,7 @@ export default function App() {
   };
 
   const sortedSections = useMemo(() => {
+    if (!editingBlockId) return [];
     const code = getBlockCode(editingBlockId);
     if (!code) return [];
 
@@ -1640,41 +1642,57 @@ export default function App() {
         {/* RIGHT SIDEBAR */}
         <div className="w-[300px] h-full bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-hidden border-l border-gray-200">
           <div className="relative h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm">
-            <div className="relative flex items-center" ref={settingsRef}>
-              {vimMode && (
-                <div className="mr-3 text-xs px-2 py-1 rounded-md bg-gray-100 text-gray-600 font-mono border border-gray-700 tracking-widest">
-                  -- {vimFocusLabelMap[state] ?? state} --
-                </div>
-              )}
+             <div className="flex items-center">
+               {vimMode && (
+                 <div className="mr-3 text-xs px-2 py-1 rounded-md bg-gray-100 text-gray-600 font-mono border border-gray-700 tracking-widest">
+                   -- {vimFocusLabelMap[state] ?? state} --
+                 </div>
+               )}
+            </div>
+            <div
+             className="absolute right-4 flex items-center"
+             ref={settingsRef}
+            >
               <button
                 onClick={() => setSettingsOpen(v => !v)}
-                className="px-3 py-1 rounded-md hover:bg-gray-100 cursor-pointer"
+                className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition"
               >
-                Settings ⚙️
+                <Settings className="w-5 h-5 text-gray-700" />
               </button>
 
               {settingsOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white border rounded-lg shadow-lg p-3 z-[9999]">
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Vim mode</span>
+              <div className="absolute right-0 top-full mt-2 w-56 bg-white border rounded-lg shadow-lg p-3 z-[9999]">
+                <button
+                  onClick={() => setVimMode(v => !v)}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-md hover:bg-gray-100 text-sm transition mb-1"
+                >
+                  <span>Vim mode</span>
 
-                    <button
-                      onClick={() => setVimMode(v => !v)}
-                      className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors duration-200 ${
-                        vimMode ? "bg-blue-950" : "bg-gray-300"
+                  <div
+                    className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors duration-200 ${
+                      vimMode ? "bg-blue-950" : "bg-gray-300"
+                    }`}
+                  >
+                    <div
+                      className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-200 ${
+                        vimMode ? "translate-x-4" : "translate-x-0"
                       }`}
-                    >
-                      <div
-                        className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-200 ${
-                          vimMode ? "translate-x-4" : "translate-x-0"
-                        }`}
-                      />
-                    </button>
+                    />
                   </div>
+                </button>
 
-                </div>
-              )}
+                {/* Ko-fi Tip Button */}
+                <button
+                  onClick={() => {
+                    setShowKofi(true);
+                    setSettingsOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 text-sm transition"
+                >
+                  <span>Donate</span>
+                </button>
+              </div>
+            )}
             </div>
           </div>
 
@@ -1683,14 +1701,16 @@ export default function App() {
               <h2 className="text-lg font-semibold">
                 Your Classes ({blocks.length})
               </h2>
+              {blocks.length !== 0 && (
+                <button
+                  onClick={clearBlocks}
+                  className="p-2 rounded-md hover:bg-red-100 text-red-600 text-sm transition cursor-pointer"
+                  title="Clear all courses"
+                >
+                  Clear
+                </button>
+              )}
 
-              <button
-                onClick={clearBlocks}
-                className="p-2 rounded-md hover:bg-red-100 text-red-600 transition cursor-pointer"
-                title="Clear all courses"
-              >
-                🗑️
-              </button>
             </div>
 
             {/* TOP HALF */}
@@ -2214,6 +2234,44 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {showKofi && (
+      <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+
+        <div className="relative w-[420px] max-w-[95vw] rounded-2xl bg-white shadow-2xl overflow-hidden">
+
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b">
+            <h2 className="font-semibold text-sm">
+              Support development
+            </h2>
+
+            <button
+              onClick={() => setShowKofi(false)}
+              className="text-gray-500 hover:text-black text-lg leading-none hover:cursor-pointer"
+            >
+              ×
+            </button>
+          </div>
+
+          {/* Ko-fi iframe */}
+          <iframe
+            id="kofiframe"
+            src="https://ko-fi.com/jevgome/?hidefeed=true&widget=true&embed=true&preview=true"
+            title="jevgome"
+            className="w-full bg-[#f9f9f9]"
+            style={{
+              border: "none",
+              padding: "4px",
+              height: "712px"
+            }}
+            sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+            allow="payment"
+         />
+        </div>
+
+      </div>
+    )}
     </div>
   );
 }
