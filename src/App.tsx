@@ -1161,6 +1161,13 @@ export default function App() {
       });
   }, []);
 
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://tally.so/widgets/embed.js";
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
+
   const getBlockCode = (id: string) => {
     return blocks.find(b => b.id === id)?.code;
   };
@@ -1690,6 +1697,16 @@ export default function App() {
                   className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 text-sm transition"
                 >
                   <span>Donate</span>
+                </button>
+
+                <button 
+                  data-tally-open="ZjZJz0" data-tally-layout="modal" data-tally-width="700" data-tally-hide-title="1" data-tally-auto-close="1000"
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 text-sm transition"
+                  onClick={() => {
+                    setSettingsOpen(false);
+                  }}
+                >
+                    Send feedback / Report bug
                 </button>
               </div>
             )}

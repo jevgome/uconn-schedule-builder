@@ -1,7 +1,6 @@
 - Put general course info in section edit
 - Filter classes
 - Report bug / feedback
-- Donations
 - Room distances
 - Dark Mode (?)
 - Mobile View
