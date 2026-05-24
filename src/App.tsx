@@ -153,7 +153,7 @@ const DraggableBlock = memo(function DraggableBlock({ id, name, onDelete, select
   );
 });
 
-function WeeklyCalendar({ schedule, hoverSchedule, professorMap }: { schedule: any[]; hoverSchedule: any[]; professorMap: Map<string, Professor>;}) {
+function WeeklyCalendar({ schedule, hoverSchedule, professorMap }: { schedule: any[] | null; hoverSchedule: any[] | null; professorMap: Map<string, Professor>;}) {
   const days = ["Mo", "Tu", "We", "Th", "Fr"];
 
   const startHour = 8;
