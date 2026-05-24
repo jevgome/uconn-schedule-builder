@@ -1,5 +1,4 @@
 - Add breaks
-- Show schedule preview on hover
 - Put general course info in section edit
 - Filter classes
 - Room distances

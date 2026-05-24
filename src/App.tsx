@@ -153,7 +153,7 @@ const DraggableBlock = memo(function DraggableBlock({ id, name, onDelete, select
   );
 });
 
-function WeeklyCalendar({ schedule, professorMap }: { schedule: any[]; professorMap: Map<string, Professor>;}) {
+function WeeklyCalendar({ schedule, hoverSchedule, professorMap }: { schedule: any[]; hoverSchedule: any[]; professorMap: Map<string, Professor>;}) {
   const days = ["Mo", "Tu", "We", "Th", "Fr"];
 
   const startHour = 8;
@@ -304,6 +304,53 @@ function WeeklyCalendar({ schedule, professorMap }: { schedule: any[]; professor
                   );
                 })
               ))}
+              {/* HOVER SCHEDULE OVERLAY */}
+              {hoverSchedule != null &&
+                hoverSchedule.flatMap((section) =>
+                  section.blocks.map((block: any) => {
+                    if (block.day !== day) return null;
+
+                    const startOffset = block.start_time - startHour * 60;
+                    const duration = block.end_time - block.start_time;
+
+                    const top = (startOffset / totalMinutes) * 100;
+                    const height = ((duration + 10) / totalMinutes) * 100;
+
+                    const code = `${section.subject} ${section.catalog_number}`;
+
+                    const color = getColor(code);
+                    const overlayBgMap: Record<string, string> = {
+                      "bg-indigo-700": "bg-indigo-400/30",
+                      "bg-slate-700": "bg-slate-400/30",
+                      "bg-emerald-700": "bg-emerald-400/30",
+                      "bg-blue-700": "bg-blue-400/30",
+                      "bg-purple-700": "bg-purple-400/30",
+                      "bg-zinc-700": "bg-zinc-400/30",
+                    };
+
+                    const overlayBg = overlayBgMap[color] ?? "bg-white/20";
+
+                    return (
+                      <div
+                        key={`hover-${section.subject}-${section.catalog_number}-${section.class_section}-${block.day}-${block.start_time}`}
+                        className={`
+                          absolute left-1 right-1 rounded-xl
+                          border-2 border-dashed
+                          ${color}
+                          ${overlayBg}
+                          opacity-60
+                          pointer-events-none
+                          z-30
+                        `}
+                        style={{
+                          top: `${top}%`,
+                          height: `${height}%`,
+                          filter: "brightness(1.2)",
+                        }}
+                      />
+                    );
+                  })
+                )}
             </div>
           </div>
         ))}
@@ -339,6 +386,7 @@ export default function App() {
   const [classesDataRaw, setClassesDataRaw] = useState<any[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [selectedSchedule, setSelectedSchedule] = useState<any | null>(null);
+  const [hoverSchedule, setHoverSchedule] = useState<any | null>(null);
   const [input, setInput] = useState("");
   const [suggestions, setSuggestions] = useState<Course[]>([]);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -1637,11 +1685,11 @@ export default function App() {
           {/* CALENDAR */}
           {!selectedSchedule ? (
             <div className="flex-1 min-h-0 overflow-hidden">
-              <WeeklyCalendar schedule={null}  professorMap={professorMap} />
+              <WeeklyCalendar schedule={null} hoverSchedule={null} professorMap={professorMap} />
             </div>
           ) : (
             <div className="flex-1 min-h-0 overflow-hidden">
-              <WeeklyCalendar schedule={selectedSchedule.sections}  professorMap={professorMap} />
+              <WeeklyCalendar schedule={selectedSchedule.sections} hoverSchedule={hoverSchedule?.sections} professorMap={professorMap} />
             </div>
           )}
         </div>
@@ -1783,8 +1831,13 @@ export default function App() {
                       onClick={() => {
                         setSelectedSchedule(schedule);
                         setSelectedScheduleIndex(globalIndex);
-                      }
-                      }
+                      }}
+                      onMouseEnter={()=> {
+                          setHoverSchedule(schedule);
+                      }}
+                      onMouseLeave={()=> {
+                          setHoverSchedule(null);
+                      }}
                       className={`aspect-square rounded-md border text-sm font-semibold flex items-center justify-center transition cursor-pointer
                         ${
                           selectedScheduleIndex === globalIndex
