@@ -228,7 +228,7 @@ function WeeklyCalendar({ schedule, professorMap }: { schedule: any[]; professor
               ))}
 
               {/* BLOCKS */}
-              {schedule.flatMap((section) =>
+              {schedule !== null && (schedule.flatMap((section) =>
                 section.blocks.map((block: any) => {
                   if (block.day !== day) return null;
 
@@ -303,7 +303,7 @@ function WeeklyCalendar({ schedule, professorMap }: { schedule: any[]; professor
                     </div>
                   );
                 })
-              )}
+              ))}
             </div>
           </div>
         ))}
@@ -1422,7 +1422,7 @@ export default function App() {
       <div className="flex flex-1 overflow-hidden">
 
         {/* LEFT SIDEBAR */}
-        <div className="w-[300px] h-full bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-hidden border-r border-gray-200">
+        <div className="w-[clamp(220px,18vw,300px)] h-full bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-hidden border-r border-gray-200">
           <div className="relative h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm">
             <div className="font-bold text-lg text-gray-800">
               UConn Schedule Builder
@@ -1636,8 +1636,8 @@ export default function App() {
 
           {/* CALENDAR */}
           {!selectedSchedule ? (
-            <div className="h-full flex items-center justify-center text-gray-500">
-              No schedules yet
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <WeeklyCalendar schedule={null}  professorMap={professorMap} />
             </div>
           ) : (
             <div className="flex-1 min-h-0 overflow-hidden">
@@ -1647,7 +1647,7 @@ export default function App() {
         </div>
 
         {/* RIGHT SIDEBAR */}
-        <div className="w-[300px] h-full bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-hidden border-l border-gray-200">
+        <div className="w-[clamp(220px,18vw,300px)] h-full bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-hidden border-l border-gray-200">
           <div className="relative h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm">
              <div className="flex items-center">
                {vimMode && (
