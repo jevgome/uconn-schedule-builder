@@ -762,69 +762,77 @@ export default function App() {
  
       j: {
         action: (_: any, ctx: any) => {
-          ctx.setSelectedScheduleIndex((i: number | null) => {
-            const pageStart = (ctx.currentPage - 1) * PAGE_SIZE;
-            const local = i === null ? 0 : i - pageStart;
+          const i = ctx.selectedScheduleIndex;
+          const pageStart = (ctx.currentPage - 1) * PAGE_SIZE;
+          const local = i === null ? 0 : i - pageStart;
 
-            const row = Math.floor(local / COLS);
-            const col = local % COLS;
+          const row = Math.floor(local / COLS);
+          const col = local % COLS;
 
-            const nextRow = Math.min(row + 1, ROWS - 1);
+          const nextRow = Math.min(row + 1, ROWS - 1);
 
-            const next = nextRow * COLS + col;
-            return pageStart + next;
-          });
+          const next = nextRow * COLS + col;
+          const index = pageStart + next;
+          ctx.setSelectedScheduleIndex(index);
+
+          ctx.setHoverSchedule(ctx.schedules[index]);
         },
       },
 
       k: {
         action: (_: any, ctx: any) => {
-          ctx.setSelectedScheduleIndex((i: number | null) => {
-            const pageStart = (ctx.currentPage - 1) * PAGE_SIZE;
-            const local = i === null ? 0 : i - pageStart;
+          const i = ctx.selectedScheduleIndex;
+          const pageStart = (ctx.currentPage - 1) * PAGE_SIZE;
+          const local = i === null ? 0 : i - pageStart;
 
-            const row = Math.floor(local / COLS);
-            const col = local % COLS;
+          const row = Math.floor(local / COLS);
+          const col = local % COLS;
 
-            const nextRow = Math.max(row - 1, 0);
+          const nextRow = Math.max(row - 1, 0);
 
-            const next = nextRow * COLS + col;
-            return pageStart + next;
-          });
+          const next = nextRow * COLS + col;
+          const index = pageStart + next;
+          ctx.setSelectedScheduleIndex(index);
+
+          ctx.setHoverSchedule(ctx.schedules[index]);
         },
       },
 
       h: {
         action: (_: any, ctx: any) => {
-          ctx.setSelectedScheduleIndex((i: number | null) => {
-            const pageStart = (ctx.currentPage - 1) * PAGE_SIZE;
-            const local = i === null ? 0 : i - pageStart;
+          const i = ctx.selectedScheduleIndex;
+          const pageStart = (ctx.currentPage - 1) * PAGE_SIZE;
+          const local = i === null ? 0 : i - pageStart;
 
-            const row = Math.floor(local / COLS);
-            const col = local % COLS;
+          const row = Math.floor(local / COLS);
+          const col = local % COLS;
 
-            const nextCol = Math.max(col - 1, 0);
+          const nextCol = Math.max(col - 1, 0);
 
-            const next = row * COLS + nextCol;
-            return pageStart + next;
-          });
+          const next = row * COLS + nextCol;
+          const index = pageStart + next;
+          ctx.setSelectedScheduleIndex(index);
+
+          ctx.setHoverSchedule(ctx.schedules[index]);
         },
       },
 
       l: {
         action: (_: any, ctx: any) => {
-          ctx.setSelectedScheduleIndex((i: number | null) => {
-            const pageStart = (ctx.currentPage - 1) * PAGE_SIZE;
-            const local = i === null ? 0 : i - pageStart;
+          const i = ctx.selectedScheduleIndex;
+          const pageStart = (ctx.currentPage - 1) * PAGE_SIZE;
+          const local = i === null ? 0 : i - pageStart;
 
-            const row = Math.floor(local / COLS);
-            const col = local % COLS;
+          const row = Math.floor(local / COLS);
+          const col = local % COLS;
 
-            const nextCol = Math.min(col + 1, COLS - 1);
+          const nextCol = Math.min(col + 1, COLS - 1);
 
-            const next = row * COLS + nextCol;
-            return pageStart + next;
-          });
+          const next = row * COLS + nextCol;
+          const index = pageStart + next;
+          ctx.setSelectedScheduleIndex(index);
+
+          ctx.setHoverSchedule(ctx.schedules[index]);
         },
       },
 
@@ -1031,6 +1039,7 @@ export default function App() {
       selectedScheduleIndex,
       openBlockEditor,
       closeBlockEditor,
+      setHoverSchedule
     }),
 
     fsm: fsm as FSM,

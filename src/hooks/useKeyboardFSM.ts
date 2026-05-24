@@ -94,6 +94,7 @@ export function useKeyboardFSM({
           const ctx = getContext();
           if (ctx.setSuggestions) ctx.setSuggestions([]);
           if (ctx.setSelectedSuggestion) ctx.setSelectedSuggestion(0);
+          if (ctx.setHoverSchedule) ctx.setHoverSchedule(null);
         }, 0);
 
         // unfocus search input if focused
