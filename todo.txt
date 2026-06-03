@@ -1,10 +1,12 @@
 - Add breaks
-- Put general course info in section edit
+- Put general course info in section edit and left sidebar
 - Filter classes
+- Make professor lookup more lenient
+- Persist data
 - Room distances
+- Import/export classes
 - Dark Mode (?)
 - Mobile View
-- Persist data
 
 # Future Stuff:
 - Gen ed finder

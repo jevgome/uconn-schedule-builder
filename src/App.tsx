@@ -1719,7 +1719,7 @@ export default function App() {
             >
               <button
                 onClick={() => setSettingsOpen(v => !v)}
-                className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition"
+                className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 hover:cursor-pointer transition"
               >
                 <Settings className="w-5 h-5 text-gray-700" />
               </button>
