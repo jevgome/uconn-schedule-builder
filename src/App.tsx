@@ -1478,6 +1478,9 @@ export default function App() {
     return [...base].sort(compare);
   }, [sections, editingBlockId, sortState, professorMap]);
 
+  const [showEnrollModal, setShowEnrollModal] = useState(false);
+  const [copiedReg, setCopiedReg] = useState<string | number | null>(null);
+  const [copiedAll, setCopiedAll] = useState(false);
 
   return (
     <div className="h-screen flex flex-col bg-gray-100 relative z-0">
@@ -1696,11 +1699,22 @@ export default function App() {
                 : "No schedules generated"}
             </div>
 
-            {selectedSchedule && (
-              <div className="text-xs text-gray-500">
-                {selectedSchedule.sections?.length ?? 0} sections • {totalCredits} credits
-              </div>
-            )}
+            <div className="flex items-center gap-3">
+              {selectedSchedule && (
+                <>
+                  <div className="text-xs text-gray-500">
+                    {selectedSchedule.sections?.length ?? 0} sections • {totalCredits} credits
+                  </div>
+
+                  <button
+                    onClick={() => setShowEnrollModal(true)}
+                    className="px-3 py-1.5 rounded-lg bg-blue-950 text-white text-sm font-medium hover:bg-blue-900 transition cursor-pointer"
+                  >
+                    Enroll
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           {/* CALENDAR */}
@@ -2361,6 +2375,129 @@ export default function App() {
          />
         </div>
 
+      </div>
+    )}
+
+    {showEnrollModal && selectedSchedule && (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4">
+        <div className="w-full max-w-5xl h-full max-h-[85vh] flex flex-col overflow-hidden rounded-2xl border border-black bg-white">
+
+          {/* Header */}
+          <div className="relative flex items-center justify-between px-6 py-4">
+            <div>
+              <h2 className="text-xl font-semibold tracking-tight">
+                Enrollment Numbers
+              </h2>
+              <p className="text-sm text-blue-950">
+                Copy these registration numbers and paste them into{" "}
+                <a
+                  href="https://studentadmin.uconn.edu/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium underline hover:text-blue-700"
+                >
+                  Student Admin ↗
+                </a>
+                {" "}when enrolling.
+              </p>
+              <p className="text-sm text-blue-950">
+                From the home page: "Manage Classes" -&gt; "Class Search and Enroll"
+              </p>
+            </div>
+
+            <button
+              className="cursor-pointer rounded-md px-3 py-1 text-sm hover:bg-black hover:text-white"
+              onClick={() => setShowEnrollModal(false)}
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Table Header */}
+          <div className="grid grid-cols-[1fr_180px_120px] text-gray-800 text-sm font-medium px-6 py-3 border-b-4 border-gray-200">
+            <div>Course</div>
+            <div>Registration Number</div>
+            <div></div>
+          </div>
+
+          {/* Content */}
+          <div className="overflow-y-auto flex-1 min-h-0 pb-6">
+            {selectedSchedule.sections.map((section: any) => (
+              <div
+                key={section.registration_number}
+                className="grid grid-cols-[1fr_180px_120px] items-center border-b border-black/10 px-6 py-3 text-sm bg-slate-50 hover:bg-blue-950/5"
+              >
+                <div className="font-medium">
+                  {section.subject} {section.catalog_number}
+                </div>
+
+                <div>
+                  <code className="font-mono text-blue-950">
+                    {section.registration_number}
+                  </code>
+                </div>
+
+                <div>
+                  <button
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(
+                        String(section.registration_number)
+                      );
+
+                      setCopiedReg(section.registration_number);
+
+                      setTimeout(() => {
+                        setCopiedReg((current) =>
+                          current === section.registration_number
+                            ? null
+                            : current
+                        );
+                      }, 2000);
+                    }}
+                    className={`px-3 py-1 rounded-md text-sm font-medium transition cursor-pointer ${
+                      copiedReg === section.registration_number
+                        ? "bg-green-100 text-green-700"
+                        : "bg-blue-950 text-white hover:bg-blue-900"
+                    }`}
+                  >
+                    {copiedReg === section.registration_number
+                      ? "Copied!"
+                      : "Copy"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer */}
+          <div className="border-t px-6 py-4 bg-slate-50">
+            <button
+              onClick={async () => {
+                const text = selectedSchedule.sections
+                  .map(
+                    (s: any) =>
+                      `${s.subject} ${s.catalog_number}: ${s.registration_number}`
+                  )
+                  .join("\n");
+
+                await navigator.clipboard.writeText(text);
+
+                setCopiedAll(true);
+
+                setTimeout(() => setCopiedAll(false), 2000);
+              }}
+              className={`w-full rounded-xl py-3 font-semibold transition cursor-pointer ${
+                copiedAll
+                  ? "bg-green-600 text-white"
+                  : "bg-blue-950 text-white hover:bg-blue-900"
+              }`}
+            >
+              {copiedAll
+                ? "Copied!"
+                : "Copy All Registration Numbers"}
+            </button>
+          </div>
+        </div>
       </div>
     )}
     </div>
