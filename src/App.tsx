@@ -884,7 +884,8 @@ export default function App() {
     },
   } as const satisfies FSM;
 
-  // Scheduler call
+  const [showScheduleError, setShowScheduleError] = useState(false);
+
   const runScheduler = async () => {
     if (sections.length === 0) {
       console.log("No sections available yet.");
@@ -901,16 +902,23 @@ export default function App() {
       return sectionSelections[code]?.has(s.registration_number);
     });
 
-    const schedulesJson = generate_schedules_from_sections(filtered);
     if (filtered.length === 0) {
       console.log("No valid sections selected");
+      setShowScheduleError(true);
       return;
     }
 
+    const schedulesJson = generate_schedules_from_sections(filtered);
     const schedules = JSON.parse(schedulesJson);
+
     setSchedules(schedules);
 
-    if (schedules.length > 0) {
+    if (schedules.length === 0) {
+      setShowScheduleError(true);
+      setSelectedSchedule(null);
+      setSelectedScheduleIndex(null);
+    } else {
+      setShowScheduleError(false);
       setSelectedSchedule(schedules[0]);
       setSelectedScheduleIndex(0);
       setCurrentPage(1);
@@ -919,10 +927,7 @@ export default function App() {
     console.log("Num sections: ", sections.length);
     console.log("Found schedules:", schedules.length);
     console.log("Schedules:", schedules);
-
   };
-
-
 
   const scoreCourse = (course: Course, query: string) => {
     const q = query.toLowerCase().trim();
@@ -1649,6 +1654,13 @@ export default function App() {
               </div>
             </div>
           </div>
+
+          {showScheduleError && (
+            <div className="mb-3 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 shadow-sm">
+              No schedules could be generated. The selected course sections conflict
+              with each other.
+            </div>
+          )}
 
           {/* Generate button */}
           <div className="p-6 border-t border-gray-200 bg-gradient-to-br from-slate-50 to-blue-50">
