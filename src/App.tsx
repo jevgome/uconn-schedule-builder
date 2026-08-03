@@ -37,6 +37,15 @@ interface BlockProps {
   selected?: boolean;
 }
 
+type BreakBlock = {
+  id: string;
+  type: "break";
+  name: string;
+  days: string[]; // ["Mo","Tu","We"]
+  start_time: number; // minutes from midnight
+  end_time: number;
+};
+
 interface Professor {
   name: string;
   rating: number;
@@ -153,7 +162,23 @@ const DraggableBlock = memo(function DraggableBlock({ id, name, onDelete, select
   );
 });
 
-function WeeklyCalendar({ schedule, hoverSchedule, professorMap }: { schedule: any[] | null; hoverSchedule: any[] | null; professorMap: Map<string, Professor>;}) {
+function WeeklyCalendar({
+  schedule,
+  hoverSchedule,
+  professorMap,
+  breakMode,
+  breakBlocks,
+  setBreakBlocks,
+  setBreakMode,
+}: {
+  schedule: any[] | null;
+  hoverSchedule: any[] | null;
+  professorMap: Map<string, Professor>;
+  breakMode: boolean;
+  breakBlocks: BreakBlock[];
+  setBreakBlocks: React.Dispatch<React.SetStateAction<BreakBlock[]>>;
+  setBreakMode: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
   const days = ["Mo", "Tu", "We", "Th", "Fr"];
 
   const startHour = 8;
@@ -180,6 +205,26 @@ function WeeklyCalendar({ schedule, hoverSchedule, professorMap }: { schedule: a
 
   const [hoveredSection, setHoveredSection] = useState<string | null>(null);
 
+  const [dragStart, setDragStart] = useState<{
+    dayIndex: number;
+    minute: number;
+  } | null>(null);
+
+  const [dragCurrent, setDragCurrent] = useState<{
+    dayIndex: number;
+    minute: number;
+  } | null>(null);
+
+  const formatTimeLabel = (min: number) => {
+    const hours = Math.floor(min / 60);
+    const minutes = min % 60;
+
+    const h = hours % 12 === 0 ? 12 : hours % 12;
+    const suffix = hours >= 12 ? "PM" : "AM";
+
+    return `${h}:${minutes.toString().padStart(2, "0")} ${suffix}`;
+  };
+
   function formatTime(min: number) {
     const hours = Math.floor(min / 60);
     const minutes = min % 60;
@@ -187,6 +232,16 @@ function WeeklyCalendar({ schedule, hoverSchedule, professorMap }: { schedule: a
 
     return `${h}:${minutes.toString().padStart(2, "0")}`;
   }
+
+  const snapMinutes = (m: number) =>
+    Math.round(m / 5) * 5;
+
+  const positionToMinute = (y: number, height: number) => {
+    const ratio = y / height;
+
+    return snapMinutes(startHour * 60 + ratio * totalMinutes);
+  };
+
   const getRatingColor = (rating: number) => {
     if (rating >= 4.5) return "text-green-400";
     if (rating >= 4.0) return "text-green-300";
@@ -195,11 +250,24 @@ function WeeklyCalendar({ schedule, hoverSchedule, professorMap }: { schedule: a
     return "text-red-300";
   };
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setBreakMode(false);
+        setDragStart(null);
+        setDragCurrent(null);
+      }
+    };
+
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
   return (
     <div className="h-full flex items-stretch overflow-hidden">
 
       {/* TIME COLUMN */}
-      <div className="w-14 pr-2 text-xs text-gray-400 flex flex-col h-full">
+      <div className="select-none w-14 pr-2 text-xs text-gray-400 flex flex-col h-full">
         {Array.from({ length: hours }).map((_, i) => (
           <div key={i} className="flex-1 flex items-start justify-end pr-1">
             {startHour + i <= 12 ? startHour+i : startHour+i-12}
@@ -210,11 +278,145 @@ function WeeklyCalendar({ schedule, hoverSchedule, professorMap }: { schedule: a
       {/* DAYS */}
       <div className="flex-1 grid grid-cols-5 gap-2 relative">
 
+        {dragStart && dragCurrent && (() => {
+          const startDay = Math.min(
+            dragStart.dayIndex,
+            dragCurrent.dayIndex
+          );
+
+          const endDay = Math.max(
+            dragStart.dayIndex,
+            dragCurrent.dayIndex
+          );
+
+          const startMinute = Math.min(
+            dragStart.minute,
+            dragCurrent.minute
+          );
+
+          const endMinute = Math.max(
+            dragStart.minute,
+            dragCurrent.minute
+          );
+
+          const left = (startDay / 5) * 100;
+          const width = ((endDay - startDay + 1) / 5) * 100;
+
+          const top =
+            ((startMinute - startHour * 60) / totalMinutes) * 100;
+
+          const height =
+            ((endMinute - startMinute) / totalMinutes) * 100;
+
+          return (
+            <div
+              className="absolute z-50 pointer-events-none"
+              style={{
+                left: `${left}%`,
+                width: `${width}%`,
+                top: `${top}%`,
+                height: `${height}%`,
+              }}
+            >
+              {/* Time label */}
+              <div className="select-none absolute -top-7 left-0 px-2 py-1 rounded-md bg-blue-950 text-white text-xs font-medium shadow-lg whitespace-nowrap">
+                {days[startDay]}
+                {startDay !== endDay ? `–${days[endDay]}` : ""}
+                {" • "}
+                {formatTimeLabel(startMinute)}
+                {" – "}
+                {formatTimeLabel(endMinute)}
+              </div>
+
+              {/* Selection rectangle */}
+              <div className="select-none w-full h-full rounded-lg border-2 border-blue-950 bg-blue-500/20" />
+            </div>
+          );
+        })()}
+
         {days.map((day) => (
-          <div key={day} className="relative h-full">
+          <div
+            key={day}
+            className="relative h-full"
+            onMouseDown={(e) => {
+              if (!breakMode) return;
+
+              const rect =
+                e.currentTarget.getBoundingClientRect();
+
+              setDragStart({
+                dayIndex: days.indexOf(day),
+                minute: positionToMinute(
+                  e.clientY - rect.top,
+                  rect.height - 32
+                ),
+              });
+
+              setDragCurrent({
+                dayIndex: days.indexOf(day),
+                minute: positionToMinute(
+                  e.clientY - rect.top,
+                  rect.height - 32
+                ),
+              });
+            }}
+            onMouseMove={(e) => {
+              if (!dragStart) return;
+
+              const rect =
+                e.currentTarget.getBoundingClientRect();
+
+              setDragCurrent({
+                dayIndex: days.indexOf(day),
+                minute: positionToMinute(
+                  e.clientY - rect.top,
+                  rect.height - 32
+                ),
+              });
+            }}
+            onMouseUp={() => {
+              if (!dragStart || !dragCurrent) return;
+
+              const startDay = Math.min(
+                dragStart.dayIndex,
+                dragCurrent.dayIndex
+              );
+
+              const endDay = Math.max(
+                dragStart.dayIndex,
+                dragCurrent.dayIndex
+              );
+
+              const startMinute = Math.min(
+                dragStart.minute,
+                dragCurrent.minute
+              );
+
+              const endMinute = Math.max(
+                dragStart.minute,
+                dragCurrent.minute
+              );
+
+              setBreakBlocks(prev => [
+                ...prev,
+                {
+                  id: crypto.randomUUID(),
+                  type: "break",
+                  name: "Break",
+                  days: days.slice(startDay, endDay + 1),
+                  start_time: startMinute,
+                  end_time: endMinute,
+                },
+              ]);
+
+              setDragStart(null);
+              setDragCurrent(null);
+              setBreakMode(false);
+            }}
+          >
 
             {/* Day label */}
-            <div className="text-center text-sm font-semibold mb-1 text-gray-600 shrink-0">
+            <div className="select-none text-center text-sm font-semibold mb-1 text-gray-600 shrink-0">
               {day}
             </div>
 
@@ -257,7 +459,7 @@ function WeeklyCalendar({ schedule, hoverSchedule, professorMap }: { schedule: a
                         key={`${section.subject}-${section.catalog_number}-${section.class_section}-${block.day}-${block.start_time}`}
                         onMouseEnter={() => setHoveredSection(section.registration_number)}
                         onMouseLeave={() => setHoveredSection(null)}
-                        className={`absolute left-1 right-1 rounded-xl pt-1 px-2 shadow-lg transition-all duration-150
+                        className={`select-none absolute left-1 right-1 rounded-xl pt-1 px-2 shadow-lg transition-all duration-150
                           ${getColor(code)}
                           text-white
                           ${hoveredSection && !isHovered ? "opacity-30" : "opacity-100"}
@@ -334,6 +536,7 @@ function WeeklyCalendar({ schedule, hoverSchedule, professorMap }: { schedule: a
                       <div
                         key={`hover-${section.subject}-${section.catalog_number}-${section.class_section}-${block.day}-${block.start_time}`}
                         className={`
+                          selecte-none
                           absolute left-1 right-1 rounded-xl
                           border-2 border-dashed
                           ${color}
@@ -908,7 +1111,25 @@ export default function App() {
       return;
     }
 
-    const schedulesJson = generate_schedules_from_sections(filtered);
+    const breakSections = breakBlocks.map((b) => ({
+      subject: "BREAK",
+      catalog_number: "",
+      registration_number: b.id,
+      blocks: b.days.map((day) => ({
+        day,
+        start_time: b.start_time,
+        end_time: b.end_time,
+        class_section: "BREAK",
+        instructor: null,
+        room: null,
+      })),
+    }));
+
+    const schedulesJson =
+    generate_schedules_from_sections([
+      ...filtered,
+      ...breakSections,
+    ]);
     const schedules = JSON.parse(schedulesJson);
 
     setSchedules(schedules);
@@ -1296,6 +1517,7 @@ export default function App() {
   const clearBlocks = () => {
     setBlocks([]);
     setSections([]);
+    setBreakBlocks([]);
   };
 
   const buildCourses = (classesData: any[], coursesData: any[]) => {
@@ -1482,12 +1704,23 @@ export default function App() {
   const [copiedReg, setCopiedReg] = useState<string | number | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
 
+  const [breakBlocks, setBreakBlocks] = useState<BreakBlock[]>([]);
+  const [breakMode, setBreakMode] = useState(false);
+
   return (
     <div className="h-screen flex flex-col bg-gray-100 relative z-0">
-      <div className="flex flex-1 overflow-hidden">
+      {breakMode && (
+        <div className="fixed top-0 left-0 right-0 z-[20000] bg-blue-950 text-white text-sm font-semibold py-2 text-center shadow-lg">
+          Click and drag on the calendar to add a break
+        </div>
+      )}
+      <div className="flex flex-1 overflow-hidden relative">
+        {breakMode && (
+          <div className="absolute inset-0 z-[15000] bg-black/40 pointer-events-none" />
+        )}
 
         {/* LEFT SIDEBAR */}
-        <div className="w-[clamp(220px,18vw,300px)] h-full bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-hidden border-r border-gray-200">
+        <div className={`w-[clamp(220px,18vw,300px)] h-full bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-hidden border-r border-gray-200 ${breakMode ? "pointer-events-none opacity-60" : ""}`}>
           <div className="relative h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm">
             <div className="font-bold text-lg text-gray-800">
               UConn Schedule Builder
@@ -1689,7 +1922,7 @@ export default function App() {
         </div>
 
         {/* CENTER */}
-        <div className="flex-1 bg-white p-4 overflow-hidden flex flex-col min-h-0">
+        <div className="flex-1 bg-white p-4 overflow-hidden flex flex-col min-h-0 relative z-[16000]">
           
           {/* HEADER LABEL */}
           <div className="mb-3 flex items-center justify-between">
@@ -1719,18 +1952,40 @@ export default function App() {
 
           {/* CALENDAR */}
           {!selectedSchedule ? (
-            <div className="flex-1 min-h-0 overflow-hidden">
-              <WeeklyCalendar schedule={null} hoverSchedule={null} professorMap={professorMap} />
+            <div
+              className={`flex-1 min-h-0 overflow-hidden ${
+                breakMode ? "cursor-crosshair" : ""
+              }`}
+            >
+              <WeeklyCalendar
+                schedule={null}
+                hoverSchedule={null}
+                professorMap={professorMap}
+                breakMode={breakMode}
+                breakBlocks={breakBlocks}
+                setBreakBlocks={setBreakBlocks}
+                setBreakMode={setBreakMode}
+              />
             </div>
           ) : (
             <div className="flex-1 min-h-0 overflow-hidden">
-              <WeeklyCalendar schedule={selectedSchedule.sections} hoverSchedule={hoverSchedule?.sections} professorMap={professorMap} />
+              <WeeklyCalendar
+                schedule={selectedSchedule.sections}
+                hoverSchedule={hoverSchedule?.sections}
+                professorMap={professorMap}
+                breakMode={breakMode}
+                breakBlocks={breakBlocks}
+                setBreakBlocks={setBreakBlocks}
+                setBreakMode={setBreakMode}
+              />
             </div>
           )}
         </div>
 
         {/* RIGHT SIDEBAR */}
-        <div className="w-[clamp(220px,18vw,300px)] h-full bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-hidden border-l border-gray-200">
+        <div className={`w-[clamp(220px,18vw,300px)] h-full bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-hidden border-l border-gray-200 ${
+          breakMode ? "pointer-events-none opacity-60" : ""
+        }`}>
           <div className="relative h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm">
              <div className="flex items-center">
                {vimMode && (
@@ -1798,9 +2053,19 @@ export default function App() {
 
           <div className="flex flex-col h-full p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">
-                Your Classes ({blocks.length})
-              </h2>
+              <div>
+                <h2 className="text-lg font-semibold">
+                  Your Classes ({blocks.length})
+                </h2>
+
+                <button
+                  onClick={() => setBreakMode(true)}
+                  className="px-3 py-1 text-sm rounded-md text-blue-900 hover:bg-blue-100 hover:cursor-pointer"
+                >
+                  Add Break
+                </button>
+              </div>
+
               {blocks.length !== 0 && (
                 <button
                   onClick={clearBlocks}
@@ -1841,6 +2106,22 @@ export default function App() {
                           onDelete={removeBlock}
                           onEdit={openBlockEditor}
                           selected={state === "blocks" && index === selectedBlockIndex}
+                        />
+                      ))}
+                      {breakBlocks.map((b) => (
+                        <DraggableBlock
+                          key={b.id}
+                          id={b.id}
+                          name={`BREAK • ${formatTime(b.start_time)}-${formatTime(
+                            b.end_time
+                          )}`}
+                          onDelete={() =>
+                            setBreakBlocks(prev =>
+                              prev.filter(x => x.id !== b.id)
+                            )
+                          }
+                          onEdit={() => {}}
+                          selected={false}
                         />
                       ))}
                     </div>
