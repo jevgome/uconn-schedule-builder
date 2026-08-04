@@ -1922,7 +1922,7 @@ export default function App() {
         </div>
 
         {/* CENTER */}
-        <div className="flex-1 bg-white p-4 overflow-hidden flex flex-col min-h-0 relative z-[16000]">
+        <div className="flex-1 bg-white p-4 overflow-hidden flex flex-col min-h-0 relative z-0">
           
           {/* HEADER LABEL */}
           <div className="mb-3 flex items-center justify-between">
@@ -2472,7 +2472,7 @@ export default function App() {
                       </div>
 
                       <div className="font-medium">
-                        {section.registration_number}
+                        {section.registration_number}, {section.class_section}
                       </div>
                       <div className="text-blue-950 flex flex-col gap-1 min-w-0 pr-8">
                         {(() => {
