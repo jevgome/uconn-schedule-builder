@@ -1790,7 +1790,10 @@ export default function App() {
                                     : "bg-white text-gray-700 border-blue-200 hover:bg-blue-50"
                             }
                           `}
-                          onClick={() => addBlock(course)}
+                          onMouseDown={(e) => {
+                            e.preventDefault(); // prevents input blur
+                            addBlock(course);
+                          }}
                         >
                           <div className="font-semibold">
                             {course.code}
