@@ -406,7 +406,7 @@ function WeeklyCalendar({
             ref={(el) => {
               gridRefs.current[dayIndex] = el;
             }}
-            className="relative flex flex-col h-full flex-1"
+            className="relative flex flex-col h-full flex-1 ${breakMode ? 'cursor-crosshair'}"
             onMouseDown={(e) => {
               e.preventDefault(); 
 
@@ -1781,7 +1781,7 @@ export default function App() {
                   ref={searchInputRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  className="w-full px-4 py-3 text-base bg-white border border-gray-300 rounded-xl shadow-md
+                  className="w-full px-4 py-3 select-none text-base bg-white border border-gray-300 rounded-xl shadow-md
                              focus:outline-none focus:ring-2 focus:ring-blue-900 relative z-10"
                   placeholder="Search catalog # or title..."
                   onFocus={() => setState("search")}
@@ -1860,7 +1860,7 @@ export default function App() {
                   {/* Button */}
                   <button
                     onClick={() => setCampusOpen((v) => !v)}
-                    className="w-full px-3 py-2 bg-white rounded-lg text-sm flex justify-between items-center shadow-sm cursor-pointer"
+                    className="w-full px-3 py-2 bg-white rounded-lg text-sm flex justify-between items-center shadow-sm cursor-pointer select-none"
                   >
                     <span>
                       {selectedCampuses.length === 0
@@ -1882,7 +1882,7 @@ export default function App() {
                         return (
                           <label
                             key={code}
-                            className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded cursor-pointer"
+                            className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded cursor-pointer select-none"
                           >
                             <input
                               type="checkbox"
@@ -1911,7 +1911,7 @@ export default function App() {
                 <div className="w-1/2 relative" ref={semesterRef}>
                   <button
                     onClick={() => setSemesterOpen((v) => !v)}
-                    className="w-full px-3 py-2 bg-white rounded-lg text-sm flex justify-between items-center shadow-sm cursor-pointer"
+                    className="w-full px-3 py-2 bg-white rounded-lg text-sm flex justify-between items-center shadow-sm cursor-pointer select-none"
                   >
                     {selectedSemester ? selectedSemester.name : "Semester"}
                     <span className="text-gray-400">▾</span>
@@ -1955,7 +1955,7 @@ export default function App() {
               }}
               disabled={!hasValidSections}
               className={`
-                w-full font-semibold py-3 rounded-xl shadow-lg transition-all duration-150
+                w-full font-semibold py-3 rounded-xl shadow-lg transition-all duration-150 select-none
                 ${
                   hasValidSections
                     ? "bg-blue-950 hover:bg-blue-900 text-white cursor-pointer"
@@ -1972,8 +1972,8 @@ export default function App() {
         <div className="flex-1 bg-white p-4 overflow-hidden flex flex-col min-h-0 relative z-0">
           
           {/* HEADER LABEL */}
-          <div className="mb-3 flex items-center justify-between">
-            <div className="text-sm font-semibold text-gray-700">
+          <div className="mb-3 h-10 shrink-0 flex items-center justify-between">
+            <div className="select-none text-sm font-semibold text-gray-700">
               {selectedScheduleIndex !== null
                 ? `Schedule ${selectedScheduleIndex + 1} / ${schedules.length}`
                 : "No schedules generated"}
@@ -2036,7 +2036,7 @@ export default function App() {
           <div className="relative h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm">
              <div className="flex items-center">
                {vimMode && (
-                 <div className="mr-3 text-xs px-2 py-1 rounded-md bg-gray-100 text-gray-600 font-mono border border-gray-700 tracking-widest">
+                 <div className="mr-3 text-xs px-2 py-1 rounded-md bg-gray-100 text-gray-600 font-mono border border-gray-700 tracking-widest select-none">
                    -- {vimFocusLabelMap[state] ?? state} --
                  </div>
                )}
@@ -2130,7 +2130,7 @@ export default function App() {
               
 
               {blocks.length === 0 && breakBlocks.length === 0 ? (
-                <div className="text-center text-gray-500 mt-10">
+                <div className="text-center text-gray-500 mt-10 select-none">
                   📚 No courses or breaks added yet
                 </div>
               ) : (
