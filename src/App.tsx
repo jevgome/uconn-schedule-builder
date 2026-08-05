@@ -181,6 +181,7 @@ function WeeklyCalendar({
 }) {
   const days = ["Mo", "Tu", "We", "Th", "Fr"];
 
+  const dayHeaderHeight = 32;
   const startHour = 8;
   const endHour = 22;
   const hours = endHour-startHour
@@ -211,6 +212,11 @@ function WeeklyCalendar({
   } | null>(null);
 
   const [dragCurrent, setDragCurrent] = useState<{
+    dayIndex: number;
+    minute: number;
+  } | null>(null);
+
+  const [breakHover, setBreakHover] = useState<{
     dayIndex: number;
     minute: number;
   } | null>(null);
@@ -250,12 +256,33 @@ function WeeklyCalendar({
     return "text-red-300";
   };
 
+  const gridRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  const getMouseMinute = (
+    e: React.MouseEvent,
+    dayIndex: number
+  ) => {
+    const grid = gridRefs.current[dayIndex];
+
+    if (!grid) return startHour * 60;
+
+    const rect = grid.getBoundingClientRect();
+
+    const y = Math.max(
+      0,
+      Math.min(e.clientY - rect.top, rect.height)
+    );
+
+    return positionToMinute(y, rect.height);
+  };
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setBreakMode(false);
         setDragStart(null);
         setDragCurrent(null);
+        setBreakHover(null);
       }
     };
 
@@ -278,31 +305,36 @@ function WeeklyCalendar({
       {/* DAYS */}
       <div className="flex-1 grid grid-cols-5 gap-2 relative">
 
-        {dragStart && dragCurrent && (() => {
+        {(dragStart && dragCurrent || (breakMode && breakHover)) && (() => {
+
+          const start = dragStart ?? breakHover!;
+          const end = dragCurrent ?? breakHover!;
+
           const startDay = Math.min(
-            dragStart.dayIndex,
-            dragCurrent.dayIndex
+            start.dayIndex,
+            end.dayIndex
           );
 
           const endDay = Math.max(
-            dragStart.dayIndex,
-            dragCurrent.dayIndex
+            start.dayIndex,
+            end.dayIndex
           );
 
           const startMinute = Math.min(
-            dragStart.minute,
-            dragCurrent.minute
+            start.minute,
+            end.minute
           );
 
           const endMinute = Math.max(
-            dragStart.minute,
-            dragCurrent.minute
+            start.minute,
+            end.minute
           );
 
           const left = (startDay / 5) * 100;
           const width = ((endDay - startDay + 1) / 5) * 100;
 
           const top =
+            (dayHeaderHeight / (hours * 60)) * 100 +
             ((startMinute - startHour * 60) / totalMinutes) * 100;
 
           const height =
@@ -318,8 +350,25 @@ function WeeklyCalendar({
                 height: `${height}%`,
               }}
             >
-              {/* Time label */}
-              <div className="select-none absolute -top-7 left-0 px-2 py-1 rounded-md bg-blue-950 text-white text-xs font-medium shadow-lg whitespace-nowrap">
+              <div
+                className="
+                  select-none
+                  absolute
+                  bottom-full
+                  mb-1
+                  left-0
+                  px-2
+                  py-1
+                  rounded-md
+                  bg-blue-950
+                  text-white
+                  text-xs
+                  font-medium
+                  shadow-lg
+                  whitespace-nowrap
+                "
+                draggable={false}
+              >
                 {days[startDay]}
                 {startDay !== endDay ? `–${days[endDay]}` : ""}
                 {" • "}
@@ -328,76 +377,83 @@ function WeeklyCalendar({
                 {formatTimeLabel(endMinute)}
               </div>
 
-              {/* Selection rectangle */}
               <div className="select-none w-full h-full rounded-lg border-2 border-blue-950 bg-blue-500/20" />
             </div>
           );
         })()}
 
-        {days.map((day) => (
-          <div
-            key={day}
-            className="relative h-full"
-            onMouseDown={(e) => {
-              if (!breakMode) return;
+        {days.map((day, dayIndex) => (
+        <div key={day} className="relative h-full flex flex-col">
 
-              const rect =
-                e.currentTarget.getBoundingClientRect();
+          {/* Day label - Decoupled from drag events */}
+          <div 
+            aria-hidden="true"
+            onDragStart={(e) => e.preventDefault()} // <-- The ultimate kill-switch for ghost dragging
+            className="
+              select-none 
+              text-center 
+              text-sm 
+              font-semibold 
+              mb-1 
+              text-gray-600 
+              shrink-0
+            "
+          >
+            {day}
+          </div>
+          {/* Background grid - Mouse handlers moved here */}
+          <div
+            ref={(el) => {
+              gridRefs.current[dayIndex] = el;
+            }}
+            className="relative flex flex-col h-full flex-1"
+            onMouseDown={(e) => {
+              e.preventDefault(); 
+
+              if (!breakMode) return;
 
               setDragStart({
                 dayIndex: days.indexOf(day),
-                minute: positionToMinute(
-                  e.clientY - rect.top,
-                  rect.height - 32
-                ),
+                minute: getMouseMinute(e, days.indexOf(day)),
               });
 
               setDragCurrent({
                 dayIndex: days.indexOf(day),
-                minute: positionToMinute(
-                  e.clientY - rect.top,
-                  rect.height - 32
-                ),
+                minute: getMouseMinute(e, days.indexOf(day)),
               });
             }}
             onMouseMove={(e) => {
-              if (!dragStart) return;
+              const minute = getMouseMinute(e, days.indexOf(day));
 
-              const rect =
-                e.currentTarget.getBoundingClientRect();
+              if (breakMode && !dragStart) {
+                setBreakHover({
+                  dayIndex: days.indexOf(day),
+                  minute,
+                });
+                return;
+              }
+
+              if (!dragStart) return;
 
               setDragCurrent({
                 dayIndex: days.indexOf(day),
-                minute: positionToMinute(
-                  e.clientY - rect.top,
-                  rect.height - 32
-                ),
+                minute,
               });
+            }}
+            onMouseLeave={() => {
+              if (!dragStart) {
+                setBreakHover(null);
+              }
             }}
             onMouseUp={() => {
               if (!dragStart || !dragCurrent) return;
 
-              const startDay = Math.min(
-                dragStart.dayIndex,
-                dragCurrent.dayIndex
-              );
+              const startDay = Math.min(dragStart.dayIndex, dragCurrent.dayIndex);
+              const endDay = Math.max(dragStart.dayIndex, dragCurrent.dayIndex);
+              const startMinute = Math.min(dragStart.minute, dragCurrent.minute);
+              const endMinute = Math.max(dragStart.minute, dragCurrent.minute);
 
-              const endDay = Math.max(
-                dragStart.dayIndex,
-                dragCurrent.dayIndex
-              );
-
-              const startMinute = Math.min(
-                dragStart.minute,
-                dragCurrent.minute
-              );
-
-              const endMinute = Math.max(
-                dragStart.minute,
-                dragCurrent.minute
-              );
-
-              setBreakBlocks(prev => [
+              setBreakBlocks((prev) => [
                 ...prev,
                 {
                   id: crypto.randomUUID(),
@@ -414,21 +470,9 @@ function WeeklyCalendar({
               setBreakMode(false);
             }}
           >
-
-            {/* Day label */}
-            <div className="select-none text-center text-sm font-semibold mb-1 text-gray-600 shrink-0">
-              {day}
-            </div>
-
-            {/* Background grid */}
-            <div className="relative flex flex-col h-full">
-              {Array.from({ length: hours }).map((_, i) => (
-                <div
-                  key={i}
-                  className="flex-1 border-t border-gray-200"
-                />
-              ))}
-
+            {Array.from({ length: hours }).map((_, i) => (
+              <div key={i} className="flex-1 border-t border-gray-200" />
+            ))}
               {/* BLOCKS */}
               {schedule !== null && (schedule.flatMap((section) =>
                 section.blocks.map((block: any) => {
@@ -536,7 +580,7 @@ function WeeklyCalendar({
                       <div
                         key={`hover-${section.subject}-${section.catalog_number}-${section.class_section}-${block.day}-${block.start_time}`}
                         className={`
-                          selecte-none
+                          select-none
                           absolute left-1 right-1 rounded-xl
                           border-2 border-dashed
                           ${color}
@@ -554,9 +598,9 @@ function WeeklyCalendar({
                     );
                   })
                 )}
-            </div>
           </div>
-        ))}
+        </div>
+      ))}
       </div>
     </div>
   );
@@ -2069,7 +2113,7 @@ export default function App() {
                 </button>
               </div>
 
-              {blocks.length !== 0 && (
+              {blocks.length + breakBlocks.length !== 0 && (
                 <button
                   onClick={clearBlocks}
                   className="p-2 rounded-md hover:bg-red-100 text-red-600 text-sm transition cursor-pointer"
@@ -2085,9 +2129,9 @@ export default function App() {
             <div className="h-[60%] overflow-y-auto">
               
 
-              {blocks.length === 0 ? (
+              {blocks.length === 0 && breakBlocks.length === 0 ? (
                 <div className="text-center text-gray-500 mt-10">
-                  📚 No courses added yet
+                  📚 No courses or breaks added yet
                 </div>
               ) : (
                 <DndContext
@@ -2097,7 +2141,10 @@ export default function App() {
                   autoScroll={false}
                 >
                   <SortableContext
-                    items={blocks.map((b) => b.id)}
+                    items={[
+                      ...blocks.map((b) => b.id),
+                      ...breakBlocks.map((b) => b.id),
+                    ]}
                     strategy={verticalListSortingStrategy}
                   >
                     <div className="flex flex-col items-center w-full">
@@ -2111,13 +2158,12 @@ export default function App() {
                           selected={state === "blocks" && index === selectedBlockIndex}
                         />
                       ))}
+
                       {breakBlocks.map((b) => (
                         <DraggableBlock
                           key={b.id}
                           id={b.id}
-                          name={`BREAK • ${formatTime(b.start_time)}-${formatTime(
-                            b.end_time
-                          )}`}
+                          name={`BREAK • ${formatTime(b.start_time)}-${formatTime(b.end_time)}`}
                           onDelete={() =>
                             setBreakBlocks(prev =>
                               prev.filter(x => x.id !== b.id)
@@ -2131,7 +2177,6 @@ export default function App() {
                   </SortableContext>
                 </DndContext>
               )}
-
             </div>
 
             {/* BOTTOM HALF */}
