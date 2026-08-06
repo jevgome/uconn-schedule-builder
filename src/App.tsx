@@ -276,6 +276,17 @@ function WeeklyCalendar({
     return positionToMinute(y, rect.height);
   };
 
+  // 1. Calculate the block height of a single 5-minute interval as a percentage of the total height
+  const minutesPerInterval = 5;
+  const totalMinutesInDay = totalMinutes; // (endHour - startHour) * 60
+
+  // 2. Helper to convert any minute value into a snapped percentage offset from the top
+  const minuteToPercent = (minute: number) => {
+    const clampedMinute = Math.max(startHour * 60, Math.min(endHour * 60, minute));
+    const offsetMinutes = clampedMinute - (startHour * 60);
+    return (offsetMinutes / totalMinutesInDay) * 100;
+  };
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -320,25 +331,16 @@ function WeeklyCalendar({
             end.dayIndex
           );
 
-          const startMinute = Math.min(
-            start.minute,
-            end.minute
-          );
-
-          const endMinute = Math.max(
-            start.minute,
-            end.minute
-          );
+          // Inside the WeeklyCalendar return statement, where the drag overlay is rendered:
+          const startMinute = Math.min(start.minute, end.minute);
+          const endMinute = Math.max(start.minute, end.minute);
 
           const left = (startDay / 5) * 100;
           const width = ((endDay - startDay + 1) / 5) * 100;
 
-          const top =
-            (dayHeaderHeight / (hours * 60)) * 100 +
-            ((startMinute - startHour * 60) / totalMinutes) * 100;
-
-          const height =
-            ((endMinute - startMinute) / totalMinutes) * 100;
+          // NEW: Get the raw percentages for the time span
+          const topPercent = minuteToPercent(startMinute);
+          const heightPercent = minuteToPercent(endMinute) - minuteToPercent(startMinute);
 
           return (
             <div
@@ -346,8 +348,9 @@ function WeeklyCalendar({
               style={{
                 left: `${left}%`,
                 width: `${width}%`,
-                top: `${top}%`,
-                height: `${height}%`,
+                // NEW: Account for the exact pixel height of the header, then scale the rest
+                top: `calc(${dayHeaderHeight}px + (100% - ${dayHeaderHeight}px) * (${topPercent} / 100))`,
+                height: `calc((100% - ${dayHeaderHeight}px) * (${heightPercent} / 100))`,
               }}
             >
               <div
@@ -388,16 +391,17 @@ function WeeklyCalendar({
           {/* Day label - Decoupled from drag events */}
           <div 
             aria-hidden="true"
-            onDragStart={(e) => e.preventDefault()} // <-- The ultimate kill-switch for ghost dragging
+            onDragStart={(e) => e.preventDefault()}
             className="
               select-none 
               text-center 
               text-sm 
               font-semibold 
-              mb-1 
               text-gray-600 
               shrink-0
+              flex items-center justify-center 
             "
+            style={{ height: `${dayHeaderHeight}px` }} // <-- NEW: Force exact pixel height
           >
             {day}
           </div>
