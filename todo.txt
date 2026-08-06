@@ -1,4 +1,5 @@
-- Add breaks
+- Update Breaks ui
+- Add vim mode cheat sheet
 - Put general course info in section edit and left sidebar
 - Filter classes
 - Make professor lookup more lenient
