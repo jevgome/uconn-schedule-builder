@@ -138,8 +138,7 @@ export function useKeyboardFSM({
       // dd detection
       if (state === "blocks") {
         if (lastKey === "d" && key === "d") {
-          ctx.setBlocks([]);
-          ctx.setSections([]);
+          ctx.clearBlocks();
           ctx.setSelectedBlockIndex(0);
           setLastKey(null);
           return;

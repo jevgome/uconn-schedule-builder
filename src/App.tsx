@@ -167,7 +167,6 @@ function WeeklyCalendar({
   hoverSchedule,
   professorMap,
   breakMode,
-  breakBlocks,
   setBreakBlocks,
   setBreakMode,
 }: {
@@ -175,7 +174,6 @@ function WeeklyCalendar({
   hoverSchedule: any[] | null;
   professorMap: Map<string, Professor>;
   breakMode: boolean;
-  breakBlocks: BreakBlock[];
   setBreakBlocks: React.Dispatch<React.SetStateAction<BreakBlock[]>>;
   setBreakMode: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
@@ -277,7 +275,6 @@ function WeeklyCalendar({
   };
 
   // 1. Calculate the block height of a single 5-minute interval as a percentage of the total height
-  const minutesPerInterval = 5;
   const totalMinutesInDay = totalMinutes; // (endHour - startHour) * 60
 
   // 2. Helper to convert any minute value into a snapped percentage offset from the top
@@ -1328,7 +1325,8 @@ export default function App() {
       selectedScheduleIndex,
       openBlockEditor,
       closeBlockEditor,
-      setHoverSchedule
+      setHoverSchedule,
+      clearBlocks,
     }),
 
     fsm: fsm as FSM,
@@ -2028,7 +2026,6 @@ export default function App() {
                 hoverSchedule={null}
                 professorMap={professorMap}
                 breakMode={breakMode}
-                breakBlocks={breakBlocks}
                 setBreakBlocks={setBreakBlocks}
                 setBreakMode={setBreakMode}
               />
@@ -2040,7 +2037,6 @@ export default function App() {
                 hoverSchedule={hoverSchedule?.sections}
                 professorMap={professorMap}
                 breakMode={breakMode}
-                breakBlocks={breakBlocks}
                 setBreakBlocks={setBreakBlocks}
                 setBreakMode={setBreakMode}
               />
