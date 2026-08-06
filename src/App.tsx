@@ -46,6 +46,18 @@ type BreakBlock = {
   end_time: number;
 };
 
+// replace your old BreakBlock type with this:
+type BreakSection = {
+  id: string;
+  type: "break";
+  name: string;
+  blocks: {
+    day: string;
+    start_time: number;
+    end_time: number;
+  }[];
+};
+
 interface Professor {
   name: string;
   rating: number;
@@ -169,13 +181,14 @@ function WeeklyCalendar({
   breakMode,
   setBreakBlocks,
   setBreakMode,
+  hoveredSection,
+  setHoveredSection,
+  pendingBreaks, // <-- ADD THIS
+  onAddPendingBreak,
 }: {
-  schedule: any[] | null;
-  hoverSchedule: any[] | null;
-  professorMap: Map<string, Professor>;
-  breakMode: boolean;
-  setBreakBlocks: React.Dispatch<React.SetStateAction<BreakBlock[]>>;
-  setBreakMode: React.Dispatch<React.SetStateAction<boolean>>;
+  // ... existing types
+  pendingBreaks: any[]; // Use your BreakBlock / staging type here
+  onAddPendingBreak: (b: any) => void; 
 }) {
   const days = ["Mo", "Tu", "We", "Th", "Fr"];
 
@@ -202,7 +215,6 @@ function WeeklyCalendar({
     return colors[hash % colors.length];
   };
 
-  const [hoveredSection, setHoveredSection] = useState<string | null>(null);
 
   const [dragStart, setDragStart] = useState<{
     dayIndex: number;
@@ -237,15 +249,6 @@ function WeeklyCalendar({
     return `${h}:${minutes.toString().padStart(2, "0")}`;
   }
 
-  const snapMinutes = (m: number) =>
-    Math.round(m / 5) * 5;
-
-  const positionToMinute = (y: number, height: number) => {
-    const ratio = y / height;
-
-    return snapMinutes(startHour * 60 + ratio * totalMinutes);
-  };
-
   const getRatingColor = (rating: number) => {
     if (rating >= 4.5) return "text-green-400";
     if (rating >= 4.0) return "text-green-300";
@@ -255,6 +258,16 @@ function WeeklyCalendar({
   };
 
   const gridRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  const snapMinutes = (m: number, isShiftHeld: boolean) => {
+    const snapInterval = isShiftHeld ? 5 : 10;
+    return Math.round(m / snapInterval) * snapInterval;
+  };
+
+  const positionToMinute = (y: number, height: number, isShiftHeld: boolean) => {
+    const ratio = y / height;
+    return snapMinutes(startHour * 60 + ratio * totalMinutes, isShiftHeld);
+  };
 
   const getMouseMinute = (
     e: React.MouseEvent,
@@ -271,13 +284,12 @@ function WeeklyCalendar({
       Math.min(e.clientY - rect.top, rect.height)
     );
 
-    return positionToMinute(y, rect.height);
+    // pass e.shiftKey into our math function
+    return positionToMinute(y, rect.height, e.shiftKey);
   };
 
-  // 1. Calculate the block height of a single 5-minute interval as a percentage of the total height
   const totalMinutesInDay = totalMinutes; // (endHour - startHour) * 60
 
-  // 2. Helper to convert any minute value into a snapped percentage offset from the top
   const minuteToPercent = (minute: number) => {
     const clampedMinute = Math.max(startHour * 60, Math.min(endHour * 60, minute));
     const offsetMinutes = clampedMinute - (startHour * 60);
@@ -454,21 +466,18 @@ function WeeklyCalendar({
               const startMinute = Math.min(dragStart.minute, dragCurrent.minute);
               const endMinute = Math.max(dragStart.minute, dragCurrent.minute);
 
-              setBreakBlocks((prev) => [
-                ...prev,
-                {
-                  id: crypto.randomUUID(),
-                  type: "break",
-                  name: "Break",
-                  days: days.slice(startDay, endDay + 1),
-                  start_time: startMinute,
-                  end_time: endMinute,
-                },
-              ]);
+              // pass it up to the pending list instead of confirming immediately
+              onAddPendingBreak({
+                id: crypto.randomUUID(),
+                type: "break",
+                days: days.slice(startDay, endDay + 1),
+                start_time: startMinute,
+                end_time: endMinute,
+              });
 
               setDragStart(null);
               setDragCurrent(null);
-              setBreakMode(false);
+              // don't turn off break mode yet so they can drag multiple blocks!
             }}
           >
             {Array.from({ length: hours }).map((_, i) => (
@@ -601,6 +610,71 @@ function WeeklyCalendar({
                     );
                   })
                 )}
+                {/* PENDING BREAKS OVERLAY */}
+                {breakMode && (() => {
+                  // 1. extract all pending blocks that fall on this specific day
+                  const dayBlocks = pendingBreaks.flatMap((p) =>
+                    p.days.includes(day)
+                      ? [{ start: p.start_time, end: p.end_time, name: p.name }]
+                      : []
+                  );
+
+                  if (dayBlocks.length === 0) return null;
+
+                  // 2. sort them chronologically by start time
+                  dayBlocks.sort((a, b) => a.start - b.start);
+
+                  // 3. merge overlapping intervals
+                  const mergedBlocks: { start: number; end: number; names: string[] }[] = [];
+                  
+                  for (const block of dayBlocks) {
+                    if (mergedBlocks.length === 0) {
+                      mergedBlocks.push({ start: block.start, end: block.end, names: [block.name] });
+                    } else {
+                      const last = mergedBlocks[mergedBlocks.length - 1];
+                      
+                      // if this block starts before or exactly when the last one ends, they overlap!
+                      if (block.start <= last.end) {
+                        last.end = Math.max(last.end, block.end); // extend the end time
+                        // optionally combine the names so it shows both
+                        if (block.name && !last.names.includes(block.name)) {
+                          last.names.push(block.name);
+                        }
+                      } else {
+                        // no overlap, push as a new block
+                        mergedBlocks.push({ start: block.start, end: block.end, names: [block.name] });
+                      }
+                    }
+                  }
+
+                  // 4. render the newly merged blocks
+                  return mergedBlocks.map((merged, idx) => {
+                    const startOffset = merged.start - startHour * 60;
+                    const duration = merged.end - merged.start;
+
+                    const top = (startOffset / totalMinutes) * 100;
+                    const height = (duration / totalMinutes) * 100;
+
+                    return (
+                      <div
+                        key={`pending-merged-${day}-${idx}`}
+                        className="
+                          absolute left-1 right-1 rounded-lg
+                          border-2 border-dashed border-blue-400 bg-blue-500/30
+                          pointer-events-none z-40 flex flex-col items-center justify-center overflow-hidden
+                        "
+                        style={{
+                          top: `${top}%`,
+                          height: `${height}%`,
+                        }}
+                      >
+                        <span className="text-blue-900 font-bold text-[10px] opacity-70 px-1 text-center leading-tight">
+                          {merged.names.filter(Boolean).join(" + ") || "Pending..."}
+                        </span>
+                      </div>
+                    );
+                  });
+                })()}
           </div>
         </div>
       ))}
@@ -694,6 +768,12 @@ export default function App() {
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
 
   const [professors, setProfessors] = useState<Professor[]>([]);
+
+  // add these inside your App component
+  const [pendingBreaks, setPendingBreaks] = useState<BreakBlock[]>([]);
+  const [pendingBreakName, setPendingBreakName] = useState<string>("Break");
+
+  const [hoveredSection, setHoveredSection] = useState<string | null>(null);
 
   const openBlockEditor = (id: string) => {
     setEditingBlockId(id);
@@ -1174,10 +1254,10 @@ export default function App() {
       capacity_available: "",
       waitlist_available: 0,
 
-      blocks: b.days.map((day) => ({
-        day,
-        start_time: b.start_time,
-        end_time: b.end_time,
+      blocks: b.blocks.map((block) => ({
+        day: block.day,
+        start_time: block.start_time,
+        end_time: block.end_time,
         class_section: b.name,
         instructor: "",
         room: "",
@@ -1770,18 +1850,10 @@ export default function App() {
 
   return (
     <div className="h-screen flex flex-col bg-gray-100 relative z-0">
-      {breakMode && (
-        <div className="fixed top-0 left-0 right-0 z-[20000] bg-blue-950 text-white text-sm font-semibold py-2 text-center shadow-lg">
-          Click and drag on the calendar to add a break
-        </div>
-      )}
       <div className="flex flex-1 overflow-hidden relative">
-        {breakMode && (
-          <div className="absolute inset-0 z-[15000] bg-black/40 pointer-events-none" />
-        )}
 
         {/* LEFT SIDEBAR */}
-        <div className={`w-[clamp(220px,18vw,300px)] h-full bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-hidden border-r border-gray-200 ${breakMode ? "pointer-events-none opacity-60" : ""}`}>
+        <div className="relative w-[clamp(220px,18vw,300px)] h-full bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-hidden border-r border-gray-200">
           <div className="relative h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm">
             <div className="font-bold text-lg text-gray-800">
               UConn Schedule Builder
@@ -1983,17 +2055,24 @@ export default function App() {
               Generate Schedules
             </button>
           </div>
+          {breakMode && (
+            <div className="absolute inset-0 bg-black/40 z-50 pointer-events-none" />
+          )}
         </div>
 
         {/* CENTER */}
         <div className="flex-1 bg-white p-4 overflow-hidden flex flex-col min-h-0 relative z-0">
-          
           {/* HEADER LABEL */}
           <div className="mb-3 h-10 shrink-0 flex items-center justify-between">
             <div className="select-none text-sm font-semibold text-gray-700">
-              {selectedScheduleIndex !== null
+              {breakMode && (
+                <div className="fixed top-0 left-1/2 -translate-x-1/2 z-[20000] bg-blue-950 text-white text-sm font-semibold py-2 text-center w-screen shadow-lg">
+                  Click and drag on the calendar to add a break (Hold Shift for more precise dragging)
+                </div>
+              )}
+              {selectedScheduleIndex !== null 
                 ? `Schedule ${selectedScheduleIndex + 1} / ${schedules.length}`
-                : "No schedules generated"}
+                : !breakMode ? "No schedules generated" : ""}
             </div>
 
             <div className="flex items-center gap-3">
@@ -2021,33 +2100,47 @@ export default function App() {
                 breakMode ? "cursor-crosshair" : ""
               }`}
             >
-              <WeeklyCalendar
-                schedule={null}
-                hoverSchedule={null}
-                professorMap={professorMap}
-                breakMode={breakMode}
-                setBreakBlocks={setBreakBlocks}
-                setBreakMode={setBreakMode}
-              />
+              <div className="flex h-full w-full gap-4">
+              {/* LEFT SIDE: Calendar */}
+              <div className="flex-1">
+                <WeeklyCalendar
+                  schedule={selectedSchedule?.sections || null}
+                  hoverSchedule={hoverSchedule?.sections || null}
+                  professorMap={professorMap}
+                  breakMode={breakMode}
+                  setBreakMode={setBreakMode}
+                  hoveredSection={hoveredSection}
+                  setHoveredSection={setHoveredSection}
+                  pendingBreaks={pendingBreaks} // <-- NEW PROP
+                  onAddPendingBreak={(newBreak) => {
+                    setPendingBreaks((prev) => [...prev, { ...newBreak, name: pendingBreakName }]);
+                  }}
+                />
+              </div>
+
+            </div>
             </div>
           ) : (
             <div className="flex-1 min-h-0 overflow-hidden">
               <WeeklyCalendar
-                schedule={selectedSchedule.sections}
-                hoverSchedule={hoverSchedule?.sections}
+                schedule={selectedSchedule?.sections || null}
+                hoverSchedule={hoverSchedule?.sections || null}
                 professorMap={professorMap}
                 breakMode={breakMode}
-                setBreakBlocks={setBreakBlocks}
                 setBreakMode={setBreakMode}
+                hoveredSection={hoveredSection}
+                setHoveredSection={setHoveredSection}
+                pendingBreaks={pendingBreaks} // <-- NEW PROP
+                onAddPendingBreak={(newBreak) => {
+                  setPendingBreaks((prev) => [...prev, { ...newBreak, name: pendingBreakName }]);
+                }}
               />
             </div>
           )}
         </div>
 
         {/* RIGHT SIDEBAR */}
-        <div className={`w-[clamp(220px,18vw,300px)] h-full bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-hidden border-l border-gray-200 ${
-          breakMode ? "pointer-events-none opacity-60" : ""
-        }`}>
+        <div className="relative w-[clamp(220px,18vw,300px)] h-full bg-gradient-to-br from-slate-50 to-blue-50 shadow-2xl z-10 flex flex-col overflow-hidden border-l border-gray-200">
           <div className="relative h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm">
              <div className="flex items-center">
                {vimMode && (
@@ -2178,7 +2271,7 @@ export default function App() {
                         <DraggableBlock
                           key={b.id}
                           id={b.id}
-                          name={`BREAK • ${formatTime(b.start_time)}-${formatTime(b.end_time)}`}
+                          name={b.name}
                           onDelete={() =>
                             setBreakBlocks(prev =>
                               prev.filter(x => x.id !== b.id)
@@ -2293,7 +2386,100 @@ export default function App() {
             </div>
 
           </div>
+          {breakMode && (
+            <div className="absolute inset-0 bg-black/40 z-50 pointer-events-none" />
+          )}
+
+        {/* RIGHT SIDE: Pending Breaks Staging Area */}
+        {breakMode && (
+          <div className="absolute z-[100] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-[400px] bg-blue-950 rounded-xl p-4 flex flex-col shadow-lg border border-blue-900 text-white shrink-0">
+            <h3 className="text-sm font-semibold mb-3">Create Break</h3>
+            
+            {/* Break Name Input */}
+            <div className="mb-4">
+              <label className="text-xs text-gray-400 mb-1 block">Break Name</label>
+              <input
+                type="text"
+                value={pendingBreakName}
+                onChange={(e) => {
+                  const newName = e.target.value;
+                  setPendingBreakName(newName);
+                  // update names of already dragged pending blocks to match the new input
+                  setPendingBreaks(prev => prev.map(b => ({ ...b, name: newName })));
+                }}
+                className="w-full bg-blue-900 border border-blue-800 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., Lunch, Work..."
+              />
+            </div>
+
+            {/* Pending Breaks List */}
+            <div className="flex-1 overflow-y-auto mb-4 bg-blue-900/50 rounded p-2">
+              {pendingBreaks.length === 0 ? (
+                <div className="text-xs text-gray-400 text-center italic mt-4">
+                  Drag on the calendar to select times.
+                </div>
+              ) : (
+                <ul className="space-y-2 text-xs">
+                  {pendingBreaks.map((b) => (
+                    <li key={b.id} className="flex justify-between items-center bg-blue-800 p-2 rounded">
+                      <div>
+                        <span className="font-semibold block">{b.days.join(", ")}</span>
+                        <span className="text-gray-300">
+                          {formatTime(b.start_time)} - {formatTime(b.end_time)}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setPendingBreaks(prev => prev.filter(pb => pb.id !== b.id))}
+                        className="text-red-400 hover:text-red-300 px-2 py-1"
+                      >
+                        ✕
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Confirm Button */}
+            <button
+              onClick={() => {
+                // 1. create an empty array to hold all the individual time blocks
+                const combinedBlocks: { day: string; start_time: number; end_time: number }[] = [];
+
+                // 2. loop through all pending breaks and flatten them
+                pendingBreaks.forEach((pending) => {
+                  pending.days.forEach((day) => {
+                    combinedBlocks.push({
+                      day: day,
+                      start_time: pending.start_time,
+                      end_time: pending.end_time,
+                    });
+                  });
+                });
+
+                // 3. create the single unified break section
+                const newUnifiedBreak: BreakSection = {
+                  id: crypto.randomUUID(), // one ID for the whole group
+                  type: "break",
+                  name: pendingBreakName || "Unnamed Break",
+                  blocks: combinedBlocks,
+                };
+
+                // 4. save it to your main state and clear the staging area
+                setBreakBlocks((prev) => [...prev, newUnifiedBreak]);
+                setPendingBreaks([]);
+                setPendingBreakName("Break"); // reset name
+                setBreakMode(false);
+              }}
+              disabled={pendingBreaks.length === 0}
+              className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              Confirm Break
+            </button>
+          </div>
+        )}
         </div>
+
       </div>
       {editingBlockId && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4">
