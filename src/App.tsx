@@ -525,9 +525,11 @@ function WeeklyCalendar({
                         </div>
 
                         {/* right: class section */}
-                        <div className="text-[10px] opacity-90 whitespace-nowrap text-right">
-                          {section.registration_number}, {block.class_section}
-                        </div>
+                        {section.registration_number !== "BREAK" && (
+                          <div className="text-[10px] opacity-90 whitespace-nowrap text-right">
+                            {section.registration_number}, {block.class_section}
+                          </div>
+                        )}
                       </div>
 
                       {/* time below */}
@@ -812,6 +814,7 @@ export default function App() {
     let total = 0;
 
     for (const s of selectedSchedule.sections) {
+      if (s.registration_number === "BREAK") continue;
       const key = `${s.subject} ${s.catalog_number}`;
 
       seen.add(key);
@@ -1160,16 +1163,28 @@ export default function App() {
     }
 
     const breakSections = breakBlocks.map((b) => ({
-      subject: "BREAK",
+      subject: b.name,
       catalog_number: "",
-      registration_number: b.id,
+      registration_number: "BREAK",
+
+      academic_career: "",
+      campus: "",
+      session: "",
+
+      enrollment_capacity: 0,
+      enrollment_total: 0,
+      seats_available: 0,
+      capacity_available: "",
+      waitlist_available: 0,
+
       blocks: b.days.map((day) => ({
         day,
         start_time: b.start_time,
         end_time: b.end_time,
-        class_section: "BREAK",
-        instructor: null,
-        room: null,
+        class_section: b.name,
+        instructor: "",
+        room: "",
+        registration_number: "BREAK",
       })),
     }));
 
@@ -2755,7 +2770,7 @@ export default function App() {
 
           {/* Content */}
           <div className="overflow-y-auto flex-1 min-h-0 pb-6">
-            {selectedSchedule.sections.map((section: any) => (
+            {selectedSchedule.sections.filter((section: any) => section.registration_number !== "BREAK").map((section: any) => (
               <div
                 key={section.registration_number}
                 className="grid grid-cols-[1fr_180px_120px] items-center border-b border-black/10 px-6 py-3 text-sm bg-slate-50 hover:bg-blue-950/5"

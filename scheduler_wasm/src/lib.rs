@@ -62,7 +62,6 @@ pub struct Schedule {
 // WASM ENTRY POINT
 // =========================
 //
-
 #[wasm_bindgen]
 pub fn generate_schedules_from_sections(sections: JsValue) -> String {
     let sections: Vec<Section> =
@@ -70,20 +69,22 @@ pub fn generate_schedules_from_sections(sections: JsValue) -> String {
 
     let conflicts = build_conflict_matrix(&sections);
 
-    let mut course_groups = group_by_course(&sections);
+    // Unpack both grouped courses and the flat list of break indices
+    let (mut course_groups, break_indices) = group_by_course(&sections);
 
     course_groups.sort_by_key(|group| group.len());
 
     for group in &mut course_groups {
         group.sort_by_key(|&section_index| {
-            sections[section_index]
-                .blocks
-                .len()
+            sections[section_index].blocks.len()
         });
     }
 
     let mut results: Vec<Vec<usize>> = Vec::new();
-    let mut current: Vec<usize> = Vec::new();
+    
+    // Pre-seed the current schedule with ALL break sections. 
+    // This forces the backtracker to treat them as fixed blocks.
+    let mut current: Vec<usize> = break_indices;
 
     backtrack(
         &course_groups,
@@ -101,22 +102,22 @@ pub fn generate_schedules_from_sections(sections: JsValue) -> String {
 // GROUPING
 // =========================
 //
-fn group_by_course(sections: &[Section]) -> Vec<Vec<usize>> {
+fn group_by_course(sections: &[Section]) -> (Vec<Vec<usize>>, Vec<usize>) {
     let mut map: HashMap<String, Vec<usize>> = HashMap::new();
+    let mut break_indices: Vec<usize> = Vec::new();
 
     for (index, section) in sections.iter().enumerate() {
-        let key = format!(
-            "{} {}",
-            section.subject,
-            section.catalog_number
-        );
-
-        map.entry(key)
-            .or_default()
-            .push(index);
+        if section.registration_number == "BREAK" {
+            // Collect breaks separately
+            break_indices.push(index);
+        } else {
+            // Group standard classes
+            let key = format!("{} {}", section.subject, section.catalog_number);
+            map.entry(key).or_default().push(index);
+        }
     }
 
-    map.into_values().collect()
+    (map.into_values().collect(), break_indices)
 }
 
 //
@@ -204,61 +205,6 @@ fn build_conflict_matrix(sections: &[Section]) -> Vec<Vec<bool>> {
     matrix
 }
 
-//
-// =========================
-// CONFLICT DETECTION
-// =========================
-//
-
-// pub fn sections_conflict(a: &Section, b: &Section) -> bool {
-//     for i in 0..a.blocks.len()-1 {
-//         for j in i+1..a.blocks.len() {
-//             let ba = &a.blocks[i];
-//             let bb = &a.blocks[j];
-//
-//             if ba.day == bb.day
-//                 && ba.start_time < bb.end_time + 15
-//                 && bb.start_time < ba.end_time + 15
-//             {
-//                 return true;
-//             }
-//         }
-//     }
-//
-//     for i in 0..b.blocks.len()-1 {
-//         for j in i+1..b.blocks.len() {
-//             let ba = &b.blocks[i];
-//             let bb = &b.blocks[j];
-//
-//             if ba.day == bb.day
-//                 && ba.start_time < bb.end_time + 15
-//                 && bb.start_time < ba.end_time + 15
-//             {
-//                 return true;
-//             }
-//         }
-//     }
-//
-//     for ba in &a.blocks {
-//         if ba.start_time == ba.end_time && ba.start_time == 0 {
-//             continue;
-//         }
-//
-//         for bb in &b.blocks {
-//             if bb.start_time == bb.end_time && bb.start_time == 0 {
-//                 continue;
-//             }
-//             if ba.day == bb.day
-//                 && ba.start_time < bb.end_time + 15
-//                 && bb.start_time < ba.end_time + 15
-//             {
-//                 return true;
-//             }
-//         }
-//     }
-//     false
-// }
-
 pub fn sections_conflict(a: &Section, b: &Section) -> bool {
     if section_has_internal_conflict(a) {
         return true;
@@ -321,8 +267,12 @@ fn blocks_conflict(a: &Block, b: &Block) -> bool {
     }
 
     // 15 minute transition buffer
-    a.start_time < b.end_time + 15
-        && b.start_time < a.end_time + 15
+    let mut offset = 15;
+    if a.registration_number == "BREAK" || b.registration_number == "BREAK" {
+        offset = 0;
+    }
+    a.start_time < b.end_time + offset
+        && b.start_time < a.end_time + offset
 }
 
 
