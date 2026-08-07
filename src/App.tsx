@@ -69,16 +69,6 @@ interface Schedule {
   sections: any[];
 }
 
-type SavedState = {
-  semester: Semester | null;
-  campuses: string[];
-  blocks: DraggableBlockData[];
-  breakBlocks: BreakSection[];
-  schedules: Schedule[];
-  selectedScheduleIndex: number | null;
-};
-
-
 const CAMPUS_MAP: Record<string, string> = {
   STORR: "Storrs",
   AVYPT: "Avery Point",
@@ -101,7 +91,7 @@ function isKeyboardDevice() {
   return hasFinePointer && hasHover;
 }
 
-const DraggableBlock = memo(function DraggableBlock({ id, name, onDelete, selected, onEdit }: BlockProps) {
+const DraggableBlock = memo(function DraggableBlock({ id, name, onDelete, selected, onEdit, setHoveredSection }: BlockProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
   const style = {
@@ -110,6 +100,10 @@ const DraggableBlock = memo(function DraggableBlock({ id, name, onDelete, select
     opacity: isDragging ? 0.9 : 1,
     zIndex: isDragging ? 999999 : 1,
   };
+
+  if(selected) {
+    setHoveredSection(id);
+  }
 
   return (
     <div
@@ -125,6 +119,8 @@ const DraggableBlock = memo(function DraggableBlock({ id, name, onDelete, select
         }
         cursor-grab active:cursor-grabbing
       `}
+      onMouseEnter={() => setHoveredSection(name)}
+      onMouseLeave={() => setHoveredSection(null)}
     >
       <div className="relative z-10 font-medium text-center text-sm tracking-wide">
         {name}
@@ -188,15 +184,20 @@ function WeeklyCalendar({
   hoverSchedule,
   professorMap,
   breakMode,
-  setBreakBlocks,
   setBreakMode,
   hoveredSection,
   setHoveredSection,
-  pendingBreaks, // <-- ADD THIS
+  pendingBreaks, 
   onAddPendingBreak,
 }: {
-  // ... existing types
-  pendingBreaks: any[]; // Use your BreakBlock / staging type here
+  schedule: any[] | null;
+  hoverSchedule: any[] | null;
+  professorMap: Map<string, Professor>;
+  breakMode: boolean;
+  setBreakMode: React.Dispatch<React.SetStateAction<boolean>>;
+  hoveredSection: string | null;
+  setHoveredSection: React.Dispatch<React.SetStateAction<string | null>>;
+  pendingBreaks: any[];
   onAddPendingBreak: (b: any) => void; 
 }) {
   const days = ["Mo", "Tu", "We", "Th", "Fr"];
@@ -515,12 +516,13 @@ function WeeklyCalendar({
                     normalizeProfessorNameKey(block.instructor ?? "")
                   );
                   const isHovered =
-                    hoveredSection === section.registration_number;
+                    hoveredSection === section.subject + " " + section.catalog_number;
+                    console.log(hoveredSection);
                   return (
 
                       <div
                         key={`${section.subject}-${section.catalog_number}-${section.class_section}-${block.day}-${block.start_time}`}
-                        onMouseEnter={() => setHoveredSection(section.registration_number)}
+                        onMouseEnter={() => setHoveredSection(section.subject + " " + section.catalog_number)}
                         onMouseLeave={() => setHoveredSection(null)}
                         className={`select-none absolute left-1 right-1 rounded-xl pt-1 px-2 shadow-lg transition-all duration-150
                           ${getColor(code)}
@@ -764,6 +766,15 @@ export default function App() {
     name: string;
   }
 
+  type SavedState = {
+    semester: Semester | null;
+    campuses: string[];
+    blocks: DraggableBlockData[];
+    breakBlocks: BreakSection[];
+    schedules: Schedule[];
+    selectedScheduleIndex: number | null;
+  };
+
   const vimFocusLabelMap: Record<string, string> = {
     global: "NORMAL",
     search: "INSERT",
@@ -780,7 +791,7 @@ export default function App() {
 
   const [professors, setProfessors] = useState<Professor[]>([]);
 
-  const [breakBlocks, setBreakBlocks] = useState<BreakBlock[]>([]);
+  const [breakBlocks, setBreakBlocks] = useState<BreakSection[]>([]);
   const [breakMode, setBreakMode] = useState(false);
 
   const [pendingBreaks, setPendingBreaks] = useState<BreakBlock[]>([]);
@@ -1470,8 +1481,9 @@ export default function App() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const semestersData = await fetch("/uconn-schedule-builder/semesters.json")
-          .then(res => res.json());
+        const semestersData: Semester[] =
+          await fetch("/uconn-schedule-builder/semesters.json")
+            .then(res => res.json());
 
         setSemesters(semestersData);
 
@@ -2363,6 +2375,7 @@ export default function App() {
                           onDelete={removeBlock}
                           onEdit={openBlockEditor}
                           selected={state === "blocks" && index === selectedBlockIndex}
+                          setHoveredSection={setHoveredSection}
                         />
                       ))}
 
@@ -2378,6 +2391,7 @@ export default function App() {
                           }
                           onEdit={() => {}}
                           selected={false}
+                          setHoveredSection={setHoveredSection}
                         />
                       ))}
                     </div>
