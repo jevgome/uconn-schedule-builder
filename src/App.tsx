@@ -69,6 +69,15 @@ interface Schedule {
   sections: any[];
 }
 
+type SavedState = {
+  semester: Semester | null;
+  campuses: string[];
+  blocks: DraggableBlockData[];
+  breakBlocks: BreakSection[];
+  schedules: Schedule[];
+  selectedScheduleIndex: number | null;
+};
+
 
 const CAMPUS_MAP: Record<string, string> = {
   STORR: "Storrs",
@@ -719,6 +728,8 @@ export default function App() {
   type State = "global" | "search" | "suggestions" | "blocks" | "schedules" | "edit";
   const [state, setState] = useState<State>("global");
   const [hasMovedSelection, setHasMovedSelection] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+  const [semesterHydrated, setSemesterHydrated] = useState(false);
   const [vimMode, setVimMode] = useState(() => {
     if (typeof window === "undefined") return false;
 
@@ -769,7 +780,9 @@ export default function App() {
 
   const [professors, setProfessors] = useState<Professor[]>([]);
 
-  // add these inside your App component
+  const [breakBlocks, setBreakBlocks] = useState<BreakBlock[]>([]);
+  const [breakMode, setBreakMode] = useState(false);
+
   const [pendingBreaks, setPendingBreaks] = useState<BreakBlock[]>([]);
   const [pendingBreakName, setPendingBreakName] = useState<string>("Break");
 
@@ -1413,6 +1426,48 @@ export default function App() {
   });
 
   useEffect(() => {
+    const raw = localStorage.getItem("scheduleBuilder");
+
+    if (!raw) return;
+
+    try {
+      const data: SavedState = JSON.parse(raw);
+
+      if (data.semester) {
+        setSelectedSemester(data.semester);
+      }
+
+      if (data.campuses) {
+        setSelectedCampuses(data.campuses);
+      }
+
+      if (data.blocks) {
+        setBlocks(data.blocks);
+      }
+
+      if (data.breakBlocks) {
+        setBreakBlocks(data.breakBlocks);
+      }
+
+      if (data.schedules) {
+        setSchedules(data.schedules);
+      }
+
+      if (
+        data.selectedScheduleIndex != null &&
+        data.schedules?.[data.selectedScheduleIndex]
+      ) {
+        setSelectedScheduleIndex(data.selectedScheduleIndex);
+        setSelectedSchedule(data.schedules[data.selectedScheduleIndex]);
+      }
+    } catch (e) {
+      console.error("Failed to restore local data", e);
+    } finally {
+      setHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
     const loadData = async () => {
       try {
         const semestersData = await fetch("/uconn-schedule-builder/semesters.json")
@@ -1422,7 +1477,9 @@ export default function App() {
 
         // ✅ set default to FIRST semester
         const defaultSemester = semestersData[0];
-        setSelectedSemester(defaultSemester);
+        if (hydrated && (!selectedSemester || !semestersData.some(sem => sem.value === selectedSemester.value))) {
+          setSelectedSemester(defaultSemester);
+        }
 
         const [classesData, coursesData] = await Promise.all([
           fetch(`/uconn-schedule-builder/semesters/${defaultSemester.value}/classes.json`)
@@ -1430,7 +1487,6 @@ export default function App() {
           fetch("/uconn-schedule-builder/courses.json")
             .then(res => res.json()),
         ]);
-
         setCoursesDataRaw(coursesData);
         buildCourses(classesData, coursesData);
         setClassesDataRaw(classesData);
@@ -1447,7 +1503,7 @@ export default function App() {
     };
 
     loadData();
-  }, [])
+  }, [hydrated])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -1532,7 +1588,53 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!selectedSemester) return;
+    if(!hydrated) return;
+    localStorage.setItem(
+      "scheduleBuilder",
+      JSON.stringify({
+        semester: selectedSemester,
+        campuses: selectedCampuses,
+        blocks,
+        breakBlocks,
+        schedules,
+        selectedScheduleIndex,
+      })
+    );
+  }, [
+    selectedSemester,
+    selectedCampuses,
+    blocks,
+    breakBlocks,
+    schedules,
+    selectedScheduleIndex,
+    hydrated,
+  ]);
+
+  useEffect(() => {
+    if (!classesDataRaw.length) return;
+
+    recomputeSections(blocks);
+  }, [classesDataRaw, blocks, selectedCampuses]);
+
+  useEffect(() => {
+    if (
+      selectedScheduleIndex != null &&
+      schedules[selectedScheduleIndex]
+    ) {
+      setSelectedSchedule(schedules[selectedScheduleIndex]);
+    } else {
+      setSelectedSchedule(null);
+    }
+  }, [schedules, selectedScheduleIndex]);
+
+
+  useEffect(() => {
+    if (!hydrated || !selectedSemester) return;
+    if (!semesterHydrated) {
+      setSemesterHydrated(true);
+      return;
+    }
+    console.log(selectedSemester);
 
     setSchedules([]);
     setSelectedSchedule(null);
@@ -1561,7 +1663,7 @@ export default function App() {
     };
 
     loadClasses();
-  }, [selectedSemester]);
+  }, [selectedSemester, hydrated]);
 
   useEffect(() => {
     fetch("/uconn-schedule-builder/time.txt")
@@ -1845,9 +1947,6 @@ export default function App() {
   const [copiedReg, setCopiedReg] = useState<string | number | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
 
-  const [breakBlocks, setBreakBlocks] = useState<BreakBlock[]>([]);
-  const [breakMode, setBreakMode] = useState(false);
-
   return (
     <div className="h-screen flex flex-col bg-gray-100 relative z-0">
       <div className="flex flex-1 overflow-hidden relative">
@@ -2056,7 +2155,7 @@ export default function App() {
             </button>
           </div>
           {breakMode && (
-            <div className="absolute inset-0 bg-black/40 z-50 pointer-events-none" />
+            <div className="absolute inset-0 bg-black/60 z-50 pointer-events-none" />
           )}
         </div>
 
@@ -2387,7 +2486,7 @@ export default function App() {
 
           </div>
           {breakMode && (
-            <div className="absolute inset-0 bg-black/40 z-50 pointer-events-none" />
+            <div className="absolute inset-0 bg-black/60 z-50 pointer-events-none" />
           )}
 
         {/* RIGHT SIDE: Pending Breaks Staging Area */}
