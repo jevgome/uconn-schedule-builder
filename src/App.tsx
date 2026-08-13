@@ -1,5 +1,5 @@
 import { useKeyboardFSM } from "./hooks/useKeyboardFSM";
-import { Settings } from "lucide-react";
+import { Settings, Undo2 } from "lucide-react";
 import type { FSM } from "./hooks/useKeyboardFSM";
 import init, { generate_schedules_from_sections } from "./wasm_pkg/scheduler_wasm";
 import { useEffect, useState, useRef, useCallback, memo, useMemo } from "react";
@@ -829,6 +829,7 @@ export default function App() {
     setSuggestions([]);
     setState("search");
     setSelectedSuggestion(0);
+    setBlocksBuffer([]);
 
     // optional but strongly recommended
     searchInputRef.current?.focus();
@@ -2323,22 +2324,23 @@ export default function App() {
                 </button>
               </div>
 
-              {blocks.length !== 0 && (
-                <button
-                  onClick={clearBlocks}
-                  className="p-2 rounded-md hover:bg-red-100 text-red-600 text-sm transition cursor-pointer"
-                  title="Clear all courses"
-                >
-                  Clear
-                </button>
-              )}
               {blocksBuffer.length > 0 && (
                 <button
                   onClick={restoreBlocks}
-                  className="p-2 rounded-md hover:bg-blue-100 text-blue-600 text-sm transition cursor-pointer"
-                  title="Undo Clear"
+                  className="absolute right-1/4 p-2 rounded-md hover:bg-gray-300 text-gray-600 text-sm transition cursor-pointer"
+                  title="Undo"
                 >
-                  Restore
+                  <Undo2 size={15}/>
+                </button>
+              )}
+
+              {blocks.length !== 0 && (
+                <button
+                  onClick={clearBlocks}
+                  className="absolute right-1/16 p-2 rounded-md hover:bg-red-100 text-red-600 text-sm transition cursor-pointer"
+                  title="Clear all courses"
+                >
+                  Clear
                 </button>
               )}
 
