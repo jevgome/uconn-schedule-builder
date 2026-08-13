@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-export type State = "global" | "search" | "suggestions" | "blocks" | "schedules" | "edit";
+export type State = "global" | "search" | "suggestions" | "blocks" | "schedules" | "popup";
 
 export type FSMRule = {
   next?: State;
@@ -95,6 +95,8 @@ export function useKeyboardFSM({
           if (ctx.setSuggestions) ctx.setSuggestions([]);
           if (ctx.setSelectedSuggestion) ctx.setSelectedSuggestion(0);
           if (ctx.setHoverSchedule) ctx.setHoverSchedule(null);
+          ctx.setSelectedBlockIndex(null);
+          ctx.setHoveredSection(null);
         }, 0);
 
         // unfocus search input if focused

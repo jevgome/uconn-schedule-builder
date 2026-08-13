@@ -27,36 +27,27 @@ interface DraggableBlockData {
   id: string;
   code: string;
   title: string;
+  sections?: Set<string>;
+  breaks?: any[];
 }
 
 interface BlockProps {
   id: string;
   name: string;
-  onDelete: (id: string) => void;
+  onDelete: (id: string[]) => void;
   onEdit: (id: string) => void;
+  setHoveredSection: (section: any) => void;
+  state: string;
   selected?: boolean;
 }
 
-type BreakBlock = {
+interface BreakBlocks {
   id: string;
-  type: "break";
   name: string;
-  days: string[]; // ["Mo","Tu","We"]
-  start_time: number; // minutes from midnight
+  days: string[];
+  start_time: number;
   end_time: number;
-};
-
-// replace your old BreakBlock type with this:
-type BreakSection = {
-  id: string;
-  type: "break";
-  name: string;
-  blocks: {
-    day: string;
-    start_time: number;
-    end_time: number;
-  }[];
-};
+}
 
 interface Professor {
   name: string;
@@ -91,7 +82,7 @@ function isKeyboardDevice() {
   return hasFinePointer && hasHover;
 }
 
-const DraggableBlock = memo(function DraggableBlock({ id, name, onDelete, selected, onEdit, setHoveredSection }: BlockProps) {
+const DraggableBlock = memo(function DraggableBlock({ id, name, onDelete, selected, onEdit, setHoveredSection, state }: BlockProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
   const style = {
@@ -100,10 +91,6 @@ const DraggableBlock = memo(function DraggableBlock({ id, name, onDelete, select
     opacity: isDragging ? 0.9 : 1,
     zIndex: isDragging ? 999999 : 1,
   };
-
-  if(selected) {
-    setHoveredSection(id);
-  }
 
   return (
     <div
@@ -120,7 +107,9 @@ const DraggableBlock = memo(function DraggableBlock({ id, name, onDelete, select
         cursor-grab active:cursor-grabbing
       `}
       onMouseEnter={() => setHoveredSection(name)}
-      onMouseLeave={() => setHoveredSection(null)}
+      onMouseLeave={() => {
+        if(state !== "blocks") setHoveredSection(null);
+      }}
     >
       <div className="relative z-10 font-medium text-center text-sm tracking-wide">
         {name}
@@ -163,7 +152,7 @@ const DraggableBlock = memo(function DraggableBlock({ id, name, onDelete, select
         "
         onClick={(e) => {
           e.stopPropagation();
-          onDelete(id);
+          onDelete([id]);
         }}
       >
         <svg
@@ -183,22 +172,26 @@ function WeeklyCalendar({
   schedule,
   hoverSchedule,
   professorMap,
-  breakMode,
-  setBreakMode,
+  breakPopup,
+  setBreakPopup,
   hoveredSection,
   setHoveredSection,
+  selectedSchedule,
   pendingBreaks, 
   onAddPendingBreak,
+  state,
 }: {
   schedule: any[] | null;
   hoverSchedule: any[] | null;
   professorMap: Map<string, Professor>;
-  breakMode: boolean;
-  setBreakMode: React.Dispatch<React.SetStateAction<boolean>>;
+  breakPopup: boolean;
+  setBreakPopup: React.Dispatch<React.SetStateAction<boolean>>;
   hoveredSection: string | null;
   setHoveredSection: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedSchedule: any[] | null;
   pendingBreaks: any[];
   onAddPendingBreak: (b: any) => void; 
+  state: string;
 }) {
   const days = ["Mo", "Tu", "We", "Th", "Fr"];
 
@@ -309,7 +302,7 @@ function WeeklyCalendar({
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        setBreakMode(false);
+        setBreakPopup(false);
         setDragStart(null);
         setDragCurrent(null);
         setBreakHover(null);
@@ -335,7 +328,7 @@ function WeeklyCalendar({
       {/* DAYS */}
       <div className="flex-1 grid grid-cols-5 gap-2 relative">
 
-        {(dragStart && dragCurrent || (breakMode && breakHover)) && (() => {
+        {(dragStart && dragCurrent || (breakPopup && breakHover)) && (() => {
 
           const start = dragStart ?? breakHover!;
           const end = dragCurrent ?? breakHover!;
@@ -429,11 +422,11 @@ function WeeklyCalendar({
             ref={(el) => {
               gridRefs.current[dayIndex] = el;
             }}
-            className="relative flex flex-col h-full flex-1 ${breakMode ? 'cursor-crosshair'}"
+            className="relative flex flex-col h-full flex-1 ${breakPopup ? 'cursor-crosshair'}"
             onMouseDown={(e) => {
               e.preventDefault(); 
 
-              if (!breakMode) return;
+              if (!breakPopup) return;
 
               setDragStart({
                 dayIndex: days.indexOf(day),
@@ -448,7 +441,7 @@ function WeeklyCalendar({
             onMouseMove={(e) => {
               const minute = getMouseMinute(e, days.indexOf(day));
 
-              if (breakMode && !dragStart) {
+              if (breakPopup && !dragStart) {
                 setBreakHover({
                   dayIndex: days.indexOf(day),
                   minute,
@@ -517,13 +510,12 @@ function WeeklyCalendar({
                   );
                   const isHovered =
                     hoveredSection === section.subject + " " + section.catalog_number;
-                    console.log(hoveredSection);
                   return (
 
                       <div
                         key={`${section.subject}-${section.catalog_number}-${section.class_section}-${block.day}-${block.start_time}`}
                         onMouseEnter={() => setHoveredSection(section.subject + " " + section.catalog_number)}
-                        onMouseLeave={() => setHoveredSection(null)}
+                        onMouseLeave={() => {if (state !== "blocks") setHoveredSection(null)}}
                         className={`select-none absolute left-1 right-1 rounded-xl pt-1 px-2 shadow-lg transition-all duration-150
                           ${getColor(code)}
                           text-white
@@ -574,7 +566,7 @@ function WeeklyCalendar({
                 })
               ))}
               {/* HOVER SCHEDULE OVERLAY */}
-              {hoverSchedule != null &&
+              {hoverSchedule != null && hoverSchedule !== selectedSchedule &&
                 hoverSchedule.flatMap((section) =>
                   section.blocks.map((block: any) => {
                     if (block.day !== day) return null;
@@ -622,7 +614,7 @@ function WeeklyCalendar({
                   })
                 )}
                 {/* PENDING BREAKS OVERLAY */}
-                {breakMode && (() => {
+                {breakPopup && (() => {
                   // 1. extract all pending blocks that fall on this specific day
                   const dayBlocks = pendingBreaks.flatMap((p) =>
                     p.days.includes(day)
@@ -716,7 +708,6 @@ function SortIcon({
 export default function App() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [coursesDataRaw, setCoursesDataRaw] = useState<any[]>([]);
-  const [sections, setSections] = useState<any[]>([]);
   const [blocks, setBlocks] = useState<DraggableBlockData[]>([]);
   const [classesDataRaw, setClassesDataRaw] = useState<any[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
@@ -727,17 +718,13 @@ export default function App() {
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [selectedSuggestion, setSelectedSuggestion] = useState(0);
-  type State = "global" | "search" | "suggestions" | "blocks" | "schedules" | "edit";
+  type State = "global" | "search" | "suggestions" | "blocks" | "schedules" | "popup";
   const [state, setState] = useState<State>("global");
+  const [stateBuffer, setStateBuffer] = useState<State>("global");
   const [hasMovedSelection, setHasMovedSelection] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [semesterHydrated, setSemesterHydrated] = useState(false);
-  const [vimMode, setVimMode] = useState(() => {
-    if (typeof window === "undefined") return false;
-
-    const saved = localStorage.getItem("vimMode");
-    return saved === "true";
-  });
+  const [vimMode, setVimMode] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
 
@@ -755,6 +742,7 @@ export default function App() {
   );
 
   const [showKofi, setShowKofi] = useState(false);
+  const [showSession, setShowSession] = useState(false);
   const [selectedCampuses, setSelectedCampuses] = useState<string[]>(["STORR"]);
   const [campusOpen, setCampusOpen] = useState(false);
   const campusRef = useRef<HTMLDivElement>(null);
@@ -767,12 +755,13 @@ export default function App() {
   }
 
   type SavedState = {
+    vimMode: boolean;
     semester: Semester | null;
     campuses: string[];
     blocks: DraggableBlockData[];
-    breakBlocks: BreakSection[];
     schedules: Schedule[];
     selectedScheduleIndex: number | null;
+    sections: string[];
   };
 
   const vimFocusLabelMap: Record<string, string> = {
@@ -781,68 +770,61 @@ export default function App() {
     suggestions: "SELECT",
     blocks: "BLOCKS",
     schedules: "SCHEDULES",
-    edit: "EDIT",
+    popup: "POPUP",
   };
 
   const [semesters, setSemesters] = useState<Semester[]>([]);
   const [selectedSemester, setSelectedSemester] = useState<Semester | null>(null);
 
-  const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
+  const [editBlockPopup, setEditBlockPopup] = useState(false);
+  const [editingBlockId, setEditingBlockId] = useState<string>("");
 
   const [professors, setProfessors] = useState<Professor[]>([]);
 
-  const [breakBlocks, setBreakBlocks] = useState<BreakSection[]>([]);
-  const [breakMode, setBreakMode] = useState(false);
+  const [breakPopup, setBreakPopup] = useState(false);
 
-  const [pendingBreaks, setPendingBreaks] = useState<BreakBlock[]>([]);
+  const [pendingBreaks, setPendingBreaks] = useState<BreakBlocks[]>([]);
   const [pendingBreakName, setPendingBreakName] = useState<string>("Break");
 
   const [hoveredSection, setHoveredSection] = useState<string | null>(null);
 
+  const [blocksBuffer, setBlocksBuffer] = useState<DraggableBlockData[]>([]);
+
+  const [enrollPopup, setEnrollPopup] = useState(false);
+  const [copiedReg, setCopiedReg] = useState<string | number | null>(null);
+  const [copiedAll, setCopiedAll] = useState(false);
+
   const openBlockEditor = (id: string) => {
+    setEditBlockPopup(true);
     setEditingBlockId(id);
-    setState("edit");
   };
 
   const closeBlockEditor = () => {
-    setEditingBlockId(null);
-    setState("blocks");
+    setEditBlockPopup(false);
   };
 
-  const [sectionSelections, setSectionSelections] = useState<Record<string, Set<string>>>({});
   const [lastUpdatedText, setLastUpdatedText] = useState<string | null>(null);
 
-  const addBlock = async (course: Course) => {
-    const courseName = course.code;
+  const addBlocks = async (newBlocks: DraggableBlockData[]) => {
 
-    if (blocks.some(block => block.code === courseName)) {
-      return;
-    }
+    newBlocks.forEach((block) => {
+      if (!block.sections || block.sections.size === 0) {
+        block.sections = new Set(classesDataRaw.filter((s) => s.subject + " " + s.catalog_number === block.code && selectedCampuses.includes(s.campus)).map((b) => b.registration_number));
+      }
+    });
 
 
-    const newBlocks = [
+    const combinedBlocks = [
       ...blocks,
-      {
-        id: `${course.code}-${Date.now()}`,
-        code: course.code,
-        title: course.title,
-      },
+      ...newBlocks,
     ];
-    setBlocks(newBlocks);
+    setBlocks(combinedBlocks);
 
     // =========================
     // NEW: IMMEDIATE SECTION FETCH
     // =========================
     await init();
 
-    const selectedCodes = newBlocks.map(b => b.code);
-
-    const sections = classesDataRaw.filter((s) => selectedCodes.includes(s.subject + " " + s.catalog_number) && selectedCampuses.includes(s.campus));
-    initializeSelections(sections);
-
-    console.log("Updated Sections:", sections);
-
-    setSections(sections);
     setInput("");
     setSuggestions([]);
     setState("search");
@@ -865,8 +847,12 @@ export default function App() {
 
     if (!course) return;
 
-    addBlock(course);
-  }, [suggestions, blocks, selectedSuggestion, addBlock]);
+    addBlocks([{
+      id: `${course.code}-${Date.now()}`,
+      code: course.code,
+      title: course.title,
+    }]);
+  }, [suggestions, blocks, selectedSuggestion, addBlocks]);
 
   const visibleSuggestions = suggestions.filter(
     (c) => !blocks.some((b) => b.code === c.code)
@@ -1065,7 +1051,7 @@ export default function App() {
 
           if (!block) return;
 
-          ctx.removeBlock(block.id);
+          ctx.removeBlocks([block.id]);
 
           const newLength = ctx.blocks.length - 1;
           ctx.setSelectedBlockIndex((i: number) =>
@@ -1105,6 +1091,12 @@ export default function App() {
       s: {
         next: "schedules",
       },
+
+      // u: {
+      //   action: (_: any, ctx: any) => {
+          // ctx.runScheduler();
+      //   },
+      // },
     },
 
     schedules: {
@@ -1226,14 +1218,14 @@ export default function App() {
       },
     },
 
-    edit: {
+    popup: {
       q: {
-        action: (_, ctx) => {
+        action: (_: any, ctx: any) => {
           const idx = ctx.selectedBlockIndex;
           const block = ctx.blocks[idx];
           if (!block) return;
 
-          ctx.closeBlockEditor?.(block.id);
+          ctx.setEditBlockPopup(false);
         },
       },
     },
@@ -1242,7 +1234,7 @@ export default function App() {
   const [showScheduleError, setShowScheduleError] = useState(false);
 
   const runScheduler = async () => {
-    if (sections.length === 0) {
+    if (blocks.length === 0) {
       console.log("No sections available yet.");
       return;
     }
@@ -1252,21 +1244,20 @@ export default function App() {
     // =========================
     // STEP 1: GENERATE SCHEDULES
     // =========================
-    const filtered = sections.filter((s) => {
-      const code = `${s.subject} ${s.catalog_number}`;
-      return sectionSelections[code]?.has(s.registration_number);
-    });
+    let filtered: any[] = [];
 
-    if (filtered.length === 0) {
-      console.log("No valid sections selected");
-      setShowScheduleError(true);
-      return;
-    }
+    blocks.forEach((b) => {
+      console.log(classesDataRaw.filter((entry) => b.sections?.has(entry.registration_number)));
+      
+      filtered = [...filtered, ...classesDataRaw.filter((entry) => b.sections?.has(entry.registration_number))];
+    })
+    console.log(filtered);
 
+    const breakBlocks = blocks.filter((b) => b.title === "BREAK");
     const breakSections = breakBlocks.map((b) => ({
-      subject: b.name,
-      catalog_number: "",
       registration_number: "BREAK",
+      subject: b.code,
+      catalog_number: "",
 
       academic_career: "",
       campus: "",
@@ -1278,16 +1269,22 @@ export default function App() {
       capacity_available: "",
       waitlist_available: 0,
 
-      blocks: b.blocks.map((block) => ({
+      blocks: b.breaks?.map((block) => ({
         day: block.day,
         start_time: block.start_time,
         end_time: block.end_time,
-        class_section: b.name,
+        class_section: b.breaks,
         instructor: "",
         room: "",
         registration_number: "BREAK",
       })),
     }));
+
+    if (filtered.length === 0 && breakSections.length === 0) {
+      console.log("No valid sections selected");
+      setShowScheduleError(true);
+      return;
+    }
 
     const schedulesJson =
     generate_schedules_from_sections([
@@ -1309,7 +1306,7 @@ export default function App() {
       setCurrentPage(1);
     }
 
-    console.log("Num sections: ", sections.length);
+    // console.log("Num sections: ", sections.length);
     console.log("Found schedules:", schedules.length);
     console.log("Schedules:", schedules);
   };
@@ -1372,7 +1369,6 @@ export default function App() {
       [newBlocks[i], newBlocks[i + 1]] = [newBlocks[i + 1], newBlocks[i]];
 
       setSelectedBlockIndex(i + 1);
-      recomputeSections(newBlocks);
       return newBlocks;
     });
   };
@@ -1385,7 +1381,6 @@ export default function App() {
       const newBlocks = [...prev];
       [newBlocks[i], newBlocks[i - 1]] = [newBlocks[i - 1], newBlocks[i]];
 
-      recomputeSections(newBlocks);
       setSelectedBlockIndex(i - 1);
       return newBlocks;
     });
@@ -1415,10 +1410,9 @@ export default function App() {
       runScheduler,
       setSelectedBlockIndex,
       selectedBlockIndex,
-      setSections,
       onMoveBlockUp: moveBlockUp,
       onMoveBlockDown: moveBlockDown,
-      removeBlock,
+      removeBlocks,
       setCurrentPage,
       currentPage,
       totalPages,
@@ -1429,8 +1423,13 @@ export default function App() {
       selectedScheduleIndex,
       openBlockEditor,
       closeBlockEditor,
+      hoverSchedule,
       setHoverSchedule,
-      clearBlocks,
+      hoveredSection,
+      setHoveredSection,
+      restoreBlocks,
+      editBlockPopup,
+      setEditBlockPopup,
     }),
 
     fsm: fsm as FSM,
@@ -1439,43 +1438,48 @@ export default function App() {
   useEffect(() => {
     const raw = localStorage.getItem("scheduleBuilder");
 
-    if (!raw) return;
+    if (raw) {
+      try {
+        const data: SavedState = JSON.parse(raw);
 
-    try {
-      const data: SavedState = JSON.parse(raw);
+        if (data.vimMode) {
+          setVimMode(data.vimMode);
+        }
 
-      if (data.semester) {
-        setSelectedSemester(data.semester);
+        if (data.semester) {
+          setSelectedSemester(data.semester);
+        }
+
+        if (data.campuses) {
+          setSelectedCampuses(data.campuses);
+        }
+
+        if (data.blocks) {
+          const newBlocks = data.blocks;
+          if (data.sections) {
+            newBlocks.forEach((block, index) => {
+              block.sections = new Set(data.sections[index]);
+            })
+          }
+          setBlocks(newBlocks);
+        }
+
+        if (data.schedules) {
+          setSchedules(data.schedules);
+        }
+
+        if (
+          data.selectedScheduleIndex != null &&
+          data.schedules?.[data.selectedScheduleIndex]
+        ) {
+          setSelectedScheduleIndex(data.selectedScheduleIndex);
+          setSelectedSchedule(data.schedules[data.selectedScheduleIndex]);
+        }
+      } catch (e) {
+        console.error("Failed to restore local data", e);
       }
-
-      if (data.campuses) {
-        setSelectedCampuses(data.campuses);
-      }
-
-      if (data.blocks) {
-        setBlocks(data.blocks);
-      }
-
-      if (data.breakBlocks) {
-        setBreakBlocks(data.breakBlocks);
-      }
-
-      if (data.schedules) {
-        setSchedules(data.schedules);
-      }
-
-      if (
-        data.selectedScheduleIndex != null &&
-        data.schedules?.[data.selectedScheduleIndex]
-      ) {
-        setSelectedScheduleIndex(data.selectedScheduleIndex);
-        setSelectedSchedule(data.schedules[data.selectedScheduleIndex]);
-      }
-    } catch (e) {
-      console.error("Failed to restore local data", e);
-    } finally {
-      setHydrated(true);
     }
+    setHydrated(true);
   }, []);
 
   useEffect(() => {
@@ -1557,10 +1561,6 @@ export default function App() {
   }, [input, courses]);
 
   useEffect(() => {
-    localStorage.setItem("vimMode", String(vimMode));
-  }, [vimMode]);
-
-  useEffect(() => {
     if (!isKeyboardDevice()) {
       setVimMode(false);
     }
@@ -1601,44 +1601,33 @@ export default function App() {
 
   useEffect(() => {
     if(!hydrated) return;
+    let newSections: string[][] = [];
+    blocks.forEach((block) => {
+      if (block.sections) {
+        newSections.push([...block.sections]);
+      }
+    })
     localStorage.setItem(
       "scheduleBuilder",
       JSON.stringify({
+        vimMode,
         semester: selectedSemester,
         campuses: selectedCampuses,
         blocks,
-        breakBlocks,
+        sections: newSections,
         schedules,
         selectedScheduleIndex,
       })
     );
   }, [
+    vimMode,
     selectedSemester,
     selectedCampuses,
     blocks,
-    breakBlocks,
     schedules,
     selectedScheduleIndex,
     hydrated,
   ]);
-
-  useEffect(() => {
-    if (!classesDataRaw.length) return;
-
-    recomputeSections(blocks);
-  }, [classesDataRaw, blocks, selectedCampuses]);
-
-  useEffect(() => {
-    if (
-      selectedScheduleIndex != null &&
-      schedules[selectedScheduleIndex]
-    ) {
-      setSelectedSchedule(schedules[selectedScheduleIndex]);
-    } else {
-      setSelectedSchedule(null);
-    }
-  }, [schedules, selectedScheduleIndex]);
-
 
   useEffect(() => {
     if (!hydrated || !selectedSemester) return;
@@ -1653,7 +1642,6 @@ export default function App() {
     setSelectedScheduleIndex(null);
     setCurrentPage(1);
 
-    setSections([]);
     setBlocks([]); // 👈 clears all selected courses
 
 
@@ -1706,20 +1694,23 @@ export default function App() {
     document.body.appendChild(script);
   }, []);
 
+  useEffect(() => {
+    if(selectedBlockIndex !== null) {
+      setHoveredSection(blocks[selectedBlockIndex]?.code);
+    }
+  }, [selectedBlockIndex]);
+
+  useEffect(() => {
+    if (enrollPopup || breakPopup || editBlockPopup) {
+      setStateBuffer(state);
+      setState("popup");
+    } else {
+      setState(stateBuffer);
+    }
+  }, [enrollPopup, breakPopup, editBlockPopup]);
+
   const getBlockCode = (id: string) => {
     return blocks.find(b => b.id === id)?.code;
-  };
-
-  const initializeSelections = (sections: any[]) => {
-    const map: Record<string, Set<string>> = {};
-
-    sections.forEach((s) => {
-      const key = `${s.subject} ${s.catalog_number}`;
-      if (!map[key]) map[key] = new Set();
-      map[key].add(s.registration_number);
-    });
-
-    setSectionSelections(map);
   };
 
   const sensors = useSensors(
@@ -1753,26 +1744,21 @@ export default function App() {
     }
   };
 
-  const recomputeSections = (blockList: DraggableBlockData[]) => {
-    if(!classesDataRaw.length) return;
-    const selectedCodes = blockList.map(b => b.code);
 
-    const updated = classesDataRaw.filter((s) => selectedCodes.includes(s.subject + " " + s.catalog_number) && selectedCampuses.includes(s.campus));
-    initializeSelections(updated);
-    setSections(updated);
-  };
-
-  const removeBlock = (id: string) => {
-    const updated = blocks.filter((block) => block.id !== id);
+  const removeBlocks = (ids: string[]) => {
+    const updated = blocks.filter((block) => !ids.includes(block.id));
+    setBlocksBuffer(blocks.filter((block) => ids.includes(block.id)));
     setBlocks(updated);
-
-    recomputeSections(updated);
   };
 
   const clearBlocks = () => {
-    setBlocks([]);
-    setSections([]);
-    setBreakBlocks([]);
+    const ids = blocks.map((b) => b.id);
+    removeBlocks(ids);
+  };
+
+  const restoreBlocks = () => {
+    setBlocks([...blocks, ...blocksBuffer]);
+    setBlocksBuffer([]);
   };
 
   const buildCourses = (classesData: any[], coursesData: any[]) => {
@@ -1798,17 +1784,6 @@ export default function App() {
 
     setCourses(Array.from(courseMap.values()));
   };
-
-  const hasValidSections = useMemo(() => {
-    if (sections.length === 0) return false;
-
-    const filtered = sections.filter((s) => {
-      const code = `${s.subject} ${s.catalog_number}`;
-      return sectionSelections[code]?.has(s.registration_number);
-    });
-
-    return filtered.length > 0;
-  }, [sections, sectionSelections]);
 
   const getRatingColor = (rating: number) => {
     if (rating >= 4.5) return "text-green-400";
@@ -1885,12 +1860,12 @@ export default function App() {
   };
 
   const sortedSections = useMemo(() => {
-    if (!editingBlockId) return [];
+    if (editingBlockId === "") return [];
     const code = getBlockCode(editingBlockId);
     if (!code) return [];
 
-    const base = sections.filter(
-      s => `${s.subject} ${s.catalog_number}` === code
+    const base = classesDataRaw.filter(
+      s => `${s.subject} ${s.catalog_number}` === code && selectedCampuses.includes(s.campus)
     );
 
     const getInstructorRating = (section: any) => {
@@ -1953,11 +1928,7 @@ export default function App() {
     };
 
     return [...base].sort(compare);
-  }, [sections, editingBlockId, sortState, professorMap]);
-
-  const [showEnrollModal, setShowEnrollModal] = useState(false);
-  const [copiedReg, setCopiedReg] = useState<string | number | null>(null);
-  const [copiedAll, setCopiedAll] = useState(false);
+  }, [editingBlockId, sortState, professorMap]);
 
   return (
     <div className="h-screen flex flex-col bg-gray-100 relative z-0">
@@ -2036,7 +2007,11 @@ export default function App() {
                           `}
                           onMouseDown={(e) => {
                             e.preventDefault(); // prevents input blur
-                            addBlock(course);
+                            addBlocks([{
+                              id: `${course.code}-${Date.now()}`,
+                              code: course.code,
+                              title: course.title,
+                            }]);
                           }}
                         >
                           <div className="font-semibold">
@@ -2150,14 +2125,14 @@ export default function App() {
             <button
               type="button"
               onClick={() => {
-                if (!hasValidSections) return;
+                if (blocks.length <= 0) return;
                 runScheduler();
               }}
-              disabled={!hasValidSections}
+              disabled={blocks.length <= 0}
               className={`
                 w-full font-semibold py-3 rounded-xl shadow-lg transition-all duration-150 select-none
                 ${
-                  hasValidSections
+                  blocks.length > 0
                     ? "bg-blue-950 hover:bg-blue-900 text-white cursor-pointer"
                     : "bg-blue-950/60 text-white cursor-not-allowed shadow-none opacity-70"
                 }
@@ -2166,7 +2141,7 @@ export default function App() {
               Generate Schedules
             </button>
           </div>
-          {breakMode && (
+          {breakPopup && (
             <div className="absolute inset-0 bg-black/60 z-50 pointer-events-none" />
           )}
         </div>
@@ -2176,25 +2151,25 @@ export default function App() {
           {/* HEADER LABEL */}
           <div className="mb-3 h-10 shrink-0 flex items-center justify-between">
             <div className="select-none text-sm font-semibold text-gray-700">
-              {breakMode && (
+              {breakPopup && (
                 <div className="fixed top-0 left-1/2 -translate-x-1/2 z-[20000] bg-blue-950 text-white text-sm font-semibold py-2 text-center w-screen shadow-lg">
                   Click and drag on the calendar to add a break (Hold Shift for more precise dragging)
                 </div>
               )}
               {selectedScheduleIndex !== null 
                 ? `Schedule ${selectedScheduleIndex + 1} / ${schedules.length}`
-                : !breakMode ? "No schedules generated" : ""}
+                : !breakPopup ? "No schedules generated" : ""}
             </div>
 
             <div className="flex items-center gap-3">
               {selectedSchedule && (
                 <>
                   <div className="text-xs text-gray-500">
-                    {selectedSchedule.sections?.length ?? 0} sections • {totalCredits} credits
+                    {selectedSchedule.sections?.length ?? 0} classes • {totalCredits} credits
                   </div>
 
                   <button
-                    onClick={() => setShowEnrollModal(true)}
+                    onClick={() => setEnrollPopup(true)}
                     className="px-3 py-1.5 rounded-lg bg-blue-950 text-white text-sm font-medium hover:bg-blue-900 transition cursor-pointer"
                   >
                     Enroll
@@ -2208,7 +2183,7 @@ export default function App() {
           {!selectedSchedule ? (
             <div
               className={`flex-1 min-h-0 overflow-hidden ${
-                breakMode ? "cursor-crosshair" : ""
+                breakPopup ? "cursor-crosshair" : ""
               }`}
             >
               <div className="flex h-full w-full gap-4">
@@ -2218,14 +2193,16 @@ export default function App() {
                   schedule={selectedSchedule?.sections || null}
                   hoverSchedule={hoverSchedule?.sections || null}
                   professorMap={professorMap}
-                  breakMode={breakMode}
-                  setBreakMode={setBreakMode}
+                  breakPopup={breakPopup}
+                  setBreakPopup={setBreakPopup}
                   hoveredSection={hoveredSection}
                   setHoveredSection={setHoveredSection}
                   pendingBreaks={pendingBreaks} // <-- NEW PROP
                   onAddPendingBreak={(newBreak) => {
                     setPendingBreaks((prev) => [...prev, { ...newBreak, name: pendingBreakName }]);
                   }}
+                  state={state}
+                  selectedSchedule={selectedSchedule}
                 />
               </div>
 
@@ -2237,14 +2214,16 @@ export default function App() {
                 schedule={selectedSchedule?.sections || null}
                 hoverSchedule={hoverSchedule?.sections || null}
                 professorMap={professorMap}
-                breakMode={breakMode}
-                setBreakMode={setBreakMode}
+                breakPopup={breakPopup}
+                setBreakPopup={setBreakPopup}
                 hoveredSection={hoveredSection}
                 setHoveredSection={setHoveredSection}
                 pendingBreaks={pendingBreaks} // <-- NEW PROP
                 onAddPendingBreak={(newBreak) => {
                   setPendingBreaks((prev) => [...prev, { ...newBreak, name: pendingBreakName }]);
                 }}
+                state={state}
+                selectedSchedule={selectedSchedule}
               />
             </div>
           )}
@@ -2273,9 +2252,21 @@ export default function App() {
 
               {settingsOpen && (
               <div className="absolute right-0 top-full mt-2 w-56 bg-white border rounded-lg shadow-lg p-3 z-[9999]">
+                {/* Import/Export Session */}
+                <button
+                  onClick={() => {
+                    setShowSession(true);
+                    setSettingsOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 text-sm transition mb-1 hover:cursor-pointer"
+                >
+                  <span>Import/Export Session</span>
+                </button>
+
+                {/* VIM MODE */}
                 <button
                   onClick={() => setVimMode(v => !v)}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-md hover:bg-gray-100 text-sm transition mb-1"
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-md hover:bg-gray-100 text-sm transition mb-1 hover:cursor-pointer"
                 >
                   <span>Vim mode</span>
 
@@ -2298,14 +2289,14 @@ export default function App() {
                     setShowKofi(true);
                     setSettingsOpen(false);
                   }}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 text-sm transition mb-1"
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 text-sm transition mb-1 hover:cursor-pointer"
                 >
                   <span>Donate</span>
                 </button>
 
                 <button 
                   data-tally-open="ZjZJz0" data-tally-layout="modal" data-tally-width="700" data-tally-hide-title="1" data-tally-auto-close="1000"
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 text-sm transition mb-1"
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 text-sm transition mb-1 hover:cursor-pointer"
                   onClick={() => {
                     setSettingsOpen(false);
                   }}
@@ -2325,20 +2316,29 @@ export default function App() {
                 </h2>
 
                 <button
-                  onClick={() => setBreakMode(true)}
+                  onClick={() => setBreakPopup(true)}
                   className="px-3 py-1 text-sm rounded-md text-blue-900 hover:bg-blue-100 hover:cursor-pointer"
                 >
                   Add Break
                 </button>
               </div>
 
-              {blocks.length + breakBlocks.length !== 0 && (
+              {blocks.length !== 0 && (
                 <button
                   onClick={clearBlocks}
                   className="p-2 rounded-md hover:bg-red-100 text-red-600 text-sm transition cursor-pointer"
                   title="Clear all courses"
                 >
                   Clear
+                </button>
+              )}
+              {blocksBuffer.length > 0 && (
+                <button
+                  onClick={restoreBlocks}
+                  className="p-2 rounded-md hover:bg-blue-100 text-blue-600 text-sm transition cursor-pointer"
+                  title="Undo Clear"
+                >
+                  Restore
                 </button>
               )}
 
@@ -2348,7 +2348,7 @@ export default function App() {
             <div className="h-[60%] overflow-y-auto">
               
 
-              {blocks.length === 0 && breakBlocks.length === 0 ? (
+              {blocks.length === 0 ? (
                 <div className="text-center text-gray-500 mt-10 select-none">
                   📚 No courses or breaks added yet
                 </div>
@@ -2362,7 +2362,6 @@ export default function App() {
                   <SortableContext
                     items={[
                       ...blocks.map((b) => b.id),
-                      ...breakBlocks.map((b) => b.id),
                     ]}
                     strategy={verticalListSortingStrategy}
                   >
@@ -2372,26 +2371,11 @@ export default function App() {
                           key={block.id}
                           id={block.id}
                           name={block.code}
-                          onDelete={removeBlock}
+                          onDelete={removeBlocks}
                           onEdit={openBlockEditor}
                           selected={state === "blocks" && index === selectedBlockIndex}
                           setHoveredSection={setHoveredSection}
-                        />
-                      ))}
-
-                      {breakBlocks.map((b) => (
-                        <DraggableBlock
-                          key={b.id}
-                          id={b.id}
-                          name={b.name}
-                          onDelete={() =>
-                            setBreakBlocks(prev =>
-                              prev.filter(x => x.id !== b.id)
-                            )
-                          }
-                          onEdit={() => {}}
-                          selected={false}
-                          setHoveredSection={setHoveredSection}
+                          state={state}
                         />
                       ))}
                     </div>
@@ -2499,13 +2483,13 @@ export default function App() {
             </div>
 
           </div>
-          {breakMode && (
+          {breakPopup && (
             <div className="absolute inset-0 bg-black/60 z-50 pointer-events-none" />
           )}
 
         {/* RIGHT SIDE: Pending Breaks Staging Area */}
-        {breakMode && (
-          <div className="absolute z-[100] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-[400px] bg-blue-950 rounded-xl p-4 flex flex-col shadow-lg border border-blue-900 text-white shrink-0">
+        {breakPopup && (
+          <div className="absolute z-[100] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-[600px] bg-blue-950 rounded-xl p-4 flex flex-col shadow-lg border border-blue-900 text-white shrink-0">
             <h3 className="text-sm font-semibold mb-3">Create Break</h3>
             
             {/* Break Name Input */}
@@ -2571,30 +2555,38 @@ export default function App() {
                 });
 
                 // 3. create the single unified break section
-                const newUnifiedBreak: BreakSection = {
-                  id: crypto.randomUUID(), // one ID for the whole group
-                  type: "break",
-                  name: pendingBreakName || "Unnamed Break",
-                  blocks: combinedBlocks,
-                };
-
+                addBlocks([
+                  {
+                    id: crypto.randomUUID(), // one ID for the whole group
+                    code: pendingBreakName || "Unnamed Break",
+                    title: "BREAK",
+                    breaks: combinedBlocks,
+                  }
+                ]) 
                 // 4. save it to your main state and clear the staging area
-                setBreakBlocks((prev) => [...prev, newUnifiedBreak]);
                 setPendingBreaks([]);
                 setPendingBreakName("Break"); // reset name
-                setBreakMode(false);
+                setBreakPopup(false);
               }}
               disabled={pendingBreaks.length === 0}
-              className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2 rounded-lg text-sm font-medium transition-colors"
+              className={`w-full bg-blue-600 ${pendingBreaks.length !== 0 ? "hover:bg-blue-500" : ""} disabled:opacity-50 disabled:cursor-not-allowed text-white py-2 rounded-lg text-sm font-medium transition-colors hover:cursor-pointer`}
             >
-              Confirm Break
+              Confirm
+            </button>
+
+            {/* CANCEL */}
+            <button
+              className="w-full bg-gray-600 hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2 rounded-lg text-sm font-medium transition-colors mt-2"
+              onClick={() => {setBreakPopup(false)}}
+            >
+                Cancel
             </button>
           </div>
         )}
         </div>
 
       </div>
-      {editingBlockId && (
+      {editBlockPopup && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-9xl h-full max-h-[95vh] flex flex-col overflow-hidden rounded-2xl border border-black bg-white">
             {/* Header */}
@@ -2638,13 +2630,13 @@ export default function App() {
                     const code = getBlockCode(editingBlockId);
                     if (!code) return false;
 
-                    const matchingSections = sections.filter(
+                    const matchingSections = classesDataRaw.filter(
                       s =>
-                        `${s.subject} ${s.catalog_number}` === code
+                        `${s.subject} ${s.catalog_number}` === code && selectedCampuses.includes(s.campus)
                     );
 
                     const selectedCount =
-                      sectionSelections[code]?.size ?? 0;
+                      blocks.find((b) => b.id === editingBlockId)?.sections?.size ?? 0;
 
                     return (
                       matchingSections.length > 0 &&
@@ -2655,32 +2647,36 @@ export default function App() {
                     const code = getBlockCode(editingBlockId);
                     if (!code) return null;
 
-                    const matchingSections = sections.filter(
+                    const matchingSections = classesDataRaw.filter(
                       s =>
-                        `${s.subject} ${s.catalog_number}` === code
+                        `${s.subject} ${s.catalog_number}` === code && selectedCampuses.includes(s.campus)
                     );
 
                     const currentSelections =
-                      sectionSelections[code] ?? new Set();
+                      blocks.find((b) => b.id === editingBlockId)?.sections ?? new Set();
 
                     const hasAnySelected =
                       currentSelections.size > 0;
 
-                    setSectionSelections(prev => {
-                      const next = { ...prev };
+                    setBlocks((prevBlocks) =>
+                      prevBlocks.map((b) => {
+                        if (b.id !== editingBlockId) return b;
 
-                      if (hasAnySelected) {
-                        next[code] = new Set();
-                      } else {
-                        next[code] = new Set(
-                          matchingSections.map(
-                            s => s.registration_number
-                          )
-                        );
-                      }
+                        let sections;
 
-                      return next;
-                    });
+                        if (hasAnySelected) {
+                          sections = new Set()
+                        } else {
+                          sections = new Set(matchingSections.map(s => s.registration_number));
+                        }
+
+                        return {
+                          ...b,
+                          sections,
+                        };
+                      })
+                    );
+
                   }}
                 />
               </div>
@@ -2737,7 +2733,7 @@ export default function App() {
                   if (!code) return null;
 
                   const isChecked =
-                    sectionSelections[code]?.has(
+                    blocks.find((b) => b.id === editingBlockId)?.sections?.has(
                       section.registration_number
                     );
                   const groupedTimes = (() => {
@@ -2810,25 +2806,24 @@ export default function App() {
                           className="cursor-pointer accent-black"
                           checked={isChecked}
                           onChange={() => {
-                            setSectionSelections(prev => {
-                              const next = { ...prev };
-                              const set = new Set(next[code]);
+                            setBlocks((prevBlocks) =>
+                              prevBlocks.map((b) => {
+                                if (b.id !== editingBlockId) return b;
 
-                              if (
-                                set.has(section.registration_number)
-                              ) {
-                                set.delete(
-                                  section.registration_number
-                                );
-                              } else {
-                                set.add(
-                                  section.registration_number
-                                );
-                              }
+                                const sections = new Set(b.sections);
 
-                              next[code] = set;
-                              return next;
-                            });
+                                if (sections.has(section.registration_number)) {
+                                  sections.delete(section.registration_number);
+                                } else {
+                                  sections.add(section.registration_number);
+                                }
+
+                                return {
+                                  ...b,
+                                  sections,
+                                };
+                              })
+                            );
                           }}
                         />
                       </div>
@@ -2924,11 +2919,11 @@ export default function App() {
 
                                 return (
                                   <div key={`${type}-${time}-${idx}`} className="leading-tight">
-                                    <span className="font-semibold text-blue-950">
+                                    <span className="font-bold text-blue-950">
                                       {type}:
                                     </span>{" "}
-                                    <span className="text-gray-500">{days}</span>{" "}
-                                    <span className="text-gray-500">{time}</span>
+                                    <span className="font-semibold text-gray-700">{days} @</span>{" "}
+                                    <span className="font-semibold text-gray-700">{time}</span>
                                   </div>
                                 );
                               })}
@@ -2957,7 +2952,7 @@ export default function App() {
                                     <span className="font-semibold text-blue-950">
                                       {type}:
                                     </span>{" "}
-                                    <span className="text-gray-500">{room}</span>
+                                    <span className="font-semibold text-gray-700">{room}</span>
                                   </div>
                                 ))}
                               </div>
@@ -3021,7 +3016,7 @@ export default function App() {
       </div>
     )}
 
-    {showEnrollModal && selectedSchedule && (
+    {enrollPopup && selectedSchedule && (
       <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4">
         <div className="w-full max-w-5xl h-full max-h-[85vh] flex flex-col overflow-hidden rounded-2xl border border-black bg-white">
 
@@ -3050,7 +3045,7 @@ export default function App() {
 
             <button
               className="cursor-pointer rounded-md px-3 py-1 text-sm hover:bg-black hover:text-white"
-              onClick={() => setShowEnrollModal(false)}
+              onClick={() => setEnrollPopup(false)}
             >
               ✕
             </button>
@@ -3139,6 +3134,71 @@ export default function App() {
                 ? "Copied!"
                 : "Copy All Registration Numbers"}
             </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* IMPORT/EXPORT SESSION */}
+    {showSession && (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4">
+        <div className="w-full max-w-5xl h-full max-h-[85vh] flex flex-col overflow-hidden rounded-2xl border border-black bg-white">
+
+          {/* Header */}
+          <div className="relative flex items-center justify-between px-6 py-4">
+            <div>
+              <h2 className="text-xl font-semibold tracking-tight">
+                Import/Export Session
+              </h2>
+              <p className="text-m text-blue-950">
+                  Want to save your progress and open it another time, or on another device? Export your session ID!
+              </p>
+              <p className="text-sm text-yellow-950 pt-5">
+                  Warning: This website does not autosave. If you make any changes, you need to copy the new ID.
+              </p>
+            </div>
+
+            <button
+              className="cursor-pointer rounded-md px-3 py-1 text-sm hover:bg-black hover:text-white"
+              onClick={() => setShowSession(false)}
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className="overflow-y-auto flex-1 min-h-0 pb-6 bg-slate-50">
+            <div>
+              <p>
+                  Export
+              </p>
+              <button
+                onClick={async () => {
+                  // await navigator.clipboard.writeText(
+                  //     // btoa(unescape(encodeURIComponent(localStorage.getItem("scheduleBuilder"))))
+                  // );
+
+                  // setCopiedReg("hi");
+                  //
+                  // setTimeout(() => {
+                  //   setCopiedReg((current) =>
+                  //     current === "hi"
+                  //       ? null
+                  //       : current
+                  //   );
+                  // }, 2000);
+                }}
+                className={`px-3 py-1 rounded-md text-sm font-medium transition cursor-pointer ${
+                  copiedReg === "hi"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-blue-950 text-white hover:bg-blue-900"
+                }`}
+              >
+                {copiedReg === "hi"
+                  ? "Copied!"
+                  : "Copy"}
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -1,11 +1,11 @@
 - Update Breaks ui
+- Dark Mode (?)
 - Add vim mode cheat sheet
 - Put general course info in section edit and left sidebar
 - Filter classes
 - Make professor lookup more lenient
 - Room distances
 - Import/export classes
-- Dark Mode (?)
 - Mobile View
 
 # Future Stuff:
