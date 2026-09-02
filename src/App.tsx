@@ -1282,6 +1282,7 @@ export default function App() {
       })),
     }));
 
+
     if (filtered.length === 0 && breakSections.length === 0) {
       console.log("No valid sections selected");
       setShowScheduleError(true);
@@ -1294,6 +1295,7 @@ export default function App() {
       ...breakSections,
     ]);
     const schedules = JSON.parse(schedulesJson);
+    console.log(schedulesJson);
 
     setSchedules(schedules);
 
