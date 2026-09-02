@@ -4379,8 +4379,8 @@
     "campus": "OFF",
     "session": "ECE",
     "enrollment_capacity": 200,
-    "enrollment_total": 11,
-    "seats_available": 189,
+    "enrollment_total": 12,
+    "seats_available": 188,
     "capacity_available": "",
     "waitlist_available": 0,
     "blocks": [],
@@ -75927,7 +75927,7 @@
       {
         "class_section": "001",
         "day": "Mo",
-        "instructor": "Molika Chea (PI)",
+        "instructor": "Molika Champion (PI)",
         "registration_number": "10874",
         "room": "WITE 209",
         "start_time": 480,
@@ -75937,7 +75937,7 @@
       {
         "class_section": "001",
         "day": "We",
-        "instructor": "Molika Chea (PI)",
+        "instructor": "Molika Champion (PI)",
         "registration_number": "10874",
         "room": "WITE 209",
         "start_time": 480,
@@ -75947,7 +75947,7 @@
       {
         "class_section": "001",
         "day": "Fr",
-        "instructor": "Molika Chea (PI)",
+        "instructor": "Molika Champion (PI)",
         "registration_number": "10874",
         "room": "WITE 209",
         "start_time": 480,
@@ -88788,8 +88788,8 @@
     "campus": "OFF",
     "session": "ECE",
     "enrollment_capacity": 200,
-    "enrollment_total": 14,
-    "seats_available": 186,
+    "enrollment_total": 15,
+    "seats_available": 185,
     "capacity_available": "",
     "waitlist_available": 0,
     "blocks": [],
@@ -93985,8 +93985,8 @@
     "campus": "OFF",
     "session": "ECE",
     "enrollment_capacity": 200,
-    "enrollment_total": 7,
-    "seats_available": 193,
+    "enrollment_total": 8,
+    "seats_available": 192,
     "capacity_available": "",
     "waitlist_available": 0,
     "blocks": [],
@@ -102580,8 +102580,8 @@
     "campus": "OFF",
     "session": "ECE",
     "enrollment_capacity": 40,
-    "enrollment_total": 21,
-    "seats_available": 19,
+    "enrollment_total": 22,
+    "seats_available": 18,
     "capacity_available": "",
     "waitlist_available": 0,
     "blocks": [],
@@ -142255,8 +142255,8 @@
     "campus": "OFF",
     "session": "ECE",
     "enrollment_capacity": 200,
-    "enrollment_total": 21,
-    "seats_available": 179,
+    "enrollment_total": 22,
+    "seats_available": 178,
     "capacity_available": "",
     "waitlist_available": 0,
     "blocks": [],
@@ -142335,8 +142335,8 @@
     "campus": "OFF",
     "session": "ECE",
     "enrollment_capacity": 200,
-    "enrollment_total": 66,
-    "seats_available": 134,
+    "enrollment_total": 67,
+    "seats_available": 133,
     "capacity_available": "",
     "waitlist_available": 0,
     "blocks": [],
@@ -192638,8 +192638,8 @@
     "campus": "OFF",
     "session": "ECE",
     "enrollment_capacity": 200,
-    "enrollment_total": 3,
-    "seats_available": 197,
+    "enrollment_total": 4,
+    "seats_available": 196,
     "capacity_available": "",
     "waitlist_available": 0,
     "blocks": [],
@@ -193411,7 +193411,7 @@
       {
         "class_section": "001",
         "day": "Tu",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6501",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 750,
@@ -193421,7 +193421,7 @@
       {
         "class_section": "001",
         "day": "Th",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6501",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 750,
@@ -193431,7 +193431,7 @@
       {
         "class_section": "001",
         "day": "Mo",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6501",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 870,
@@ -193441,7 +193441,7 @@
       {
         "class_section": "001",
         "day": "We",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6501",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 870,
@@ -193451,7 +193451,7 @@
       {
         "class_section": "001",
         "day": "Fr",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6501",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 870,
@@ -193478,7 +193478,7 @@
       {
         "class_section": "002",
         "day": "Tu",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6502",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 1140,
@@ -193488,7 +193488,7 @@
       {
         "class_section": "002",
         "day": "Mo",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6502",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 870,
@@ -193498,7 +193498,7 @@
       {
         "class_section": "002",
         "day": "We",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6502",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 870,
@@ -193508,7 +193508,7 @@
       {
         "class_section": "002",
         "day": "Fr",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6502",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 870,
@@ -193535,7 +193535,7 @@
       {
         "class_section": "003",
         "day": "Tu",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6503",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 750,
@@ -193545,7 +193545,7 @@
       {
         "class_section": "003",
         "day": "Th",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6503",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 750,
@@ -193555,7 +193555,7 @@
       {
         "class_section": "003",
         "day": "Mo",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6503",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 870,
@@ -193565,7 +193565,7 @@
       {
         "class_section": "003",
         "day": "We",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6503",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 870,
@@ -193575,7 +193575,7 @@
       {
         "class_section": "003",
         "day": "Fr",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6503",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 870,
@@ -193602,7 +193602,7 @@
       {
         "class_section": "004",
         "day": "Tu",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6504",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 750,
@@ -193612,7 +193612,7 @@
       {
         "class_section": "004",
         "day": "Th",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6504",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 750,
@@ -193622,7 +193622,7 @@
       {
         "class_section": "004",
         "day": "Mo",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6504",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 870,
@@ -193632,7 +193632,7 @@
       {
         "class_section": "004",
         "day": "We",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6504",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 870,
@@ -193642,7 +193642,7 @@
       {
         "class_section": "004",
         "day": "Fr",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6504",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 870,
@@ -193733,7 +193733,7 @@
       {
         "class_section": "007",
         "day": "Tu",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6507",
         "room": "VDM AUD",
         "start_time": 750,
@@ -193743,7 +193743,7 @@
       {
         "class_section": "007",
         "day": "Th",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6507",
         "room": "VDM AUD",
         "start_time": 750,
@@ -193807,7 +193807,7 @@
       {
         "class_section": "009",
         "day": "Mo",
-        "instructor": "Ellen Gilson Voth (PI)",
+        "instructor": "Ellen Voth (PI)",
         "registration_number": "6509",
         "room": "ZFA 103",
         "start_time": 1140,
@@ -193834,7 +193834,7 @@
       {
         "class_section": "010",
         "day": "Mo",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6510",
         "room": "VDM AUD",
         "start_time": 870,
@@ -193844,7 +193844,7 @@
       {
         "class_section": "010",
         "day": "We",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6510",
         "room": "VDM AUD",
         "start_time": 870,
@@ -193854,7 +193854,7 @@
       {
         "class_section": "010",
         "day": "Fr",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6510",
         "room": "VDM AUD",
         "start_time": 870,
@@ -193965,7 +193965,7 @@
       {
         "class_section": "013",
         "day": "We",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6513",
         "room": "MUSB 102\rMUSB 102",
         "start_time": 1110,
@@ -193975,7 +193975,7 @@
       {
         "class_section": "013",
         "day": "Tu",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6513",
         "room": "MUSB 102\rMUSB 102",
         "start_time": 750,
@@ -193985,7 +193985,7 @@
       {
         "class_section": "013",
         "day": "Th",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6513",
         "room": "MUSB 102\rMUSB 102",
         "start_time": 750,
@@ -194059,7 +194059,7 @@
       {
         "class_section": "016",
         "day": "Mo",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6515",
         "room": "VDM AUD",
         "start_time": 870,
@@ -194069,7 +194069,7 @@
       {
         "class_section": "016",
         "day": "We",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6515",
         "room": "VDM AUD",
         "start_time": 870,
@@ -194079,7 +194079,7 @@
       {
         "class_section": "016",
         "day": "Fr",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6515",
         "room": "VDM AUD",
         "start_time": 870,
@@ -194106,7 +194106,7 @@
       {
         "class_section": "017",
         "day": "We",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (PI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (PI)",
         "registration_number": "12959",
         "room": "VDM AUD\rMUSB 109",
         "start_time": 930,
@@ -194116,7 +194116,7 @@
       {
         "class_section": "017",
         "day": "Mo",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (PI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (PI)",
         "registration_number": "12959",
         "room": "VDM AUD\rMUSB 109",
         "start_time": 870,
@@ -194126,7 +194126,7 @@
       {
         "class_section": "017",
         "day": "We",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (PI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (PI)",
         "registration_number": "12959",
         "room": "VDM AUD\rMUSB 109",
         "start_time": 870,
@@ -194136,7 +194136,7 @@
       {
         "class_section": "017",
         "day": "Fr",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (PI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (PI)",
         "registration_number": "12959",
         "room": "VDM AUD\rMUSB 109",
         "start_time": 870,
@@ -198027,7 +198027,7 @@
       {
         "class_section": "005",
         "day": "Tu",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6642",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 750,
@@ -198037,7 +198037,7 @@
       {
         "class_section": "005",
         "day": "Th",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6642",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 750,
@@ -198047,7 +198047,7 @@
       {
         "class_section": "005",
         "day": "Mo",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6642",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 870,
@@ -198057,7 +198057,7 @@
       {
         "class_section": "005",
         "day": "We",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6642",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 870,
@@ -198067,7 +198067,7 @@
       {
         "class_section": "005",
         "day": "Fr",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6642",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 870,
@@ -198094,7 +198094,7 @@
       {
         "class_section": "006",
         "day": "Tu",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6643",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 750,
@@ -198104,7 +198104,7 @@
       {
         "class_section": "006",
         "day": "Th",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6643",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 750,
@@ -198114,7 +198114,7 @@
       {
         "class_section": "006",
         "day": "Mo",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6643",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 870,
@@ -198124,7 +198124,7 @@
       {
         "class_section": "006",
         "day": "We",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6643",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 870,
@@ -198134,7 +198134,7 @@
       {
         "class_section": "006",
         "day": "Fr",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6643",
         "room": "VDM AUD\rVDM AUD",
         "start_time": 870,
@@ -198299,7 +198299,7 @@
       {
         "class_section": "011",
         "day": "Mo",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6648",
         "room": "VDM AUD",
         "start_time": 870,
@@ -198309,7 +198309,7 @@
       {
         "class_section": "011",
         "day": "We",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6648",
         "room": "VDM AUD",
         "start_time": 870,
@@ -198319,7 +198319,7 @@
       {
         "class_section": "011",
         "day": "Fr",
-        "instructor": "Ellen Gilson Voth (PI),James (Jamie) Spillane (SI)",
+        "instructor": "Ellen Voth (PI),James (Jamie) Spillane (SI)",
         "registration_number": "6648",
         "room": "VDM AUD",
         "start_time": 870,
@@ -209516,7 +209516,7 @@
       {
         "class_section": "001",
         "day": "Tu",
-        "instructor": "Molika Chea (PI)",
+        "instructor": "Molika Champion (PI)",
         "registration_number": "10829",
         "room": "ARJ 105",
         "start_time": 570,
@@ -209526,7 +209526,7 @@
       {
         "class_section": "001",
         "day": "Th",
-        "instructor": "Molika Chea (PI)",
+        "instructor": "Molika Champion (PI)",
         "registration_number": "10829",
         "room": "ARJ 105",
         "start_time": 570,
@@ -209637,7 +209637,7 @@
       {
         "class_section": "001",
         "day": "Tu",
-        "instructor": "Molika Chea (PI)",
+        "instructor": "Molika Champion (PI)",
         "registration_number": "10832",
         "room": "YNG 100",
         "start_time": 840,
@@ -209647,7 +209647,7 @@
       {
         "class_section": "001",
         "day": "Th",
-        "instructor": "Molika Chea (PI)",
+        "instructor": "Molika Champion (PI)",
         "registration_number": "10832",
         "room": "YNG 100",
         "start_time": 840,
@@ -209811,7 +209811,7 @@
       {
         "class_section": "001",
         "day": "Mo",
-        "instructor": "Molika Chea (PI)",
+        "instructor": "Molika Champion (PI)",
         "registration_number": "10875",
         "room": "WITE 209",
         "start_time": 480,
@@ -209821,7 +209821,7 @@
       {
         "class_section": "001",
         "day": "We",
-        "instructor": "Molika Chea (PI)",
+        "instructor": "Molika Champion (PI)",
         "registration_number": "10875",
         "room": "WITE 209",
         "start_time": 480,
@@ -209831,7 +209831,7 @@
       {
         "class_section": "001",
         "day": "Fr",
-        "instructor": "Molika Chea (PI)",
+        "instructor": "Molika Champion (PI)",
         "registration_number": "10875",
         "room": "WITE 209",
         "start_time": 480,
@@ -250293,8 +250293,8 @@
     "campus": "OFF",
     "session": "ECE",
     "enrollment_capacity": 200,
-    "enrollment_total": 4,
-    "seats_available": 196,
+    "enrollment_total": 5,
+    "seats_available": 195,
     "capacity_available": "",
     "waitlist_available": 0,
     "blocks": [],

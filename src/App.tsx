@@ -509,7 +509,7 @@ function WeeklyCalendar({
                     normalizeProfessorNameKey(block.instructor ?? "")
                   );
                   const isHovered =
-                    hoveredSection === section.subject + " " + section.catalog_number;
+                    hoveredSection === section.subject + " " + section.catalog_number || hoveredSection === section.subject;
                   return (
 
                       <div
@@ -907,7 +907,8 @@ export default function App() {
 
       seen.add(key);
 
-      total += Number(creditsMap.get(key)) ?? 0;
+      const number = Number(creditsMap.get(key));
+      total += (Number.isNaN(number) ? 0 : number);
     }
 
     return total;
@@ -1274,7 +1275,7 @@ export default function App() {
         day: block.day,
         start_time: block.start_time,
         end_time: block.end_time,
-        class_section: b.breaks,
+        class_section: "",
         instructor: "",
         room: "",
         registration_number: "BREAK",
@@ -1307,7 +1308,6 @@ export default function App() {
       setCurrentPage(1);
     }
 
-    // console.log("Num sections: ", sections.length);
     console.log("Found schedules:", schedules.length);
     console.log("Schedules:", schedules);
   };
@@ -1748,7 +1748,8 @@ export default function App() {
 
   const removeBlocks = (ids: string[]) => {
     const updated = blocks.filter((block) => !ids.includes(block.id));
-    setBlocksBuffer(blocks.filter((block) => ids.includes(block.id)));
+    setHoveredSection(null);
+    setBlocksBuffer(blocks);
     setBlocks(updated);
   };
 
@@ -1758,7 +1759,7 @@ export default function App() {
   };
 
   const restoreBlocks = () => {
-    setBlocks([...blocks, ...blocksBuffer]);
+    setBlocks(blocksBuffer);
     setBlocksBuffer([]);
   };
 
@@ -2068,7 +2069,6 @@ export default function App() {
                                   if (prev.includes(code)) {
                                     return prev.filter((c) => c !== code);
                                   }
-                                  console.log(code);
 
                                   // ensure first selected stays first
                                   return [...prev, code];
@@ -2144,6 +2144,25 @@ export default function App() {
           </div>
           {breakPopup && (
             <div className="absolute inset-0 bg-black/60 z-50 pointer-events-none" />
+          )}
+          {breakPopup && (
+            <div className="bg-white absolute z-[100] left-1/2 top-3/8 -translate-x-1/2 -translate-y-1/2 w-64 h-40 rounded-lg p-4 flex flex-col text-lg text-black font-bold shrink-0">
+              <div className="mt-2 p-2 mb-4">
+                <label className="font-semibold text-md text-black mb-1 block">Command</label>
+                <input
+                  type="text"
+                  value={pendingBreakName}
+                  onChange={(e) => {
+                    const newName = e.target.value;
+                    setPendingBreakName(newName);
+                    // update names of already dragged pending blocks to match the new input
+                    setPendingBreaks(prev => prev.map(b => ({ ...b, name: newName })));
+                  }}
+                  className="w-full text-gray-500 bg-white border border-gray-300 rounded shadow-md px-2 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-950"
+                  placeholder="e.g., Lunch, Work..."
+                />
+              </div>
+            </div>
           )}
         </div>
 
@@ -2491,12 +2510,11 @@ export default function App() {
 
         {/* RIGHT SIDE: Pending Breaks Staging Area */}
         {breakPopup && (
-          <div className="absolute z-[100] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-[600px] bg-blue-950 rounded-xl p-4 flex flex-col shadow-lg border border-blue-900 text-white shrink-0">
-            <h3 className="text-sm font-semibold mb-3">Create Break</h3>
+          <div className="bg-white absolute z-[100] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full p-4 flex flex-col text-white shrink-0">
             
             {/* Break Name Input */}
-            <div className="mb-4">
-              <label className="text-xs text-gray-400 mb-1 block">Break Name</label>
+            <div className="mt-15 p-2 mb-4">
+              <label className="font-semibold text-md text-black mb-1 block">Break Name</label>
               <input
                 type="text"
                 value={pendingBreakName}
@@ -2506,13 +2524,13 @@ export default function App() {
                   // update names of already dragged pending blocks to match the new input
                   setPendingBreaks(prev => prev.map(b => ({ ...b, name: newName })));
                 }}
-                className="w-full bg-blue-900 border border-blue-800 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full text-gray-500 bg-white border border-gray-300 rounded shadow-md px-2 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-950"
                 placeholder="e.g., Lunch, Work..."
               />
             </div>
 
             {/* Pending Breaks List */}
-            <div className="flex-1 overflow-y-auto mb-4 bg-blue-900/50 rounded p-2">
+            <div className="flex-1 overflow-y-auto mb-4 bg-slate-50 border border-blue-950 rounded p-2">
               {pendingBreaks.length === 0 ? (
                 <div className="text-xs text-gray-400 text-center italic mt-4">
                   Drag on the calendar to select times.
@@ -2520,7 +2538,7 @@ export default function App() {
               ) : (
                 <ul className="space-y-2 text-xs">
                   {pendingBreaks.map((b) => (
-                    <li key={b.id} className="flex justify-between items-center bg-blue-800 p-2 rounded">
+                    <li key={b.id} className="flex justify-between items-center bg-blue-950 p-2 rounded">
                       <div>
                         <span className="font-semibold block">{b.days.join(", ")}</span>
                         <span className="text-gray-300">
@@ -2529,7 +2547,7 @@ export default function App() {
                       </div>
                       <button
                         onClick={() => setPendingBreaks(prev => prev.filter(pb => pb.id !== b.id))}
-                        className="text-red-400 hover:text-red-300 px-2 py-1"
+                        className="text-red-400 hover:text-red-300 rounded px-2 py-1 hover:bg-red-500 transition"
                       >
                         ✕
                       </button>
@@ -2571,14 +2589,14 @@ export default function App() {
                 setBreakPopup(false);
               }}
               disabled={pendingBreaks.length === 0}
-              className={`w-full bg-blue-600 ${pendingBreaks.length !== 0 ? "hover:bg-blue-500" : ""} disabled:opacity-50 disabled:cursor-not-allowed text-white py-2 rounded-lg text-sm font-medium transition-colors hover:cursor-pointer`}
+              className={`w-full bg-blue-950 ${pendingBreaks.length !== 0 ? "hover:bg-blue-700" : ""} disabled:bg-blue-950/50 disabled:cursor-not-allowed text-white py-2 rounded-lg text-sm font-medium transition-colors hover:cursor-pointer`}
             >
               Confirm
             </button>
 
             {/* CANCEL */}
             <button
-              className="w-full bg-gray-600 hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2 rounded-lg text-sm font-medium transition-colors mt-2"
+              className="mb-15 w-full bg-gray-700 hover:bg-gray-500 text-white py-2 rounded-lg text-sm font-medium transition-colors mt-2 hover:cursor-pointer"
               onClick={() => {setBreakPopup(false)}}
             >
                 Cancel
