@@ -2145,7 +2145,7 @@ export default function App() {
           {breakPopup && (
             <div className="absolute inset-0 bg-black/60 z-50 pointer-events-none" />
           )}
-          {breakPopup && (
+          {breakPopup && vimMode && (
             <div className="bg-white absolute z-[100] left-1/2 top-3/8 -translate-x-1/2 -translate-y-1/2 w-64 h-40 rounded-lg p-4 flex flex-col text-lg text-black font-bold shrink-0">
               <div className="mt-2 p-2 mb-4">
                 <label className="font-semibold text-md text-black mb-1 block">Command</label>
